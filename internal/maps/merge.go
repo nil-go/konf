@@ -16,7 +16,7 @@ func Merge(dst, src map[string]any) {
 			continue
 		}
 
-		// Direct override if the srcVal is not map.
+		// Direct override if the srcVal is not map[string]any.
 		srcMap, succeed := srcVal.(map[string]any)
 		if !succeed {
 			dst[key] = srcVal
@@ -24,7 +24,7 @@ func Merge(dst, src map[string]any) {
 			continue
 		}
 
-		// Direct override if the dstVal is not map.
+		// Direct override if the dstVal is not map[string]any.
 		dstMap, succeed := dstVal.(map[string]any)
 		if !succeed {
 			dst[key] = srcVal
@@ -32,7 +32,7 @@ func Merge(dst, src map[string]any) {
 			continue
 		}
 
-		// Merge if the srcVal and dstVal are both maps.
+		// Merge if the srcVal and dstVal are both map[string]any.
 		Merge(dstMap, srcMap)
 	}
 }

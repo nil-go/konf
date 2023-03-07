@@ -18,7 +18,7 @@ type Config struct {
 	values map[string]any
 }
 
-// New initializes a Config with the given Option(s).
+// New returns a Config with the given Option(s).
 func New(opts ...Option) Config {
 	config := &Config{
 		delimiter: ".",

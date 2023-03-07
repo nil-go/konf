@@ -71,7 +71,7 @@ func TestMerge(t *testing.T) {
 			t.Parallel()
 
 			maps.Merge(testcase.dst, testcase.src)
-			require.Equal(t, testcase.dst, testcase.expected)
+			require.Equal(t, testcase.expected, testcase.dst)
 		})
 	}
 }
