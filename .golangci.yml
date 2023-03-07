@@ -1,0 +1,132 @@
+linters-settings:
+  cyclop:
+    max-complexity: 15
+  errcheck:
+    check-type-assertions: true
+  exhaustive:
+    default-signifies-exhaustive: true
+  gci:
+    sections:
+      - standard
+      - default
+      - prefix(github.com/ktong/konf)
+  gocognit:
+    min-complexity: 15
+  gocyclo:
+    min-complexity: 15
+  goheader:
+    template: |-
+      Copyright (c) {{ YEAR }} The konf authors
+      Use of this source code is governed by a MIT license found in the LICENSE file.
+  goimports:
+    local-prefixes: github.com/ktong/konf
+  govet:
+    check-shadowing: true
+  makezero:
+    always: true
+  misspell:
+    locale: US
+
+linters:
+  disable-all: true
+  enable:
+    - asasalint
+    - asciicheck
+    - bidichk
+    - bodyclose
+    - containedctx
+    - contextcheck
+    - cyclop
+    - decorder
+    - depguard
+    - dogsled
+    - dupl
+    - durationcheck
+    - dupword
+    - errcheck
+    - errchkjson
+    - errname
+    - errorlint
+    - execinquery
+    - exportloopref
+    - exhaustive
+    # exhaustruct
+    - forbidigo
+    - forcetypeassert
+    - funlen
+    - gci
+    - ginkgolinter
+    - gocheckcompilerdirectives
+    - gochecknoglobals
+    - gochecknoinits
+    - gocognit
+    - goconst
+    - gocritic
+    - gocyclo
+    - godot
+    - godox
+    - goerr113
+    - gofmt
+    - gofumpt
+    - goheader
+    - goimports
+    - gomnd
+    - gomoddirectives
+    - gomodguard
+    - goprintffuncname
+    - gosec
+    - gosimple
+    - govet
+    - grouper
+    - importas
+    - ineffassign
+    - interfacebloat
+    - ireturn
+    - lll
+    - loggercheck
+    - maintidx
+    - makezero
+    - misspell
+    - musttag
+    - nakedret
+    - nestif
+    - nilerr
+    - nilnil
+    - nlreturn
+    - noctx
+    - nolintlint
+    - nonamedreturns
+    - nosprintfhostport
+    # paralleltest
+    - prealloc
+    - predeclared
+    - promlinter
+    - reassign
+    - revive
+    - rowserrcheck
+    - sqlclosecheck
+    - staticcheck
+    - stylecheck
+    - tagliatelle
+    - tenv
+    - testableexamples
+    - testpackage
+    - thelper
+    - tparallel
+    - typecheck
+    - unconvert
+    - unparam
+    - unused
+    - usestdlibvars
+    - varnamelen
+    - wastedassign
+    - whitespace
+    - wrapcheck
+    # wsl
+
+issues:
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - goerr113
+        - funlen
