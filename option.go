@@ -3,15 +3,21 @@
 
 package konf
 
-// Option configures how it loads configuration.
+// Option configures the given Config.
 type Option func(*Config)
 
+// WithDelimiter provides the delimiter when specifying config path.
+//
+// The default delimiter is `.`, which makes config path like `parent.child.key`.
 func WithDelimiter(delimiter string) Option {
 	return func(config *Config) {
 		config.delimiter = delimiter
 	}
 }
 
+// WithLogger provides a Logger implementation to log.
+//
+// The default implementation is using standard [log].
 func WithLogger(logger Logger) Option {
 	return func(config *Config) {
 		config.logger = logger

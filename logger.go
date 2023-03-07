@@ -9,6 +9,7 @@ import (
 	"log"
 )
 
+// Logger is the interface that wraps the basic methods for logging.
 type Logger interface {
 	Info(message string, keyAndValues ...any)
 	Error(message string, err error, keyAndValues ...any)
