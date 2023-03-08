@@ -6,6 +6,7 @@ package file
 import (
 	"encoding/json"
 	"io/fs"
+	"log"
 )
 
 // WithFS provides the fs.FS that config file is loaded from.
@@ -33,6 +34,15 @@ func IgnoreFileNotExit() Option {
 	}
 }
 
+// WithLog provides the function that logs message.
+//
+// The default function [log.Print].
+func WithLog(log func(...any)) Option {
+	return func(file *options) {
+		file.log = log
+	}
+}
+
 // Option configures the given File.
 type Option func(file *options)
 
@@ -42,6 +52,7 @@ func apply(path string, opts []Option) options {
 	option := &options{
 		path:      path,
 		unmarshal: json.Unmarshal,
+		log:       log.Print,
 	}
 	for _, opt := range opts {
 		opt(option)

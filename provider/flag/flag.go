@@ -4,8 +4,9 @@
 package flag
 
 import (
+	"errors"
 	"flag"
-	"log"
+	"fmt"
 	"reflect"
 	"strings"
 
@@ -34,6 +35,7 @@ func New(opts ...Option) Flag {
 }
 
 func (f Flag) Load() (map[string]any, error) {
+	var errs []error
 	config := make(map[string]any)
 	f.set.VisitAll(func(flag *flag.Flag) {
 		if f.prefix != "" && !strings.HasPrefix(flag.Name, f.prefix) {
@@ -41,38 +43,54 @@ func (f Flag) Load() (map[string]any, error) {
 		}
 
 		// Skip zero default value to avoid overriding values set by other loader.
-		if flag.Value.String() == flag.DefValue && isZeroValue(flag) {
-			return
+		if flag.Value.String() == flag.DefValue {
+			zero, err := isZeroValue(flag, flag.DefValue)
+			if err != nil {
+				errs = append(errs, err)
+			}
+			if zero {
+				return
+			}
 		}
 
 		maps.Insert(config, strings.Split(strings.ToLower(flag.Name), f.delimiter), flag.Value.String())
 	})
 
+	if len(errs) > 0 {
+		return nil, errors.Join(errs...)
+	}
+
 	return config, nil
 }
 
-// isZeroValue determines whether the flag has the zero value.
-func isZeroValue(flg *flag.Flag) bool {
+// isZeroValue determines whether the string represents the zero
+// value for a flag.
+func isZeroValue(flg *flag.Flag, value string) (ok bool, err error) { //nolint:nonamedreturns
 	// Build a zero value of the flag's Value type, and see if the
 	// result of calling its String method equals the value passed in.
 	// This works unless the Value type is itself an interface type.
 	typ := reflect.TypeOf(flg.Value)
-	var zero reflect.Value
+	var val reflect.Value
 	if typ.Kind() == reflect.Pointer {
-		zero = reflect.New(typ.Elem())
+		val = reflect.New(typ.Elem())
 	} else {
-		zero = reflect.Zero(typ)
+		val = reflect.Zero(typ)
 	}
 
-	// Catch panics calling the String method.
+	// Catch panics calling the String method, which shouldn't prevent the
+	// usage message from being printed, but that we should report to the
+	// user so that they know to fix their code.
 	defer func() {
-		if e := recover(); e != nil {
+		if msg := recover(); msg != nil {
 			if typ.Kind() == reflect.Pointer {
 				typ = typ.Elem()
 			}
-			log.Printf("panic calling String method on zero %v for flag %s: %v", typ, flg.Name, e)
+			err = fmt.Errorf( //nolint:goerr113
+				"panic calling String method on zero %v for flag %s: %v",
+				typ, flg.Name, msg,
+			)
 		}
 	}()
 
-	return flg.DefValue == zero.Interface().(flag.Value).String() //nolint:forcetypeassert
+	return value == val.Interface().(flag.Value).String(), nil //nolint:forcetypeassert
 }

@@ -35,7 +35,7 @@ func TestFile(t *testing.T) {
 		{
 			description: "os file (not exist)",
 			path:        "not_found.json",
-			err:         "[konf] read os file: open not_found.json: no such file or directory",
+			err:         "[konf] read file: open not_found.json: no such file or directory",
 		},
 		{
 			description: "os file (ignore not exist)",
@@ -65,7 +65,7 @@ func TestFile(t *testing.T) {
 			opts: []file.Option{
 				file.WithFS(fstest.MapFS{}),
 			},
-			err: "[konf] read fs file: open not_found.json: file does not exist",
+			err: "[konf] read file: open not_found.json: file does not exist",
 		},
 		{
 			description: "fs file (ignore not exist)",
@@ -103,4 +103,13 @@ func TestFile(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestFile_log(t *testing.T) {
+	var log []any
+	_, err := file.New("not_found.json", file.IgnoreFileNotExit(), file.WithLog(func(a ...any) {
+		log = append(log, a...)
+	})).Load()
+	require.NoError(t, err)
+	require.Equal(t, []any{"Config file not_found.json does not exist."}, log)
 }
