@@ -16,29 +16,21 @@ import (
 type Config struct {
 	delimiter string
 	logger    Logger
-	loaders   []Loader
 
 	values map[string]any
 }
 
 // New returns a Config with the given Option(s).
 func New(opts ...Option) (Config, error) {
-	config := &Config{
-		delimiter: ".",
-		logger:    stdlog{},
-		values:    make(map[string]any),
-	}
-	for _, opt := range opts {
-		opt(config)
-	}
+	option := apply(opts)
 
-	for _, loader := range config.loaders {
-		if err := config.load(loader); err != nil {
+	for _, loader := range option.loaders {
+		if err := option.load(loader); err != nil {
 			return Config{}, err
 		}
 	}
 
-	return *config, nil
+	return option.Config, nil
 }
 
 func (c Config) load(loader Loader) error {

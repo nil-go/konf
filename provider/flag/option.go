@@ -9,14 +9,14 @@ import "flag"
 //
 // The default delimiter is `.`, which makes flag name like `parent.child.key`.
 func WithDelimiter(delimiter string) Option {
-	return func(flag *Flag) {
+	return func(flag *options) {
 		flag.delimiter = delimiter
 	}
 }
 
 // WithPrefix enables only loads flags with the given prefix.
 func WithPrefix(prefix string) Option {
-	return func(flag *Flag) {
+	return func(flag *options) {
 		flag.prefix = prefix
 	}
 }
@@ -25,10 +25,23 @@ func WithPrefix(prefix string) Option {
 //
 // The default flag set is [flag.CommandLine].
 func WithFlagSet(set *flag.FlagSet) Option {
-	return func(flag *Flag) {
+	return func(flag *options) {
 		flag.set = set
 	}
 }
 
 // Option configures the give Flag.
-type Option func(*Flag)
+type Option func(*options)
+
+type options Flag
+
+func apply(opts []Option) options {
+	option := &options{
+		delimiter: ".",
+	}
+	for _, opt := range opts {
+		opt(option)
+	}
+
+	return *option
+}

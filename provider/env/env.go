@@ -20,14 +20,7 @@ type Env struct {
 
 // New returns an Env with the given Option(s).
 func New(opts ...Option) Env {
-	env := Env{
-		delimiter: "_",
-	}
-	for _, opt := range opts {
-		opt(&env)
-	}
-
-	return env
+	return Env(apply(opts))
 }
 
 func (e Env) Load() (map[string]any, error) {
