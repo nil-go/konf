@@ -8,18 +8,21 @@ import (
 	"strings"
 
 	"github.com/mitchellh/mapstructure"
+
+	"github.com/ktong/konf/internal/maps"
 )
 
 // Config is a registry which holds configuration loaded by Loader(s).
 type Config struct {
 	delimiter string
 	logger    Logger
+	loaders   []Loader
 
 	values map[string]any
 }
 
 // New returns a Config with the given Option(s).
-func New(opts ...Option) Config {
+func New(opts ...Option) (Config, error) {
 	config := &Config{
 		delimiter: ".",
 		logger:    stdlog{},
@@ -29,7 +32,32 @@ func New(opts ...Option) Config {
 		opt(config)
 	}
 
-	return *config
+	for _, loader := range config.loaders {
+		if err := config.load(loader); err != nil {
+			return Config{}, err
+		}
+	}
+
+	return *config, nil
+}
+
+func (c Config) load(loader Loader) error {
+	if loader == nil {
+		return nil
+	}
+
+	values, err := loader.Load()
+	if err != nil {
+		return fmt.Errorf("load configuration: %w", err)
+	}
+
+	maps.Merge(c.values, values)
+	c.logger.Info(
+		"Loaded configuration.",
+		"loader", loader,
+	)
+
+	return nil
 }
 
 // Unmarshal loads configuration under the given path into the given object pointed to by target.

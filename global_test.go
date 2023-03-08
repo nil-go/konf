@@ -14,25 +14,27 @@ import (
 )
 
 func TestUnmarshal(t *testing.T) {
-	cfg := konf.New()
+	cfg, err := konf.New(konf.WithLoader(mapLoader{"config": "string"}))
+	require.NoError(t, err)
 	konf.SetGlobal(cfg)
-	require.NoError(t, cfg.Load(mapLoader{"config": "string"}))
+
 	var v string
 	require.NoError(t, konf.Unmarshal("config", &v))
 	require.Equal(t, "string", v)
 }
 
 func TestGet(t *testing.T) {
-	cfg := konf.New()
+	cfg, err := konf.New(konf.WithLoader(mapLoader{"config": "string"}))
+	require.NoError(t, err)
 	konf.SetGlobal(cfg)
-	require.NoError(t, cfg.Load(mapLoader{"config": "string"}))
+
 	require.Equal(t, "string", konf.Get[string]("config"))
 }
 
 func TestGet_error(t *testing.T) {
-	cfg := konf.New()
+	cfg, err := konf.New(konf.WithLoader(mapLoader{"config": "string"}))
+	require.NoError(t, err)
 	konf.SetGlobal(cfg)
-	require.NoError(t, cfg.Load(mapLoader{"config": "string"}))
 
 	buf := new(bytes.Buffer)
 	log.SetOutput(buf)

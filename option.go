@@ -6,6 +6,16 @@ package konf
 // Option configures the given Config.
 type Option func(*Config)
 
+// WithLoader provides the loaders that configuration is loaded from.
+//
+// Each loader takes precedence over the loaders before it
+// while multiple loader are specified.
+func WithLoader(loaders ...Loader) Option {
+	return func(config *Config) {
+		config.loaders = append(config.loaders, loaders...)
+	}
+}
+
 // WithDelimiter provides the delimiter when specifying config path.
 //
 // The default delimiter is `.`, which makes config path like `parent.child.key`.
@@ -15,7 +25,7 @@ func WithDelimiter(delimiter string) Option {
 	}
 }
 
-// WithLogger provides a Logger implementation to log.
+// WithLogger provides a Logger implementation to logger.
 //
 // The default implementation is using standard [log].
 func WithLogger(logger Logger) Option {

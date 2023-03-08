@@ -5,7 +5,7 @@ package konf
 
 import "reflect"
 
-var global = New() //nolint:gochecknoglobals
+var global, _ = New() //nolint:gochecknoglobals
 
 // Unmarshal loads configuration under the given path into the given object pointed to by target.
 // It supports [mapstructure] tags.
