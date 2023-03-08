@@ -6,7 +6,6 @@ package file
 import (
 	"fmt"
 	"io/fs"
-	"log"
 	"os"
 )
 
@@ -15,6 +14,7 @@ type File struct {
 	fs             fs.FS
 	path           string
 	unmarshal      func([]byte, any) error
+	log            func(...any)
 	ignoreNotExist bool
 }
 
@@ -27,13 +27,7 @@ func (f File) Load() (map[string]any, error) {
 	if f.fs == nil {
 		bytes, err := os.ReadFile(f.path)
 		if err != nil {
-			if f.ignoreNotExist && os.IsNotExist(err) {
-				log.Printf("Config file %s does not exist.", f.path)
-
-				return make(map[string]any), nil
-			}
-
-			return nil, fmt.Errorf("[konf] read os file: %w", err)
+			return f.notExist(err)
 		}
 
 		return f.parse(bytes)
@@ -41,16 +35,20 @@ func (f File) Load() (map[string]any, error) {
 
 	bytes, err := fs.ReadFile(f.fs, f.path)
 	if err != nil {
-		if f.ignoreNotExist && os.IsNotExist(err) {
-			log.Printf("Config file %s does not exist.", f.path)
-
-			return make(map[string]any), nil
-		}
-
-		return nil, fmt.Errorf("[konf] read fs file: %w", err)
+		return f.notExist(err)
 	}
 
 	return f.parse(bytes)
+}
+
+func (f File) notExist(err error) (map[string]any, error) {
+	if f.ignoreNotExist && os.IsNotExist(err) {
+		f.log(fmt.Sprintf("Config file %s does not exist.", f.path))
+
+		return make(map[string]any), nil
+	}
+
+	return nil, fmt.Errorf("[konf] read file: %w", err)
 }
 
 func (f File) parse(bytes []byte) (map[string]any, error) {
