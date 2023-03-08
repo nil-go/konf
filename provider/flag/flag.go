@@ -23,19 +23,13 @@ type Flag struct {
 
 // New returns a Flag with the given Option(s).
 func New(opts ...Option) Flag {
-	flg := Flag{
-		delimiter: ".",
-	}
-	for _, opt := range opts {
-		opt(&flg)
-	}
-
-	if flg.set == nil {
+	option := apply(opts)
+	if option.set == nil {
 		flag.Parse()
-		flg.set = flag.CommandLine
+		option.set = flag.CommandLine
 	}
 
-	return flg
+	return Flag(option)
 }
 
 func (f Flag) Load() (map[string]any, error) {

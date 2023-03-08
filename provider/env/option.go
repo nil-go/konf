@@ -7,17 +7,30 @@ package env
 //
 // The default delimiter is `_`, which makes environment variable name like `PARENT_CHILD_KEY`.
 func WithDelimiter(delimiter string) Option {
-	return func(env *Env) {
+	return func(env *options) {
 		env.delimiter = delimiter
 	}
 }
 
 // WithPrefix enables only loads environment variables with the given prefix.
 func WithPrefix(prefix string) Option {
-	return func(env *Env) {
+	return func(env *options) {
 		env.prefix = prefix
 	}
 }
 
 // Option configures the given Env.
-type Option func(*Env)
+type Option func(*options)
+
+type options Env
+
+func apply(opts []Option) options {
+	option := &options{
+		delimiter: "_",
+	}
+	for _, opt := range opts {
+		opt(option)
+	}
+
+	return *option
+}
