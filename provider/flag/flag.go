@@ -5,6 +5,7 @@ package flag
 
 import (
 	"flag"
+	"log"
 	"reflect"
 	"strings"
 
@@ -65,7 +66,12 @@ func isZeroValue(flg *flag.Flag) bool {
 
 	// Catch panics calling the String method.
 	defer func() {
-		_ = recover()
+		if e := recover(); e != nil {
+			if typ.Kind() == reflect.Pointer {
+				typ = typ.Elem()
+			}
+			log.Printf("panic calling String method on zero %v for flag %s: %v", typ, flg.Name, e)
+		}
 	}()
 
 	return flg.DefValue == zero.Interface().(flag.Value).String() //nolint:forcetypeassert

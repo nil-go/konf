@@ -21,6 +21,12 @@ func TestMerge(t *testing.T) {
 		expected    map[string]any
 	}{
 		{
+			description: "nil source",
+			src:         nil,
+			dst:         make(map[string]any),
+			expected:    make(map[string]any),
+		},
+		{
 			description: "empty",
 			src:         make(map[string]any),
 			dst:         make(map[string]any),
