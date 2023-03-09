@@ -5,8 +5,10 @@ package konf
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
+	"sync"
 
 	"github.com/mitchellh/mapstructure"
 	"golang.org/x/sync/errgroup"
@@ -19,8 +21,9 @@ type Config struct {
 	delimiter string
 	logger    Logger
 
-	values    *map[string]any // Use pointer of map for switching while configuration changes.
+	values    map[string]any
 	providers []*provider
+	watchOnce sync.Once
 }
 
 type provider struct {
@@ -29,7 +32,7 @@ type provider struct {
 }
 
 // New returns a Config with the given Option(s).
-func New(opts ...Option) (Config, error) {
+func New(opts ...Option) (*Config, error) {
 	option := apply(opts)
 	config := option.Config
 	config.providers = make([]*provider, 0, len(option.loaders))
@@ -41,12 +44,12 @@ func New(opts ...Option) (Config, error) {
 
 		values, err := loader.Load()
 		if err != nil {
-			return Config{}, fmt.Errorf("[konf] load configuration: %w", err)
+			return nil, fmt.Errorf("[konf] load configuration: %w", err)
 		}
-		maps.Merge(*config.values, values)
+		maps.Merge(config.values, values)
 		config.logger.Info(
 			"Loaded configuration.",
-			"loader", loader,
+			"errorLoader", loader,
 		)
 
 		provider := &provider{
@@ -63,7 +66,7 @@ func New(opts ...Option) (Config, error) {
 
 // Unmarshal loads configuration under the given path into the given object pointed to by target.
 // It supports [mapstructure] tags.
-func (c Config) Unmarshal(path string, target any) error {
+func (c *Config) Unmarshal(path string, target any) error {
 	decoder, err := mapstructure.NewDecoder(
 		&mapstructure.DecoderConfig{
 			Metadata:         nil,
@@ -87,12 +90,12 @@ func (c Config) Unmarshal(path string, target any) error {
 	return nil
 }
 
-func (c Config) sub(path string) any {
+func (c *Config) sub(path string) any {
 	if path == "" {
-		return *c.values
+		return c.values
 	}
 
-	var next any = *c.values
+	var next any = c.values
 	for _, key := range strings.Split(strings.ToLower(path), c.delimiter) {
 		mp, ok := next.(map[string]any)
 		if !ok {
@@ -111,7 +114,18 @@ func (c Config) sub(path string) any {
 
 // Watch watches configuration and triggers callbacks when it changes.
 // It blocks until ctx is done, or the service returns a non-retryable error.
-func (c Config) Watch(ctx context.Context, fns ...func(Config)) error { //nolint:gocognit
+//
+// It only can be called once. Call after first returns error.
+func (c *Config) Watch(ctx context.Context, fns ...func(*Config)) error { //nolint:gocognit
+	var first bool
+	c.watchOnce.Do(func() {
+		first = true
+	})
+
+	if !first {
+		return errors.New("[konf] Watch only can be called once")
+	}
+
 	changeChan := make(chan struct{})
 	defer close(changeChan)
 
@@ -126,7 +140,7 @@ func (c Config) Watch(ctx context.Context, fns ...func(Config)) error { //nolint
 				for _, w := range c.providers {
 					maps.Merge(values, w.values)
 				}
-				*c.values = values
+				c.values = values
 
 				for _, fn := range fns {
 					fn(c)
@@ -145,7 +159,7 @@ func (c Config) Watch(ctx context.Context, fns ...func(Config)) error { //nolint
 						provider.values = values
 						c.logger.Info(
 							"Configuration has been changed.",
-							"loader", provider.watcher,
+							"errorLoader", provider.watcher,
 						)
 						changeChan <- struct{}{}
 					},

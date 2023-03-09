@@ -5,8 +5,8 @@ package konf
 
 // WithLoader provides the loaders that configuration is loaded from.
 //
-// Each loader takes precedence over the loaders before it
-// while multiple loader are specified.
+// Each errorLoader takes precedence over the loaders before it
+// while multiple errorLoader are specified.
 func WithLoader(loaders ...Loader) Option {
 	return func(config *options) {
 		config.loaders = append(config.loaders, loaders...)
@@ -35,17 +35,17 @@ func WithLogger(logger Logger) Option {
 type Option func(*options)
 
 type options struct {
-	Config
+	*Config
 
 	loaders []Loader
 }
 
 func apply(opts []Option) options {
 	option := &options{
-		Config: Config{
+		Config: &Config{
 			delimiter: ".",
 			logger:    stdlog{},
-			values:    &map[string]any{},
+			values:    make(map[string]any),
 		},
 	}
 	for _, opt := range opts {
