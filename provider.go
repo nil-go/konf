@@ -15,7 +15,8 @@ type Loader interface {
 
 // Watcher is the interface that wraps the basic watch method.
 //
-// Watch watches configuration and triggers a callback when it changes.
+// Watch watches configuration and triggers a callback with full new configurations
+// as a nested map[string]any when it changes.
 // It blocks until ctx is done, or the service returns a non-retryable error.
 type Watcher interface {
 	Watch(context.Context, func(map[string]any)) error

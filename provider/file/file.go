@@ -29,34 +29,25 @@ func New(path string, opts ...Option) File {
 }
 
 func (f File) Load() (map[string]any, error) {
+	var (
+		bytes []byte
+		err   error
+	)
 	if f.fs == nil {
-		bytes, err := os.ReadFile(f.path)
-		if err != nil {
-			return f.notExist(err)
+		bytes, err = os.ReadFile(f.path)
+	} else {
+		bytes, err = fs.ReadFile(f.fs, f.path)
+	}
+	if err != nil {
+		if f.ignoreNotExist && os.IsNotExist(err) {
+			f.log(fmt.Sprintf("Config file %s does not exist.", f.path))
+
+			return make(map[string]any), nil
 		}
 
-		return f.parse(bytes)
+		return nil, fmt.Errorf("read file: %w", err)
 	}
 
-	bytes, err := fs.ReadFile(f.fs, f.path)
-	if err != nil {
-		return f.notExist(err)
-	}
-
-	return f.parse(bytes)
-}
-
-func (f File) notExist(err error) (map[string]any, error) {
-	if f.ignoreNotExist && os.IsNotExist(err) {
-		f.log(fmt.Sprintf("Config file %s does not exist.", f.path))
-
-		return make(map[string]any), nil
-	}
-
-	return nil, fmt.Errorf("read file: %w", err)
-}
-
-func (f File) parse(bytes []byte) (map[string]any, error) {
 	var out map[string]any
 	if err := f.unmarshal(bytes, &out); err != nil {
 		return nil, fmt.Errorf("unmarshal: %w", err)
@@ -70,6 +61,16 @@ func (f File) parse(bytes []byte) (map[string]any, error) {
 //
 //nolint:cyclop,funlen,gocognit,gocyclo
 func (f File) Watch(ctx context.Context, watchFunc func(map[string]any)) error {
+	watcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		return fmt.Errorf("create file watcher for %s: %w", f.path, err)
+	}
+	defer func() {
+		if e := watcher.Close(); e != nil {
+			f.log(fmt.Sprintf("Error when closing watcher for %s: %v", f.path, e))
+		}
+	}()
+
 	// Resolve symlinks and save the original path so that changes to symlinks
 	// can be detected.
 	realPath, err := filepath.EvalSymlinks(f.path)
@@ -77,16 +78,6 @@ func (f File) Watch(ctx context.Context, watchFunc func(map[string]any)) error {
 		return fmt.Errorf("eval symlike: %w", err)
 	}
 	realPath = filepath.Clean(realPath)
-
-	watcher, err := fsnotify.NewWatcher()
-	if err != nil {
-		return fmt.Errorf("create file watcher for %s: %w", f.path, err)
-	}
-	defer func() {
-		if err := watcher.Close(); err != nil {
-			f.log(fmt.Sprintf("Error when closing watcher for %s: %v", f.path, err))
-		}
-	}()
 
 	// Although only a single file is being watched, fsnotify has to watch
 	// the whole parent directory to pick up all events such as symlink changes.
@@ -114,47 +105,27 @@ func (f File) Watch(ctx context.Context, watchFunc func(map[string]any)) error {
 			lastEvent = event.String()
 			lastEventTime = time.Now()
 
-			evFile := filepath.Clean(event.Name)
-
 			// Since the event is triggered on a directory, is this
 			// one on the file being watched?
+			evFile := filepath.Clean(event.Name)
 			if evFile != realPath && evFile != f.path {
 				continue
 			}
 
-			// The file was removed.
-			if event.Op&fsnotify.Remove != 0 {
+			switch {
+			case event.Has(fsnotify.Remove):
 				f.log(fmt.Sprintf("Config file %s has been removed.", f.path))
 				watchFunc(nil)
+			case event.Has(fsnotify.Create) || event.Has(fsnotify.Write):
+				values, err := f.Load()
+				if err != nil {
+					f.log(fmt.Sprintf("Error when reloading configuration from %s: %v", f.path, err))
 
-				continue
+					continue
+				}
+				watchFunc(values)
 			}
 
-			// Resolve symlink to get the real path, in case the symlink's
-			// target has changed.
-			curPath, err := filepath.EvalSymlinks(f.path)
-			if err != nil {
-				f.log(fmt.Sprintf("Error when evaling symlink for %s: %v", f.path, err))
-
-				continue
-			}
-			realPath = filepath.Clean(curPath)
-
-			// Finally, we only care about create and write.
-			if event.Op&(fsnotify.Write|fsnotify.Create) == 0 {
-				continue
-			}
-
-			// Trigger event.
-			values, err := f.Load()
-			if err != nil {
-				f.log(fmt.Sprintf("Error when loading configuration from %s: %v", f.path, err))
-
-				continue
-			}
-			watchFunc(values)
-
-		// There's an error.
 		case err, ok := <-watcher.Errors:
 			if !ok {
 				return nil
