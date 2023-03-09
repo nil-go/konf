@@ -4,7 +4,9 @@
 package konf_test
 
 import (
+	"context"
 	"errors"
+	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -129,6 +131,58 @@ type mapLoader map[string]any
 
 func (m mapLoader) Load() (map[string]any, error) {
 	return m, nil
+}
+
+func TestConfig_Watch(t *testing.T) {
+	t.Parallel()
+
+	watcher := mapWatcher(make(chan map[string]any))
+	config, err := konf.New(konf.WithLoader(watcher))
+	require.NoError(t, err)
+
+	var cfg string
+	require.NoError(t, config.Unmarshal("config", &cfg))
+	require.Equal(t, "string", cfg)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	var waitGroup sync.WaitGroup
+	waitGroup.Add(1)
+	go func() {
+		err := config.Watch(ctx, func(config konf.Config) {
+			defer waitGroup.Done()
+
+			require.NoError(t, config.Unmarshal("config", &cfg))
+		})
+		require.NoError(t, err)
+	}()
+
+	watcher.change(map[string]any{"config": "changed"})
+	waitGroup.Wait()
+
+	require.Equal(t, "changed", cfg)
+}
+
+type mapWatcher chan map[string]any
+
+func (m mapWatcher) Load() (map[string]any, error) {
+	return map[string]any{"config": "string"}, nil
+}
+
+func (m mapWatcher) Watch(ctx context.Context, fn func(map[string]any)) error {
+	for {
+		select {
+		case values := <-m:
+			fn(values)
+		case <-ctx.Done():
+			return nil
+		}
+	}
+}
+
+func (m mapWatcher) change(values map[string]any) {
+	m <- values
 }
 
 func TestConfig_error(t *testing.T) {

@@ -19,8 +19,8 @@ type Config struct {
 	delimiter string
 	logger    Logger
 
-	values   map[string]any
-	watchers []watcher
+	values   *map[string]any // Use pointer of map for switching while configuration changes.
+	watchers []*watcher
 }
 
 type watcher struct {
@@ -32,7 +32,7 @@ type watcher struct {
 func New(opts ...Option) (Config, error) {
 	option := apply(opts)
 	config := option.Config
-	config.watchers = make([]watcher, 0, len(option.loaders))
+	config.watchers = make([]*watcher, 0, len(option.loaders))
 
 	for _, loader := range option.loaders {
 		if loader == nil {
@@ -43,13 +43,13 @@ func New(opts ...Option) (Config, error) {
 		if err != nil {
 			return Config{}, fmt.Errorf("[konf] load configuration: %w", err)
 		}
-		maps.Merge(config.values, values)
+		maps.Merge(*config.values, values)
 		config.logger.Info(
 			"Loaded configuration.",
 			"loader", loader,
 		)
 
-		provider := watcher{
+		provider := &watcher{
 			values: values,
 		}
 		if w, ok := loader.(Watcher); ok {
@@ -89,10 +89,10 @@ func (c Config) Unmarshal(path string, target any) error {
 
 func (c Config) sub(path string) any {
 	if path == "" {
-		return c.values
+		return *c.values
 	}
 
-	var next any = c.values
+	var next any = *c.values
 	for _, key := range strings.Split(strings.ToLower(path), c.delimiter) {
 		mp, ok := next.(map[string]any)
 		if !ok {
@@ -126,7 +126,7 @@ func (c Config) Watch(ctx context.Context, fns ...func(Config)) error { //nolint
 				for _, w := range c.watchers {
 					maps.Merge(values, w.values)
 				}
-				c.values = values
+				*c.values = values
 
 				for _, fn := range fns {
 					fn(c)

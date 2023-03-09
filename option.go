@@ -45,7 +45,7 @@ func apply(opts []Option) options {
 		Config: Config{
 			delimiter: ".",
 			logger:    stdlog{},
-			values:    make(map[string]any),
+			values:    &map[string]any{},
 		},
 	}
 	for _, opt := range opts {

@@ -5,7 +5,9 @@ package konf_test
 
 import (
 	"bytes"
+	"context"
 	"log"
+	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -49,4 +51,33 @@ func TestGet_error(t *testing.T) { //nolint:paralleltest
 		" error=[konf] decode: cannot parse '' as bool: strconv.ParseBool: parsing \"string\": invalid syntax" +
 		" path=config type=bool\n"
 	require.Equal(t, expected, buf.String())
+}
+
+func TestWatch(t *testing.T) { //nolint:paralleltest
+	watcher := mapWatcher(make(chan map[string]any))
+	config, err := konf.New(konf.WithLoader(watcher))
+	require.NoError(t, err)
+	konf.SetGlobal(config)
+
+	cfg := konf.Get[string]("config")
+	require.Equal(t, "string", cfg)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	var waitGroup sync.WaitGroup
+	waitGroup.Add(1)
+	go func() {
+		err := konf.Watch(ctx, func() {
+			defer waitGroup.Done()
+
+			cfg = konf.Get[string]("config")
+		})
+		require.NoError(t, err)
+	}()
+
+	watcher.change(map[string]any{"config": "changed"})
+	waitGroup.Wait()
+
+	require.Equal(t, "changed", cfg)
 }
