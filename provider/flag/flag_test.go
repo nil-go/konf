@@ -14,7 +14,7 @@ import (
 	kflag "github.com/ktong/konf/provider/flag"
 )
 
-func TestFlag_Load(t *testing.T) {
+func TestFlag_Load(t *testing.T) { //nolint:paralleltest
 	flag.String("p.k", "", "")
 	_ = flag.Set("p.k", "v")
 	flag.String("p.d", ".", "")
@@ -49,7 +49,7 @@ func TestFlag_Load(t *testing.T) {
 		},
 	}
 
-	for i := range testcases {
+	for i := range testcases { //nolint:paralleltest
 		testcase := testcases[i]
 
 		t.Run(testcase.description, func(t *testing.T) {

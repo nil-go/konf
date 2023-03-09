@@ -11,7 +11,7 @@ import (
 	"github.com/ktong/konf/provider/env"
 )
 
-func TestEnv_Load(t *testing.T) {
+func TestEnv_Load(t *testing.T) { //nolint:paralleltest
 	testcases := []struct {
 		description string
 		opts        []env.Option
@@ -42,7 +42,7 @@ func TestEnv_Load(t *testing.T) {
 	t.Setenv("P_D", "-")
 	t.Setenv("P.D", ".")
 
-	for i := range testcases {
+	for i := range testcases { //nolint:paralleltest
 		testcase := testcases[i]
 
 		t.Run(testcase.description, func(t *testing.T) {

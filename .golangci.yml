@@ -97,7 +97,7 @@ linters:
     - nolintlint
     - nonamedreturns
     - nosprintfhostport
-    # paralleltest
+    - paralleltest
     - prealloc
     - predeclared
     - promlinter

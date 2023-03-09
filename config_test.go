@@ -12,7 +12,7 @@ import (
 	"github.com/ktong/konf"
 )
 
-func TestConfig(t *testing.T) {
+func TestConfig_Unmarshal(t *testing.T) {
 	t.Parallel()
 
 	testcases := []struct {

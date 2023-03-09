@@ -26,6 +26,8 @@ func TestUnmarshal(t *testing.T) {
 }
 
 func TestGet(t *testing.T) {
+	t.Parallel()
+
 	cfg, err := konf.New(konf.WithLoader(mapLoader{"config": "string"}))
 	require.NoError(t, err)
 	konf.SetGlobal(cfg)
@@ -33,7 +35,7 @@ func TestGet(t *testing.T) {
 	require.Equal(t, "string", konf.Get[string]("config"))
 }
 
-func TestGet_error(t *testing.T) {
+func TestGet_error(t *testing.T) { //nolint:paralleltest
 	cfg, err := konf.New(konf.WithLoader(mapLoader{"config": "string"}))
 	require.NoError(t, err)
 	konf.SetGlobal(cfg)
