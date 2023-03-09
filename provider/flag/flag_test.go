@@ -53,9 +53,9 @@ func TestFlag_Load(t *testing.T) { //nolint:paralleltest
 		testcase := testcases[i]
 
 		t.Run(testcase.description, func(t *testing.T) {
-			loader, err := kflag.New(testcase.opts...).Load()
+			values, err := kflag.New(testcase.opts...).Load()
 			require.NoError(t, err)
-			require.Equal(t, testcase.expected, loader)
+			require.Equal(t, testcase.expected, values)
 		})
 	}
 }
