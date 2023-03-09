@@ -19,11 +19,11 @@ type Config struct {
 	delimiter string
 	logger    Logger
 
-	values   *map[string]any // Use pointer of map for switching while configuration changes.
-	watchers []*watcher
+	values    *map[string]any // Use pointer of map for switching while configuration changes.
+	providers []*provider
 }
 
-type watcher struct {
+type provider struct {
 	watcher Watcher
 	values  map[string]any
 }
@@ -32,7 +32,7 @@ type watcher struct {
 func New(opts ...Option) (Config, error) {
 	option := apply(opts)
 	config := option.Config
-	config.watchers = make([]*watcher, 0, len(option.loaders))
+	config.providers = make([]*provider, 0, len(option.loaders))
 
 	for _, loader := range option.loaders {
 		if loader == nil {
@@ -49,13 +49,13 @@ func New(opts ...Option) (Config, error) {
 			"loader", loader,
 		)
 
-		provider := &watcher{
+		provider := &provider{
 			values: values,
 		}
 		if w, ok := loader.(Watcher); ok {
 			provider.watcher = w
 		}
-		config.watchers = append(config.watchers, provider)
+		config.providers = append(config.providers, provider)
 	}
 
 	return config, nil
@@ -123,7 +123,7 @@ func (c Config) Watch(ctx context.Context, fns ...func(Config)) error { //nolint
 				return nil
 			case <-changeChan:
 				values := make(map[string]any)
-				for _, w := range c.watchers {
+				for _, w := range c.providers {
 					maps.Merge(values, w.values)
 				}
 				*c.values = values
@@ -135,17 +135,17 @@ func (c Config) Watch(ctx context.Context, fns ...func(Config)) error { //nolint
 		}
 	})
 
-	for _, watcher := range c.watchers {
-		watcher := watcher
-		if watcher.watcher != nil {
+	for _, watcher := range c.providers {
+		provider := watcher
+		if provider.watcher != nil {
 			group.Go(func() error {
-				if err := watcher.watcher.Watch(
+				if err := provider.watcher.Watch(
 					ctx,
 					func(values map[string]any) {
-						watcher.values = values
+						provider.values = values
 						c.logger.Info(
 							"Configuration has been changed.",
-							"loader", watcher.watcher,
+							"loader", provider.watcher,
 						)
 						changeChan <- struct{}{}
 					},
