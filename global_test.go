@@ -14,6 +14,8 @@ import (
 )
 
 func TestUnmarshal(t *testing.T) {
+	t.Parallel()
+
 	cfg, err := konf.New(konf.WithLoader(mapLoader{"config": "string"}))
 	require.NoError(t, err)
 	konf.SetGlobal(cfg)

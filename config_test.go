@@ -132,6 +132,8 @@ func (m mapLoader) Load() (map[string]any, error) {
 }
 
 func TestConfig_error(t *testing.T) {
+	t.Parallel()
+
 	_, err := konf.New(konf.WithLoader(loader{}))
 	require.EqualError(t, err, "[konf] load configuration: error")
 }
@@ -143,6 +145,8 @@ func (loader) Load() (map[string]any, error) {
 }
 
 func TestConfig_logger(t *testing.T) {
+	t.Parallel()
+
 	logger := &logger{}
 	_, err := konf.New(konf.WithLogger(logger), konf.WithLoader(mapLoader{}))
 	require.NoError(t, err)

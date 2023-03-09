@@ -34,3 +34,11 @@ func (e Env) Load() (map[string]any, error) {
 
 	return config, nil
 }
+
+func (e Env) String() string {
+	if e.prefix == "" {
+		return "env"
+	}
+
+	return "env:" + e.prefix
+}

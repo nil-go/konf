@@ -5,6 +5,7 @@ package file_test
 
 import (
 	"errors"
+	"io/fs"
 	"testing"
 	"testing/fstest"
 
@@ -13,7 +14,7 @@ import (
 	"github.com/ktong/konf/provider/file"
 )
 
-func TestFile(t *testing.T) {
+func TestFile_Load(t *testing.T) {
 	t.Parallel()
 
 	testcases := []struct {
@@ -106,10 +107,52 @@ func TestFile(t *testing.T) {
 }
 
 func TestFile_log(t *testing.T) {
+	t.Parallel()
+
 	var log []any
-	_, err := file.New("not_found.json", file.IgnoreFileNotExit(), file.WithLog(func(a ...any) {
-		log = append(log, a...)
-	})).Load()
+	_, err := file.New(
+		"not_found.json",
+		file.IgnoreFileNotExit(),
+		file.WithLog(
+			func(a ...any) {
+				log = append(log, a...)
+			},
+		),
+	).Load()
+
 	require.NoError(t, err)
 	require.Equal(t, []any{"Config file not_found.json does not exist."}, log)
+}
+
+func TestFile_String(t *testing.T) {
+	t.Parallel()
+
+	testcases := []struct {
+		description string
+		path        string
+		fs          fs.FS
+		expected    string
+	}{
+		{
+			description: "fs file",
+			path:        "config.json",
+			fs:          fstest.MapFS{},
+			expected:    "fs file:config.json",
+		},
+		{
+			description: "os file",
+			path:        "config.json",
+			expected:    "os file:config.json",
+		},
+	}
+
+	for i := range testcases {
+		testcase := testcases[i]
+
+		t.Run(testcase.description, func(t *testing.T) {
+			t.Parallel()
+
+			require.Equal(t, testcase.expected, file.New(testcase.path, file.WithFS(testcase.fs)).String())
+		})
+	}
 }

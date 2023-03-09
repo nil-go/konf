@@ -11,7 +11,7 @@ import (
 	"github.com/ktong/konf/provider/env"
 )
 
-func TestEnv(t *testing.T) {
+func TestEnv_Load(t *testing.T) {
 	testcases := []struct {
 		description string
 		opts        []env.Option
@@ -49,6 +49,36 @@ func TestEnv(t *testing.T) {
 			loader, err := env.New(testcase.opts...).Load()
 			require.NoError(t, err)
 			require.Equal(t, testcase.expected, loader)
+		})
+	}
+}
+
+func TestEnv_String(t *testing.T) {
+	t.Parallel()
+
+	testcases := []struct {
+		description string
+		prefix      string
+		expected    string
+	}{
+		{
+			description: "with prefix",
+			prefix:      "P_",
+			expected:    "env:P_",
+		},
+		{
+			description: "no prefix",
+			expected:    "env",
+		},
+	}
+
+	for i := range testcases {
+		testcase := testcases[i]
+
+		t.Run(testcase.description, func(t *testing.T) {
+			t.Parallel()
+
+			require.Equal(t, testcase.expected, env.New(env.WithPrefix(testcase.prefix)).String())
 		})
 	}
 }

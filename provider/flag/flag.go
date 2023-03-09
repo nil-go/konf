@@ -94,3 +94,11 @@ func isZeroValue(flg *flag.Flag, value string) (ok bool, err error) { //nolint:n
 
 	return value == val.Interface().(flag.Value).String(), nil //nolint:forcetypeassert
 }
+
+func (f Flag) String() string {
+	if f.prefix == "" {
+		return "flag"
+	}
+
+	return "flag:" + f.prefix
+}

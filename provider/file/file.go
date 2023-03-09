@@ -167,3 +167,11 @@ func (f File) Watch(ctx context.Context, watchFunc func(map[string]any)) error {
 		}
 	}
 }
+
+func (f File) String() string {
+	if f.fs == nil {
+		return "os file:" + f.path
+	}
+
+	return "fs file:" + f.path
+}
