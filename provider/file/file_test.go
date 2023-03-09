@@ -35,7 +35,7 @@ func TestFile(t *testing.T) {
 		{
 			description: "os file (not exist)",
 			path:        "not_found.json",
-			err:         "[konf] read file: open not_found.json: no such file or directory",
+			err:         "read file: open not_found.json: no such file or directory",
 		},
 		{
 			description: "os file (ignore not exist)",
@@ -65,7 +65,7 @@ func TestFile(t *testing.T) {
 			opts: []file.Option{
 				file.WithFS(fstest.MapFS{}),
 			},
-			err: "[konf] read file: open not_found.json: file does not exist",
+			err: "read file: open not_found.json: file does not exist",
 		},
 		{
 			description: "fs file (ignore not exist)",
@@ -84,7 +84,7 @@ func TestFile(t *testing.T) {
 					return errors.New("unmarshal error")
 				}),
 			},
-			err: "[konf] unmarshal: unmarshal error",
+			err: "unmarshal: unmarshal error",
 		},
 	}
 

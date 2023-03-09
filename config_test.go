@@ -133,7 +133,7 @@ func (m mapLoader) Load() (map[string]any, error) {
 
 func TestConfig_error(t *testing.T) {
 	_, err := konf.New(konf.WithLoader(loader{}))
-	require.EqualError(t, err, "load configuration: error")
+	require.EqualError(t, err, "[konf] load configuration: error")
 }
 
 type loader struct{}

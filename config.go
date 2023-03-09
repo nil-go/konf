@@ -4,10 +4,12 @@
 package konf
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
 	"github.com/mitchellh/mapstructure"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/ktong/konf/internal/maps"
 )
@@ -17,39 +19,46 @@ type Config struct {
 	delimiter string
 	logger    Logger
 
-	values map[string]any
+	values   map[string]any
+	watchers []watcher
+}
+
+type watcher struct {
+	watcher Watcher
+	values  map[string]any
 }
 
 // New returns a Config with the given Option(s).
 func New(opts ...Option) (Config, error) {
 	option := apply(opts)
+	config := option.Config
+	config.watchers = make([]watcher, 0, len(option.loaders))
 
 	for _, loader := range option.loaders {
-		if err := option.load(loader); err != nil {
-			return Config{}, err
+		if loader == nil {
+			continue
 		}
+
+		values, err := loader.Load()
+		if err != nil {
+			return Config{}, fmt.Errorf("[konf] load configuration: %w", err)
+		}
+		maps.Merge(config.values, values)
+		config.logger.Info(
+			"Loaded configuration.",
+			"loader", loader,
+		)
+
+		provider := watcher{
+			values: values,
+		}
+		if w, ok := loader.(Watcher); ok {
+			provider.watcher = w
+		}
+		config.watchers = append(config.watchers, provider)
 	}
 
-	return option.Config, nil
-}
-
-func (c Config) load(loader Loader) error {
-	if loader == nil {
-		return nil
-	}
-
-	values, err := loader.Load()
-	if err != nil {
-		return fmt.Errorf("load configuration: %w", err)
-	}
-
-	maps.Merge(c.values, values)
-	c.logger.Info(
-		"Loaded configuration.",
-		"loader", loader,
-	)
-
-	return nil
+	return config, nil
 }
 
 // Unmarshal loads configuration under the given path into the given object pointed to by target.
@@ -98,4 +107,56 @@ func (c Config) sub(path string) any {
 	}
 
 	return next
+}
+
+// Watch watches configuration and triggers callbacks when it changes.
+// It blocks until ctx is done, or the service returns a non-retryable error.
+func (c Config) Watch(ctx context.Context, fns ...func(Config)) error { //nolint:gocognit
+	changeChan := make(chan struct{})
+	defer close(changeChan)
+
+	group, ctx := errgroup.WithContext(ctx)
+	group.Go(func() error {
+		for {
+			select {
+			case <-ctx.Done():
+				return nil
+			case <-changeChan:
+				values := make(map[string]any)
+				for _, w := range c.watchers {
+					maps.Merge(values, w.values)
+				}
+				c.values = values
+
+				for _, fn := range fns {
+					fn(c)
+				}
+			}
+		}
+	})
+
+	for _, watcher := range c.watchers {
+		watcher := watcher
+		if watcher.watcher != nil {
+			group.Go(func() error {
+				if err := watcher.watcher.Watch(
+					ctx,
+					func(values map[string]any) {
+						watcher.values = values
+						c.logger.Info(
+							"Configuration has been changed.",
+							"loader", watcher.watcher,
+						)
+						changeChan <- struct{}{}
+					},
+				); err != nil {
+					return fmt.Errorf("[konf] watch configuration change: %w", err)
+				}
+
+				return nil
+			})
+		}
+	}
+
+	return group.Wait() //nolint:wrapcheck
 }

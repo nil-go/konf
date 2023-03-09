@@ -3,7 +3,10 @@
 
 package konf
 
-import "reflect"
+import (
+	"context"
+	"reflect"
+)
 
 var global, _ = New() //nolint:gochecknoglobals
 
@@ -29,6 +32,19 @@ func Get[T any](path string) T { //nolint:ireturn
 	}
 
 	return value
+}
+
+// Watch watches configuration and triggers callbacks when it changes.
+// It blocks until ctx is done, or the service returns a non-retryable error.
+func Watch(ctx context.Context, fns ...func()) error {
+	return global.Watch(
+		ctx,
+		func(Config) {
+			for _, fn := range fns {
+				fn()
+			}
+		},
+	)
 }
 
 // SetGlobal makes c the global Config. After this call,
