@@ -18,6 +18,7 @@ import (
 // The name of flags is case-insensitive.
 // It skips it if the flag's value is same as default zero value.
 type Flag struct {
+	_         [0]func() // Ensure it's incomparable.
 	set       *flag.FlagSet
 	delimiter string
 	prefix    string

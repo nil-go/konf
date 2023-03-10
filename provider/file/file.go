@@ -16,6 +16,7 @@ import (
 
 // File is a Provider that loads configuration from file.
 type File struct {
+	_              [0]func() // Ensure it's incomparable.
 	fs             fs.FS
 	path           string
 	unmarshal      func([]byte, any) error
