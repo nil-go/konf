@@ -1,6 +1,4 @@
 linters-settings:
-  cyclop:
-    max-complexity: 15
   errcheck:
     check-type-assertions: true
   exhaustive:
@@ -10,10 +8,6 @@ linters-settings:
       - standard
       - default
       - prefix(github.com/ktong/konf)
-  gocognit:
-    min-complexity: 15
-  gocyclo:
-    min-complexity: 15
   goheader:
     template: |-
       Copyright (c) {{ YEAR }} The konf authors
@@ -22,10 +16,24 @@ linters-settings:
     local-prefixes: github.com/ktong/konf
   govet:
     check-shadowing: true
+  ireturn:
+    allow:
+      - anon
+      - error
+      - empty
+      - stdlib
+      - T
   makezero:
     always: true
   misspell:
     locale: US
+  nonamedreturns:
+    report-error-in-defer: true
+  paralleltest:
+    ignore-missing: true
+  wrapcheck:
+    ignorePackageGlobs:
+      - golang.org/x/sync/*
 
 linters:
   disable-all: true
@@ -97,7 +105,7 @@ linters:
     - nolintlint
     - nonamedreturns
     - nosprintfhostport
-    # paralleltest
+    - paralleltest
     - prealloc
     - predeclared
     - promlinter

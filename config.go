@@ -111,7 +111,7 @@ func (c *Config) sub(path string) any {
 // It blocks until ctx is done, or the service returns an error.
 //
 // It only can be called once. Call after first returns an error.
-func (c *Config) Watch(ctx context.Context, fns ...func(*Config)) error { //nolint:gocognit
+func (c *Config) Watch(ctx context.Context, fns ...func(*Config)) error {
 	var first bool
 	c.watchOnce.Do(func() {
 		first = true
@@ -166,7 +166,7 @@ func (c *Config) Watch(ctx context.Context, fns ...func(*Config)) error { //noli
 		}
 	}
 
-	return group.Wait() //nolint:wrapcheck
+	return group.Wait()
 }
 
 var errOnlyOnce = errors.New("[konf] Watch only can be called once")
