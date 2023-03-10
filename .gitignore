@@ -1,2 +1,5 @@
 # All files and folders start with .
 .*
+
+# Go vendor folder
+vendor
