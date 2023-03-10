@@ -64,8 +64,8 @@ func New(opts ...Option) (*Config, error) {
 	return config, nil
 }
 
-// Unmarshal loads configuration under the given path into the given object pointed to by target.
-// It supports [mapstructure] tags.
+// Unmarshal loads configuration under the given path into the given object
+// pointed to by target. It supports [mapstructure] tags on struct fields.
 func (c *Config) Unmarshal(path string, target any) error {
 	decoder, err := mapstructure.NewDecoder(
 		&mapstructure.DecoderConfig{
@@ -113,23 +113,22 @@ func (c *Config) sub(path string) any {
 }
 
 // Watch watches configuration and triggers callbacks when it changes.
-// It blocks until ctx is done, or the service returns a non-retryable error.
+// It blocks until ctx is done, or the service returns an error.
 //
-// It only can be called once. Call after first returns error.
+// It only can be called once. Call after first returns an error.
 func (c *Config) Watch(ctx context.Context, fns ...func(*Config)) error { //nolint:gocognit
 	var first bool
 	c.watchOnce.Do(func() {
 		first = true
 	})
-
 	if !first {
 		return errors.New("[konf] Watch only can be called once")
 	}
 
 	changeChan := make(chan struct{})
 	defer close(changeChan)
-
 	group, ctx := errgroup.WithContext(ctx)
+
 	group.Go(func() error {
 		for {
 			select {

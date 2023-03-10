@@ -9,8 +9,8 @@ import (
 	"sync"
 )
 
-// Unmarshal loads configuration under the given path into the given object pointed to by target.
-// It supports [mapstructure] tags.
+// Unmarshal loads configuration under the given path into the given object
+// pointed to by target. It supports [mapstructure] tags on struct fields.
 func Unmarshal(path string, target any) error {
 	mux.RLock()
 	defer mux.RUnlock()
@@ -40,9 +40,9 @@ func Get[T any](path string) T { //nolint:ireturn
 }
 
 // Watch watches configuration and triggers callbacks when it changes.
-// It blocks until ctx is done, or the service returns a non-retryable error.
+// It blocks until ctx is done, or the service returns an error.
 //
-// It only can be called once. Call after first returns error.
+// It only can be called once. Call after first returns an error.
 func Watch(ctx context.Context, fns ...func()) error {
 	mux.RLock()
 	defer mux.RUnlock()
