@@ -109,7 +109,14 @@ func TestFlag_String(t *testing.T) {
 		t.Run(testcase.description, func(t *testing.T) {
 			t.Parallel()
 
-			require.Equal(t, testcase.expected, kflag.New(kflag.WithPrefix(testcase.prefix)).String())
+			require.Equal(
+				t,
+				testcase.expected,
+				kflag.New(
+					kflag.WithPrefix(testcase.prefix),
+					kflag.WithFlagSet(&flag.FlagSet{}),
+				).String(),
+			)
 		})
 	}
 }
