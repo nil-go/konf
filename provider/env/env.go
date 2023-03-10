@@ -28,8 +28,8 @@ func (e Env) Load() (map[string]any, error) {
 	config := make(map[string]any)
 	for _, env := range os.Environ() {
 		if e.prefix == "" || strings.HasPrefix(env, e.prefix) {
-			parts := strings.SplitN(env, "=", 2) //nolint:gomnd
-			maps.Insert(config, strings.Split(strings.ToLower(parts[0]), e.delimiter), parts[1])
+			key, value, _ := strings.Cut(env, "=")
+			maps.Insert(config, strings.Split(strings.ToLower(key), e.delimiter), value)
 		}
 	}
 

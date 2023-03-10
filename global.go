@@ -11,7 +11,7 @@ import (
 
 // Get retrieves the value given the path to use.
 // It returns zero value if there is error while getting configuration.
-func Get[T any](path string) T { //nolint:ireturn
+func Get[T any](path string) T {
 	mux.RLock()
 	defer mux.RUnlock()
 

@@ -37,7 +37,7 @@ func TestGet(t *testing.T) {
 	require.Equal(t, "string", konf.Get[string]("config"))
 }
 
-func TestGet_error(t *testing.T) { //nolint:paralleltest
+func TestGet_error(t *testing.T) {
 	cfg, err := konf.New(konf.WithLoader(mapLoader{"config": "string"}))
 	require.NoError(t, err)
 	konf.SetGlobal(cfg)
@@ -53,7 +53,7 @@ func TestGet_error(t *testing.T) { //nolint:paralleltest
 	require.Equal(t, expected, buf.String())
 }
 
-func TestWatch(t *testing.T) { //nolint:paralleltest
+func TestWatch(t *testing.T) {
 	watcher := mapWatcher(make(chan map[string]any))
 	config, err := konf.New(konf.WithLoader(watcher))
 	require.NoError(t, err)
