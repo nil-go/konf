@@ -5,8 +5,8 @@ package konf
 
 // WithLoader provides the loaders that configuration is loaded from.
 //
-// Each errorLoader takes precedence over the loaders before it
-// while multiple errorLoader are specified.
+// Each loader takes precedence over the loaders before it
+// while multiple loader are specified.
 func WithLoader(loaders ...Loader) Option {
 	return func(config *options) {
 		config.loaders = append(config.loaders, loaders...)

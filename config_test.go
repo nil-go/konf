@@ -32,7 +32,7 @@ func TestConfig_Unmarshal(t *testing.T) {
 			},
 		},
 		{
-			description: "nil errorLoader",
+			description: "nil loader",
 			opts:        []konf.Option{konf.WithLoader(nil)},
 			assert: func(config *konf.Config) {
 				var cfg string
@@ -248,7 +248,7 @@ func TestConfig_logger(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Equal(t, "Loaded configuration.", logger.message)
-	require.Equal(t, []any{"errorLoader", mapLoader{}}, logger.keyAndValues)
+	require.Equal(t, []any{"loader", mapLoader{}}, logger.keyAndValues)
 }
 
 type logger struct {

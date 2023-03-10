@@ -49,7 +49,7 @@ func New(opts ...Option) (*Config, error) {
 		maps.Merge(config.values, values)
 		config.logger.Info(
 			"Loaded configuration.",
-			"errorLoader", loader,
+			"loader", loader,
 		)
 
 		provider := &provider{
@@ -159,7 +159,7 @@ func (c *Config) Watch(ctx context.Context, fns ...func(*Config)) error { //noli
 						provider.values = values
 						c.logger.Info(
 							"Configuration has been changed.",
-							"errorLoader", provider.watcher,
+							"loader", provider.watcher,
 						)
 						changeChan <- struct{}{}
 					},
