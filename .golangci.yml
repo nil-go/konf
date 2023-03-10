@@ -133,6 +133,8 @@ linters:
     # wsl
 
 issues:
+  exclude:
+    - declaration of "(err|ctx)" shadows declaration at
   exclude-rules:
     - path: _test\.go
       linters:
