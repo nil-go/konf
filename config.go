@@ -78,7 +78,7 @@ func (c *Config) Unmarshal(path string, target any) error {
 		return fmt.Errorf("[konf] new decoder: %w", err)
 	}
 
-	if err = decoder.Decode(c.sub(path)); err != nil {
+	if err := decoder.Decode(c.sub(path)); err != nil {
 		return fmt.Errorf("[konf] decode: %w", err)
 	}
 
