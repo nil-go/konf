@@ -117,7 +117,7 @@ func (c *Config) Watch(ctx context.Context, fns ...func(*Config)) error { //noli
 		first = true
 	})
 	if !first {
-		return errors.New("[konf] Watch only can be called once")
+		return errOnlyOnce
 	}
 
 	changeChan := make(chan struct{})
@@ -168,6 +168,8 @@ func (c *Config) Watch(ctx context.Context, fns ...func(*Config)) error { //noli
 
 	return group.Wait() //nolint:wrapcheck
 }
+
+var errOnlyOnce = errors.New("[konf] Watch only can be called once")
 
 type provider struct {
 	watcher Watcher
