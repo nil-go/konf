@@ -131,7 +131,7 @@ func TestFile_log(t *testing.T) {
 	require.Equal(t, []any{"Config file not_found.json does not exist."}, log)
 }
 
-func TestFile_Watch(t *testing.T) { //nolint:paralleltest
+func TestFile_Watch(t *testing.T) {
 	testcases := []struct {
 		description string
 		action      func(string) error
@@ -157,7 +157,7 @@ func TestFile_Watch(t *testing.T) { //nolint:paralleltest
 		},
 	}
 
-	for i := range testcases { //nolint:paralleltest
+	for i := range testcases {
 		testcase := testcases[i]
 
 		t.Run(testcase.description, func(t *testing.T) {
