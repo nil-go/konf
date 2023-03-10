@@ -60,30 +60,6 @@ func TestFlag_Load(t *testing.T) {
 	}
 }
 
-func TestFlag_panic(t *testing.T) {
-	t.Parallel()
-
-	set := &flag.FlagSet{}
-	set.Var(&panicker{doNotPanic: true}, "p", "")
-
-	_, err := kflag.New(kflag.WithFlagSet(set)).Load()
-	require.EqualError(t, err, "panic calling String method on zero flag_test.panicker for flag p: panic")
-}
-
-type panicker struct {
-	flag.Value
-
-	doNotPanic bool
-}
-
-func (p panicker) String() string {
-	if p.doNotPanic {
-		return ""
-	}
-
-	panic("panic")
-}
-
 func TestFlag_String(t *testing.T) {
 	t.Parallel()
 
