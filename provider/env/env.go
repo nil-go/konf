@@ -14,6 +14,7 @@ import (
 //
 // The name of environment variable is case-insensitive.
 type Env struct {
+	_         [0]func() // Ensure it's incomparable.
 	prefix    string
 	delimiter string
 }
