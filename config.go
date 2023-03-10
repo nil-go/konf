@@ -26,11 +26,6 @@ type Config struct {
 	watchOnce sync.Once
 }
 
-type provider struct {
-	watcher Watcher
-	values  map[string]any
-}
-
 // New returns a Config with the given Option(s).
 func New(opts ...Option) (*Config, error) {
 	option := apply(opts)
@@ -172,4 +167,9 @@ func (c *Config) Watch(ctx context.Context, fns ...func(*Config)) error { //noli
 	}
 
 	return group.Wait() //nolint:wrapcheck
+}
+
+type provider struct {
+	watcher Watcher
+	values  map[string]any
 }

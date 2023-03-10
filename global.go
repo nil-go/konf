@@ -9,15 +9,6 @@ import (
 	"sync"
 )
 
-// Unmarshal loads configuration under the given path into the given object
-// pointed to by target. It supports [mapstructure] tags on struct fields.
-func Unmarshal(path string, target any) error {
-	mux.RLock()
-	defer mux.RUnlock()
-
-	return global.Unmarshal(path, target)
-}
-
 // Get retrieves the value given the path to use.
 // It returns zero value if there is error while getting configuration.
 func Get[T any](path string) T { //nolint:ireturn
@@ -37,6 +28,15 @@ func Get[T any](path string) T { //nolint:ireturn
 	}
 
 	return value
+}
+
+// Unmarshal loads configuration under the given path into the given object
+// pointed to by target. It supports [mapstructure] tags on struct fields.
+func Unmarshal(path string, target any) error {
+	mux.RLock()
+	defer mux.RUnlock()
+
+	return global.Unmarshal(path, target)
 }
 
 // Watch watches configuration and triggers callbacks when it changes.
