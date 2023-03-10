@@ -14,7 +14,7 @@ import (
 	kflag "github.com/ktong/konf/provider/flag"
 )
 
-func TestFlag(t *testing.T) {
+func TestFlag_Load(t *testing.T) { //nolint:paralleltest
 	flag.String("p.k", "", "")
 	_ = flag.Set("p.k", "v")
 	flag.String("p.d", ".", "")
@@ -49,18 +49,20 @@ func TestFlag(t *testing.T) {
 		},
 	}
 
-	for i := range testcases {
+	for i := range testcases { //nolint:paralleltest
 		testcase := testcases[i]
 
 		t.Run(testcase.description, func(t *testing.T) {
-			loader, err := kflag.New(testcase.opts...).Load()
+			values, err := kflag.New(testcase.opts...).Load()
 			require.NoError(t, err)
-			require.Equal(t, testcase.expected, loader)
+			require.Equal(t, testcase.expected, values)
 		})
 	}
 }
 
 func TestFlag_panic(t *testing.T) {
+	t.Parallel()
+
 	set := &flag.FlagSet{}
 	set.Var(&panicker{doNotPanic: true}, "p", "")
 
@@ -80,4 +82,41 @@ func (p panicker) String() string {
 	}
 
 	panic("panic")
+}
+
+func TestFlag_String(t *testing.T) {
+	t.Parallel()
+
+	testcases := []struct {
+		description string
+		prefix      string
+		expected    string
+	}{
+		{
+			description: "with prefix",
+			prefix:      "P_",
+			expected:    "flag:P_",
+		},
+		{
+			description: "no prefix",
+			expected:    "flag",
+		},
+	}
+
+	for i := range testcases {
+		testcase := testcases[i]
+
+		t.Run(testcase.description, func(t *testing.T) {
+			t.Parallel()
+
+			require.Equal(
+				t,
+				testcase.expected,
+				kflag.New(
+					kflag.WithPrefix(testcase.prefix),
+					kflag.WithFlagSet(&flag.FlagSet{}),
+				).String(),
+			)
+		})
+	}
 }

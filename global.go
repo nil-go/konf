@@ -3,19 +3,18 @@
 
 package konf
 
-import "reflect"
-
-var global, _ = New() //nolint:gochecknoglobals
-
-// Unmarshal loads configuration under the given path into the given object pointed to by target.
-// It supports [mapstructure] tags.
-func Unmarshal(path string, target any) error {
-	return global.Unmarshal(path, target)
-}
+import (
+	"context"
+	"reflect"
+	"sync"
+)
 
 // Get retrieves the value given the path to use.
 // It returns zero value if there is error while getting configuration.
 func Get[T any](path string) T { //nolint:ireturn
+	mux.RLock()
+	defer mux.RUnlock()
+
 	var value T
 	if err := global.Unmarshal(path, &value); err != nil {
 		global.logger.Error(
@@ -31,8 +30,44 @@ func Get[T any](path string) T { //nolint:ireturn
 	return value
 }
 
+// Unmarshal loads configuration under the given path into the given object
+// pointed to by target. It supports [mapstructure] tags on struct fields.
+func Unmarshal(path string, target any) error {
+	mux.RLock()
+	defer mux.RUnlock()
+
+	return global.Unmarshal(path, target)
+}
+
+// Watch watches configuration and triggers callbacks when it changes.
+// It blocks until ctx is done, or the service returns an error.
+//
+// It only can be called once. Call after first returns an error.
+func Watch(ctx context.Context, fns ...func()) error {
+	mux.RLock()
+	defer mux.RUnlock()
+
+	return global.Watch(
+		ctx,
+		func(*Config) {
+			for _, fn := range fns {
+				fn()
+			}
+		},
+	)
+}
+
 // SetGlobal makes c the global Config. After this call,
 // the konf package's functions (e.g. konf.Get) will read from c.
-func SetGlobal(c Config) {
+func SetGlobal(c *Config) {
+	mux.Lock()
+	defer mux.Unlock()
+
 	global = c
 }
+
+//nolint:gochecknoglobals
+var (
+	global, _ = New()
+	mux       sync.RWMutex
+)

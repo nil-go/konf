@@ -65,7 +65,7 @@ linters:
     - gocyclo
     - godot
     - godox
-    - goerr113
+    # goerr113
     - gofmt
     - gofumpt
     - goheader
@@ -97,7 +97,7 @@ linters:
     - nolintlint
     - nonamedreturns
     - nosprintfhostport
-    # paralleltest
+    - paralleltest
     - prealloc
     - predeclared
     - promlinter
@@ -128,5 +128,6 @@ issues:
   exclude-rules:
     - path: _test\.go
       linters:
-        - goerr113
         - funlen
+        - goerr113
+        - wrapcheck

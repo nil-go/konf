@@ -35,14 +35,14 @@ func WithLogger(logger Logger) Option {
 type Option func(*options)
 
 type options struct {
-	Config
+	*Config
 
 	loaders []Loader
 }
 
 func apply(opts []Option) options {
 	option := &options{
-		Config: Config{
+		Config: &Config{
 			delimiter: ".",
 			logger:    stdlog{},
 			values:    make(map[string]any),
