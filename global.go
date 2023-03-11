@@ -11,6 +11,8 @@ import (
 
 // Get retrieves the value given the path to use.
 // It returns zero value if there is an error while getting configuration.
+//
+// The path is case-insensitive.
 func Get[T any](path string) T {
 	mux.RLock()
 	defer mux.RUnlock()
@@ -32,6 +34,8 @@ func Get[T any](path string) T {
 
 // Unmarshal loads configuration under the given path into the given object
 // pointed to by target. It supports [mapstructure] tags on struct fields.
+//
+// The path is case-insensitive.
 func Unmarshal(path string, target any) error {
 	mux.RLock()
 	defer mux.RUnlock()

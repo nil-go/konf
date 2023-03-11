@@ -138,10 +138,6 @@ issues:
       linters:
        - govet
     - path: _test\.go
-      text: 'SA9003:'
-      linters:
-        - staticcheck
-    - path: _test\.go
       linters:
         - funlen
         - goerr113

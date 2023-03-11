@@ -61,6 +61,8 @@ func New(opts ...Option) (*Config, error) {
 
 // Unmarshal loads configuration under the given path into the given object
 // pointed to by target. It supports [mapstructure] tags on struct fields.
+//
+// The path is case-insensitive.
 func (c *Config) Unmarshal(path string, target any) error {
 	decoder, err := mapstructure.NewDecoder(
 		&mapstructure.DecoderConfig{
