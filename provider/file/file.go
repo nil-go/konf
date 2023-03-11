@@ -1,6 +1,7 @@
 // Copyright (c) 2023 The konf authors
 // Use of this source code is governed by a MIT license found in the LICENSE file.
 
+// Package file loads configuration from files.
 package file
 
 import (
