@@ -8,8 +8,11 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/ktong/konf"
 	"github.com/ktong/konf/provider/env"
 )
+
+var _ konf.Loader = (*env.Env)(nil)
 
 func TestEnv_Load(t *testing.T) {
 	testcases := []struct {
