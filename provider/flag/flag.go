@@ -6,8 +6,7 @@
 // Flag loads all flags in [flag.CommandLine] and returns nested map[string]any.
 // by splitting the names by `.`.E.g. the flag `parent.child.key` with value 1
 // is loaded as `{parent: {child: {key: 1}}}`.
-//
-// The unchanged flag with zero default value are skipped to avoid
+// The unchanged flags with zero default value are skipped to avoid
 // overriding values set by other loader.
 //
 // The default behavior can be changed with following options:

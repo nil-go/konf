@@ -6,8 +6,7 @@
 // Env loads all environment variables and returns nested map[string]any.
 // by splitting the names by `_`. E.g. the environment variable
 // `PARENT_CHILD_KEY="1"` is loaded as `{PARENT: {CHILD: {KEY: "1"}}}`.
-//
-// All environment variables with empty value are treated as unset.
+// The environment variables with empty value are treated as unset.
 //
 // The default behavior can be changed with following options:
 //   - WithPrefix enables loads environment variables with the given prefix in the name.
