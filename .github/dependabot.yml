@@ -6,6 +6,11 @@ updates:
     schedule:
       interval: daily
 
+  - package-ecosystem: gomod
+    directory: /provider/pflag
+    schedule:
+      interval: daily
+
   - package-ecosystem: github-actions
     directory: /
     schedule:

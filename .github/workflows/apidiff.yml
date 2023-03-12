@@ -5,7 +5,8 @@ on:
       - main
 
 jobs:
-  go-apidiff:
+  apidiff:
+    name: API Diff
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:

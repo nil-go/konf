@@ -61,12 +61,12 @@ func ExampleWatch() {
 }
 
 //go:embed testdata
-var config embed.FS
+var testdata embed.FS
 
 func ExampleSetGlobal() {
 	cfg, err := konf.New(
 		konf.WithLoader(
-			file.New("testdata/config.json", file.WithFS(config)),
+			file.New("testdata/config.json", file.WithFS(testdata)),
 			env.New(env.WithPrefix("server")),
 		),
 	)

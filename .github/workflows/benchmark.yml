@@ -1,0 +1,24 @@
+name: Benchmark
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  benchmark:
+    name: Benchmark
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
+        with:
+          cache: true
+          go-version: 'stable'
+      - name: Benchmark
+        run: go test -v -shuffle=on -bench=. ./...
+      - name: Benchmark (pflag)
+        run: go test -v -shuffle=on -bench=. ./...
+        working-directory: provider/pflag
