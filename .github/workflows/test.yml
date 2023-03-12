@@ -33,7 +33,7 @@ jobs:
   all:
     if: ${{ always() }}
     runs-on: ubuntu-latest
-    name: Test
+    name: All Tests
     needs: test
     steps:
       - name: Check test matrix status
