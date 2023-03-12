@@ -2,6 +2,15 @@
 // Use of this source code is governed by a MIT license found in the LICENSE file.
 
 // Package env loads configuration from environment variables.
+//
+// Env loads all environment variables and returns nested map[string]any.
+// by splitting the names by `_`. E.g. the environment variable
+// `PARENT_CHILD_KEY="1"` is loaded as `{PARENT: {CHILD: {KEY: "1"}}}`.
+// The environment variables with empty value are treated as unset.
+//
+// The default behavior can be changed with following options:
+//   - WithPrefix enables loads environment variables with the given prefix in the name.
+//   - WithDelimiter provides the delimiter when splitting environment variable name to nested keys.
 package env
 
 import (
@@ -12,8 +21,6 @@ import (
 )
 
 // Env is a Provider that loads configuration from environment variables.
-//
-// The name of environment variable is case-insensitive.
 type Env struct {
 	_         [0]func() // Ensure it's incomparable.
 	prefix    string
@@ -31,7 +38,7 @@ func (e Env) Load() (map[string]any, error) {
 		if e.prefix == "" || strings.HasPrefix(env, e.prefix) {
 			key, value, _ := strings.Cut(env, "=")
 			if value == "" {
-				// Treat empty value of an environment variable as it's unset.
+				// The environment variable with empty value is treated as unset.
 				continue
 			}
 			maps.Insert(config, strings.Split(key, e.delimiter), value)
