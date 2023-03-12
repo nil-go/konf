@@ -1,26 +1,26 @@
 // Copyright (c) 2023 The konf authors
 // Use of this source code is governed by a MIT license found in the LICENSE file.
 
-package flag
+package pflag
 
-import "flag"
+import "github.com/spf13/pflag"
 
 // WithPrefix enables only loads flags with the given prefix in the name.
 //
 // E.g. if the given prefix is "server", it only loads flags
 // which name starts with "server".
 func WithPrefix(prefix string) Option {
-	return func(flag *options) {
-		flag.prefix = prefix
+	return func(pflag *options) {
+		pflag.prefix = prefix
 	}
 }
 
-// WithFlagSet provides the [flag.FlagSet] that loads configuration from.
+// WithFlagSet provides the [pflag.FlagSet] that loads configuration from.
 //
-// The default flag set is [flag.CommandLine].
-func WithFlagSet(set *flag.FlagSet) Option {
-	return func(flag *options) {
-		flag.set = set
+// The default flag set is [pflag.CommandLine].
+func WithFlagSet(set *pflag.FlagSet) Option {
+	return func(pflag *options) {
+		pflag.set = set
 	}
 }
 
@@ -29,15 +29,15 @@ func WithFlagSet(set *flag.FlagSet) Option {
 // The default delimiter is `_`, which loads the flag `parent.child.key` with value 1
 // as `{parent: {child: {key: 1}}}`.
 func WithDelimiter(delimiter string) Option {
-	return func(flag *options) {
-		flag.delimiter = delimiter
+	return func(pflag *options) {
+		pflag.delimiter = delimiter
 	}
 }
 
-// Option configures the give Flag.
+// Option configures the give PFlag.
 type Option func(*options)
 
-type options Flag
+type options PFlag
 
 func apply(opts []Option) options {
 	option := &options{
