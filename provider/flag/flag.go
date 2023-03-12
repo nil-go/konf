@@ -43,21 +43,22 @@ func New(opts ...Option) Flag {
 }
 
 func (f Flag) Load() (map[string]any, error) {
-	config := make(map[string]any)
+	values := make(map[string]any)
 	f.set.VisitAll(func(flag *flag.Flag) {
 		if f.prefix != "" && !strings.HasPrefix(flag.Name, f.prefix) {
 			return
 		}
 
+		val := flag.Value.String()
 		// Skip zero default value to avoid overriding values set by other loader.
-		if flag.Value.String() == flag.DefValue && isZeroDefValue(flag) {
+		if val == flag.DefValue && isZeroDefValue(flag) {
 			return
 		}
 
-		maps.Insert(config, strings.Split(flag.Name, f.delimiter), flag.Value.String())
+		maps.Insert(values, strings.Split(flag.Name, f.delimiter), val)
 	})
 
-	return config, nil
+	return values, nil
 }
 
 func isZeroDefValue(flg *flag.Flag) bool {

@@ -33,7 +33,7 @@ func New(opts ...Option) Env {
 }
 
 func (e Env) Load() (map[string]any, error) {
-	config := make(map[string]any)
+	values := make(map[string]any)
 	for _, env := range os.Environ() {
 		if e.prefix == "" || strings.HasPrefix(env, e.prefix) {
 			key, value, _ := strings.Cut(env, "=")
@@ -41,11 +41,11 @@ func (e Env) Load() (map[string]any, error) {
 				// The environment variable with empty value is treated as unset.
 				continue
 			}
-			maps.Insert(config, strings.Split(key, e.delimiter), value)
+			maps.Insert(values, strings.Split(key, e.delimiter), value)
 		}
 	}
 
-	return config, nil
+	return values, nil
 }
 
 func (e Env) String() string {
