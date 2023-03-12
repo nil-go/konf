@@ -2,6 +2,18 @@
 // Use of this source code is governed by a MIT license found in the LICENSE file.
 
 // Package flag loads configuration from flags.
+//
+// Flag loads all flags in [flag.CommandLine] and returns nested map[string]any.
+// by splitting the names by `.`.E.g. the flag `parent.child.key` with value 1
+// is loaded as `{parent: {child: {key: 1}}}`.
+//
+// The unchanged flag with zero default value are skipped to avoid
+// overriding values set by other loader.
+//
+// The default behavior can be changed with following options:
+//   - WithPrefix enables loads flags with the given prefix in the name.
+//   - WithFlagSet provides the flag set that loads configuration from.
+//   - WithDelimiter provides the delimiter when splitting flag name to nested keys.
 package flag
 
 import (
@@ -13,8 +25,6 @@ import (
 )
 
 // Flag is a Provider that loads configuration from flags.
-//
-// The name of flags is case-insensitive.
 type Flag struct {
 	_         [0]func() // Ensure it's incomparable.
 	set       *flag.FlagSet

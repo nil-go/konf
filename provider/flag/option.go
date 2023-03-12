@@ -5,16 +5,7 @@ package flag
 
 import "flag"
 
-// WithDelimiter provides the delimiter when specifying flag name with nested hierarchy.
-//
-// The default delimiter is `.`, which makes flag name like `parent.child.key`.
-func WithDelimiter(delimiter string) Option {
-	return func(flag *options) {
-		flag.delimiter = delimiter
-	}
-}
-
-// WithPrefix enables only loads flags with the given prefix.
+// WithPrefix enables only loads flags with the given prefix in the name.
 //
 // E.g. if the given prefix is "server", it only loads flags
 // which name starts with "server".
@@ -30,6 +21,16 @@ func WithPrefix(prefix string) Option {
 func WithFlagSet(set *flag.FlagSet) Option {
 	return func(flag *options) {
 		flag.set = set
+	}
+}
+
+// WithDelimiter provides the delimiter when splitting flag name to nested keys.
+//
+// The default delimiter is `_`, which loads the flag `parent.child.key` with value 1
+// as `{parent: {child: {key: 1}}}`.
+func WithDelimiter(delimiter string) Option {
+	return func(flag *options) {
+		flag.delimiter = delimiter
 	}
 }
 
