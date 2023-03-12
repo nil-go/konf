@@ -5,6 +5,9 @@ go 1.18
 require (
 	github.com/fsnotify/fsnotify v1.6.0
 	github.com/mitchellh/mapstructure v1.5.0
+)
+
+require ( // for test
 	github.com/stretchr/testify v1.8.2
 	go.uber.org/goleak v1.2.1
 	golang.org/x/sync v0.1.0
