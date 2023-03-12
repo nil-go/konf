@@ -4,6 +4,8 @@
 package konf_test
 
 import (
+	"context"
+	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -39,4 +41,35 @@ func BenchmarkGet(b *testing.B) {
 	b.StopTimer()
 
 	require.Equal(b, "v", value)
+}
+
+func BenchmarkWatch(b *testing.B) {
+	watcher := mapWatcher(make(chan map[string]any))
+	config, err := konf.New(konf.WithLoader(watcher))
+	require.NoError(b, err)
+	konf.SetGlobal(config)
+
+	cfg := konf.Get[string]("config")
+	require.Equal(b, "string", cfg)
+	var waitGroup sync.WaitGroup
+	waitGroup.Add(b.N)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go func() {
+		err := konf.Watch(ctx, func() {
+			defer waitGroup.Done()
+
+			cfg = konf.Get[string]("config")
+		})
+		require.NoError(b, err)
+	}()
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		watcher.change(map[string]any{"config": "changed"})
+	}
+	waitGroup.Wait()
+	b.StopTimer()
+
+	require.Equal(b, "changed", cfg)
 }
