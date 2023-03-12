@@ -11,7 +11,6 @@ import (
 	"sync"
 
 	"github.com/mitchellh/mapstructure"
-	"golang.org/x/sync/errgroup"
 
 	"github.com/ktong/konf/internal/maps"
 )
@@ -113,7 +112,7 @@ func (c *Config) sub(path string) any {
 // It blocks until ctx is done, or the service returns an error.
 //
 // It only can be called once. Call after first returns an error.
-func (c *Config) Watch(ctx context.Context, fns ...func(*Config)) error {
+func (c *Config) Watch(ctx context.Context, fns ...func(*Config)) error { //nolint:funlen
 	var first bool
 	c.watchOnce.Do(func() {
 		first = true
@@ -124,13 +123,16 @@ func (c *Config) Watch(ctx context.Context, fns ...func(*Config)) error {
 
 	changeChan := make(chan struct{})
 	defer close(changeChan)
-	group, ctx := errgroup.WithContext(ctx)
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 
-	group.Go(func() error {
+	var waitGroup sync.WaitGroup
+	waitGroup.Add(1)
+	go func() {
+		defer waitGroup.Done()
+
 		for {
 			select {
-			case <-ctx.Done():
-				return nil
 			case <-changeChan:
 				values := make(map[string]any)
 				for _, w := range c.providers {
@@ -141,14 +143,25 @@ func (c *Config) Watch(ctx context.Context, fns ...func(*Config)) error {
 				for _, fn := range fns {
 					fn(c)
 				}
+
+			case <-ctx.Done():
+				return
 			}
 		}
-	})
+	}()
 
-	for _, watcher := range c.providers {
-		provider := watcher
+	var (
+		firstErr error
+		errOnce  sync.Once
+	)
+	for _, provider := range c.providers {
 		if provider.watcher != nil {
-			group.Go(func() error {
+			provider := provider
+
+			waitGroup.Add(1)
+			go func() {
+				defer waitGroup.Done()
+
 				if err := provider.watcher.Watch(
 					ctx,
 					func(values map[string]any) {
@@ -160,15 +173,17 @@ func (c *Config) Watch(ctx context.Context, fns ...func(*Config)) error {
 						changeChan <- struct{}{}
 					},
 				); err != nil {
-					return fmt.Errorf("[konf] watch configuration change: %w", err)
+					errOnce.Do(func() {
+						firstErr = fmt.Errorf("[konf] watch configuration change: %w", err)
+						cancel()
+					})
 				}
-
-				return nil
-			})
+			}()
 		}
 	}
+	waitGroup.Wait()
 
-	return group.Wait()
+	return firstErr
 }
 
 var errOnlyOnce = errors.New("[konf] Watch only can be called once")

@@ -31,9 +31,6 @@ linters-settings:
     report-error-in-defer: true
   paralleltest:
     ignore-missing: true
-  wrapcheck:
-    ignorePackageGlobs:
-      - golang.org/x/sync/*
 
 linters:
   disable-all: true
