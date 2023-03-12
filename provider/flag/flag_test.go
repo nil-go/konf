@@ -11,8 +11,11 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/ktong/konf"
 	kflag "github.com/ktong/konf/provider/flag"
 )
+
+var _ konf.Loader = (*kflag.Flag)(nil)
 
 func TestFlag_Load(t *testing.T) {
 	flag.String("p.k", "", "")

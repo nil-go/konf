@@ -15,6 +15,9 @@ func WithDelimiter(delimiter string) Option {
 }
 
 // WithPrefix enables only loads flags with the given prefix.
+//
+// E.g. if the given prefix is "server", it only loads flags
+// which name starts with "server".
 func WithPrefix(prefix string) Option {
 	return func(flag *options) {
 		flag.prefix = prefix

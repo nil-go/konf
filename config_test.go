@@ -247,7 +247,7 @@ func TestConfig_logger(t *testing.T) {
 	_, err := konf.New(konf.WithLogger(logger), konf.WithLoader(mapLoader{}))
 	require.NoError(t, err)
 
-	require.Equal(t, "Loaded configuration.", logger.message)
+	require.Equal(t, "Configuration has been loaded.", logger.message)
 	require.Equal(t, []any{"loader", mapLoader{}}, logger.keyAndValues)
 }
 

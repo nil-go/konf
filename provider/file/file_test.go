@@ -18,7 +18,13 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/ktong/konf"
 	"github.com/ktong/konf/provider/file"
+)
+
+var (
+	_ konf.Loader  = (*file.File)(nil)
+	_ konf.Watcher = (*file.File)(nil)
 )
 
 func TestFile_Load(t *testing.T) {

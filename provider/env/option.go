@@ -12,7 +12,10 @@ func WithDelimiter(delimiter string) Option {
 	}
 }
 
-// WithPrefix enables only loads environment variables with the given prefix.
+// WithPrefix enables loads environment variables with the given prefix.
+//
+// E.g. if the given prefix is "server", it only loads environment variables
+// which name starts with "server".
 func WithPrefix(prefix string) Option {
 	return func(env *options) {
 		env.prefix = prefix

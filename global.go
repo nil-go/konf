@@ -7,10 +7,14 @@ import (
 	"context"
 	"reflect"
 	"sync"
+
+	"github.com/ktong/konf/provider/env"
 )
 
 // Get retrieves the value given the path to use.
-// It returns zero value if there is error while getting configuration.
+// It returns zero value if there is an error while getting configuration.
+//
+// The path is case-insensitive.
 func Get[T any](path string) T {
 	mux.RLock()
 	defer mux.RUnlock()
@@ -32,6 +36,8 @@ func Get[T any](path string) T {
 
 // Unmarshal loads configuration under the given path into the given object
 // pointed to by target. It supports [mapstructure] tags on struct fields.
+//
+// The path is case-insensitive.
 func Unmarshal(path string, target any) error {
 	mux.RLock()
 	defer mux.RUnlock()
@@ -58,16 +64,18 @@ func Watch(ctx context.Context, fns ...func()) error {
 }
 
 // SetGlobal makes c the global Config. After this call,
-// the konf package's functions (e.g. konf.Get) will read from c.
-func SetGlobal(c *Config) {
+// the konf package's functions (e.g. konf.Get) will read from config.
+//
+// The default global config only loads configuration from environment variables.
+func SetGlobal(config *Config) {
 	mux.Lock()
 	defer mux.Unlock()
 
-	global = c
+	global = config
 }
 
 //nolint:gochecknoglobals
 var (
-	global, _ = New()
+	global, _ = New(WithLoader(env.New()))
 	mux       sync.RWMutex
 )

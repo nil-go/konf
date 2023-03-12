@@ -1,6 +1,7 @@
 // Copyright (c) 2023 The konf authors
 // Use of this source code is governed by a MIT license found in the LICENSE file.
 
+// Package flag loads configuration from flags.
 package flag
 
 import (
@@ -14,7 +15,6 @@ import (
 // Flag is a Provider that loads configuration from flags.
 //
 // The name of flags is case-insensitive.
-// It skips it if the flag's value is same as default zero value.
 type Flag struct {
 	_         [0]func() // Ensure it's incomparable.
 	set       *flag.FlagSet
