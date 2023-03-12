@@ -5,7 +5,7 @@ package konf
 
 import "context"
 
-// Loader is the interface that wraps the basic Load method.
+// Loader is the interface that wraps the Load method.
 //
 // Load loads configuration and returns as a nested map[string]any.
 // It requires that the string keys should be nested like `{parent: {child: {key: 1}}}`.
@@ -13,11 +13,21 @@ type Loader interface {
 	Load() (map[string]any, error)
 }
 
-// Watcher is the interface that wraps the basic watch method.
+// Watcher is the interface that wraps the Watch method.
 //
 // Watch watches configuration and triggers a callback with full new configurations
 // as a nested map[string]any when it changes.
 // It blocks until ctx is done, or the service returns an error.
 type Watcher interface {
 	Watch(context.Context, func(map[string]any)) error
+}
+
+// ConfigAware is the interface that wraps the WithConfig method.
+//
+// Config enables provider could load configuration from providers before it,
+// and use it in Load and Watch methods.
+//
+// New() ensures the Config is called before Load and Watch.
+type ConfigAware interface {
+	WithConfig(*Config)
 }

@@ -36,6 +36,10 @@ func New(opts ...Option) (*Config, error) {
 			continue
 		}
 
+		if configer, ok := loader.(ConfigAware); ok {
+			configer.WithConfig(config)
+		}
+
 		values, err := loader.Load()
 		if err != nil {
 			return nil, fmt.Errorf("[konf] load configuration: %w", err)

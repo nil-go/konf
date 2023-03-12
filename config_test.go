@@ -112,6 +112,17 @@ func TestConfig_Unmarshal(t *testing.T) {
 				require.Equal(t, "", cfg)
 			},
 		},
+		{
+			description: "configer",
+			opts: []konf.Option{
+				konf.WithLoader(mapLoader{}),
+			},
+			assert: func(config *konf.Config) {
+				var configured bool
+				require.NoError(t, config.Unmarshal("configured", &configured))
+				require.True(t, configured)
+			},
+		},
 	}
 
 	for i := range testcases {
@@ -128,6 +139,10 @@ func TestConfig_Unmarshal(t *testing.T) {
 }
 
 type mapLoader map[string]any
+
+func (m mapLoader) WithConfig(c *konf.Config) {
+	m["configured"] = true
+}
 
 func (m mapLoader) Load() (map[string]any, error) {
 	return m, nil
@@ -248,7 +263,7 @@ func TestConfig_logger(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Equal(t, "Configuration has been loaded.", logger.message)
-	require.Equal(t, []any{"loader", mapLoader{}}, logger.keyAndValues)
+	require.Equal(t, []any{"loader", mapLoader{"configured": true}}, logger.keyAndValues)
 }
 
 type logger struct {
