@@ -7,6 +7,8 @@ import (
 	"context"
 	"reflect"
 	"sync"
+
+	"github.com/ktong/konf/provider/env"
 )
 
 // Get retrieves the value given the path to use.
@@ -62,16 +64,18 @@ func Watch(ctx context.Context, fns ...func()) error {
 }
 
 // SetGlobal makes c the global Config. After this call,
-// the konf package's functions (e.g. konf.Get) will read from c.
-func SetGlobal(c *Config) {
+// the konf package's functions (e.g. konf.Get) will read from config.
+//
+// The default global config only loads configuration from environment variables.
+func SetGlobal(config *Config) {
 	mux.Lock()
 	defer mux.Unlock()
 
-	global = c
+	global = config
 }
 
 //nolint:gochecknoglobals
 var (
-	global, _ = New()
+	global, _ = New(WithLoader(env.New()))
 	mux       sync.RWMutex
 )

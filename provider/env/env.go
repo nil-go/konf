@@ -30,6 +30,10 @@ func (e Env) Load() (map[string]any, error) {
 	for _, env := range os.Environ() {
 		if e.prefix == "" || strings.HasPrefix(env, e.prefix) {
 			key, value, _ := strings.Cut(env, "=")
+			if value == "" {
+				// Treat empty value of an environment variable as it's unset.
+				continue
+			}
 			maps.Insert(config, strings.Split(strings.ToLower(key), e.delimiter), value)
 		}
 	}
