@@ -140,7 +140,7 @@ func TestConfig_Unmarshal(t *testing.T) {
 
 type mapLoader map[string]any
 
-func (m mapLoader) WithConfig(c *konf.Config) {
+func (m mapLoader) WithConfig(*konf.Config) {
 	m["configured"] = true
 }
 

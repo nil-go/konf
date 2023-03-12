@@ -24,9 +24,9 @@ func TestEnv_Load(t *testing.T) {
 			description: "with prefix",
 			opts:        []env.Option{env.WithPrefix("P_")},
 			expected: map[string]any{
-				"p": map[string]any{
-					"k": "v",
-					"d": "-",
+				"P": map[string]any{
+					"K": "v",
+					"D": "-",
 				},
 			},
 		},
@@ -34,8 +34,8 @@ func TestEnv_Load(t *testing.T) {
 			description: "with delimiter",
 			opts:        []env.Option{env.WithPrefix("P."), env.WithDelimiter(".")},
 			expected: map[string]any{
-				"p": map[string]any{
-					"d": ".",
+				"P": map[string]any{
+					"D": ".",
 				},
 			},
 		},

@@ -34,7 +34,7 @@ func (e Env) Load() (map[string]any, error) {
 				// Treat empty value of an environment variable as it's unset.
 				continue
 			}
-			maps.Insert(config, strings.Split(strings.ToLower(key), e.delimiter), value)
+			maps.Insert(config, strings.Split(key, e.delimiter), value)
 		}
 	}
 
