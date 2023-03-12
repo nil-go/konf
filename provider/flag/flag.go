@@ -45,7 +45,7 @@ func (f Flag) Load() (map[string]any, error) {
 			return
 		}
 
-		maps.Insert(config, strings.Split(strings.ToLower(flag.Name), f.delimiter), flag.Value.String())
+		maps.Insert(config, strings.Split(flag.Name, f.delimiter), flag.Value.String())
 	})
 
 	return config, nil
