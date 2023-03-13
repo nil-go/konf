@@ -29,7 +29,7 @@ type Watcher interface {
 // WithConfig enables provider loads configuration from providers
 // before it in Load and Watch methods.
 //
-// New() ensures the Config is called before Load and Watch.
+// It ensures the WithConfig is called before Load and Watch.
 type ConfigAware interface {
 	WithConfig(*Config)
 }
