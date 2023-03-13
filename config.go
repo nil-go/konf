@@ -36,8 +36,8 @@ func New(opts ...Option) (*Config, error) {
 			continue
 		}
 
-		if configer, ok := loader.(ConfigAware); ok {
-			configer.WithConfig(config)
+		if configAware, ok := loader.(ConfigAware); ok {
+			configAware.WithConfig(config)
 		}
 
 		values, err := loader.Load()
