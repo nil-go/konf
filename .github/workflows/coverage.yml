@@ -18,6 +18,25 @@ jobs:
           cache: true
           go-version: 'stable'
       - name: Coverage
-        run: go test -v -covermode=count -coverprofile=coverage.txt ./...
+        run: go test -v -covermode=count -coverprofile=coverage.out ./...
       - name: Codecov
         uses: codecov/codecov-action@v3
+        with:
+          flags: konf
+  coverage_pflag:
+    name: Coverage (pflag)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
+        with:
+          cache: true
+          go-version: 'stable'
+      - name: Coverage
+        run: go test -v -covermode=count -coverprofile=coverage.out ./...
+        working-directory: provider/pflag
+      - name: Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          flags: pflag
+          working-directory: provider/pflag
