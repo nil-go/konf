@@ -11,9 +11,10 @@ jobs:
   test:
     strategy:
       matrix:
+        run-on: [ 'ubuntu', 'macOS', 'windows' ]
         go-version: [ 'oldstable', 'stable' ]
     name: Test
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.run-on }}-latest
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-go@v3
