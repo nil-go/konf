@@ -1,6 +1,8 @@
 # A minimal configuration API for Go
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/ktong/konf.svg)](https://pkg.go.dev/github.com/ktong/konf)
+[![Build](https://github.com/ktong/konf/actions/workflows/test.yml/badge.svg)](https://github.com/ktong/konf/actions/workflows/test.yml)
+[![Coverage](https://codecov.io/gh/ktong/konf/branch/main/graph/badge.svg)](https://codecov.io/gh/ktong/konf)
 
 konf offers an(other) opinion on how Go programs can read configuration without
 becoming coupled to a particular configuration source. It contains two APIs with two
@@ -87,3 +89,23 @@ There are providers for the following configuration sources:
 - `file` loads configuration from a file.
 - `flag` loads configuration from flags.
 - `pflag` loads configuration from [spf13/pflag](https://github.com/spf13/pflag).
+
+## Compatibility
+
+konf ensures compatibility with the current supported versions of
+the [Go language](https://golang.org/doc/devel/release#policy):
+
+> Each major Go release is supported until there are two newer major releases.
+> For example, Go 1.5 was supported until the Go 1.7 release,
+> and Go 1.6 was supported until the Go 1.8 release.
+
+For versions of Go that are no longer supported upstream, konf will stop ensuring
+compatibility with these versions in the following manner:
+
+- A minor release of konf will be made to add support for the new
+  supported release of Go.
+- The following minor release of konf will remove compatibility
+  testing for the oldest (now archived upstream) version of Go. This, and
+  future, releases of konf may include features only supported by
+  the currently supported versions of Go.
+
