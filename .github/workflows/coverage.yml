@@ -19,5 +19,8 @@ jobs:
           go-version: 'stable'
       - name: Coverage
         run: go test -v -covermode=count -coverprofile=coverage.txt ./...
+      - name: Coverage (pflag)
+        run: go test -v -covermode=count -coverprofile=coverage.txt ./...
+        working-directory: provider/pflag
       - name: Codecov
         uses: codecov/codecov-action@v3

@@ -1,0 +1,25 @@
+codecov:
+  require_ci_to_pass: true
+
+coverage:
+  status:
+    project:
+      default: false
+
+comment:
+  layout: "header, diff, components, files"
+
+component_management:
+  default_rules:
+    statuses:
+      - type: project
+        target: auto
+        branches:
+          - "!main"
+  individual_components:
+    - component_id: konf
+      paths:
+        - "!provider/pflag/"
+    - component_id: pflag
+      paths:
+        - "provider/pflag/"
