@@ -17,9 +17,8 @@ jobs:
     runs-on: ${{ matrix.run-on }}-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-go@v3
+      - uses: actions/setup-go@v4
         with:
-          cache: true
           go-version: ${{ matrix.go-version }}
       - name: Race Test
         run: go test -v -shuffle=on -count=10 -race ./...
