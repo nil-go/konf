@@ -5,10 +5,8 @@
 
 package file
 
-import "fmt"
-
 func (f File) Watch(context.Context, func(map[string]any)) error {
-	f.log(fmt.Sprintf("File.Watch does not supported on %s.", runtime.GOOS))
+	log.Printf("File.Watch does not supported on %s.", runtime.GOOS)
 
 	return nil
 }

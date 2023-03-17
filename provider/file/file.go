@@ -17,6 +17,7 @@ package file
 import (
 	"fmt"
 	"io/fs"
+	"log"
 	"os"
 )
 
@@ -26,7 +27,6 @@ type File struct {
 	fs             fs.FS
 	path           string
 	unmarshal      func([]byte, any) error
-	log            func(...any)
 	ignoreNotExist bool
 }
 
@@ -47,7 +47,7 @@ func (f File) Load() (map[string]any, error) {
 	}
 	if err != nil {
 		if f.ignoreNotExist && os.IsNotExist(err) {
-			f.log(fmt.Sprintf("Config file %s does not exist.", f.path))
+			log.Printf("Config file %s does not exist.", f.path)
 
 			return make(map[string]any), nil
 		}
