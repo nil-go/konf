@@ -7,6 +7,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [v0.2.0] - 3/18/2023
+
 ### Removed
 - Remove file.WithLog to favor standard log.Printf (#32).
 
