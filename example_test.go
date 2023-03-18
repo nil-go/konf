@@ -36,6 +36,7 @@ func ExampleUnmarshal() {
 
 	if err := konf.Unmarshal("server", &cfg); err != nil {
 		// Handle error here.
+		panic(err)
 	}
 	fmt.Printf("%s:%d\n", cfg.Host, cfg.Port)
 	// Output: example.com:8080
@@ -56,6 +57,7 @@ func ExampleWatch() {
 
 	if err := group.Wait(); err != nil {
 		// Handle error here.
+		panic(err)
 	}
 	// Output:
 }
@@ -72,6 +74,7 @@ func ExampleSetGlobal() {
 	)
 	if err != nil {
 		// Handle error here.
+		panic(err)
 	}
 	konf.SetGlobal(cfg)
 	// Output:
