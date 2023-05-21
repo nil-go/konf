@@ -19,5 +19,3 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: dangoslen/changelog-enforcer@v3
-        with:
-          skipLabels: Skip-Changelog,dependencies
