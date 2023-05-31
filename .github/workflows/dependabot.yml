@@ -1,9 +1,6 @@
 name: Dependabot
 on: pull_request
 
-env:
-  GH_TOKEN: ${{ github.token }}
-    
 permissions:
   contents: write
   pull-requests: write
@@ -23,6 +20,7 @@ jobs:
         run: gh pr edit "$PR_URL" --add-label "Skip-Changelog"
         env:
           PR_URL: ${{github.event.pull_request.html_url}}
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
       - name: Approve a PR
         run: gh pr review --approve "$PR_URL"
         env:
