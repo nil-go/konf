@@ -14,9 +14,9 @@ func Merge(dst, src map[string]any) {
 		// Ensure key is lower case since the path is case-insensitive.
 		key = strings.ToLower(key)
 
-		// Add the srcVal if the key does not exist in the dst map.
-		dstVal, exist := dst[key]
-		if !exist {
+		// Direct override if the dstVal is not map[string]any.
+		dstMap, succeed := dst[key].(map[string]any)
+		if !succeed {
 			dst[key] = srcVal
 
 			continue
@@ -24,14 +24,6 @@ func Merge(dst, src map[string]any) {
 
 		// Direct override if the srcVal is not map[string]any.
 		srcMap, succeed := srcVal.(map[string]any)
-		if !succeed {
-			dst[key] = srcVal
-
-			continue
-		}
-
-		// Direct override if the dstVal is not map[string]any.
-		dstMap, succeed := dstVal.(map[string]any)
 		if !succeed {
 			dst[key] = srcVal
 

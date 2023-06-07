@@ -9,8 +9,7 @@ import "context"
 //
 // Load loads configuration and returns as a nested map[string]any.
 // It requires that the string keys should be nested like `{parent: {child: {key: 1}}}`.
-// The key in returned map should be case-insensitive,
-// otherwise random overridden exists.
+// The key in returned map should be case-insensitive, otherwise random overridden exists.
 type Loader interface {
 	Load() (map[string]any, error)
 }
@@ -26,10 +25,8 @@ type Watcher interface {
 
 // ConfigAware is the interface that wraps the WithConfig method.
 //
-// WithConfig enables provider loads configuration from providers
-// before it in Load and Watch methods.
-//
-// It ensures the WithConfig is called before Load and Watch.
+// WithConfig enables provider loads configuration from providers before it.
+// It ensures the WithConfig is called before executing methods in Loader and Watcher.
 type ConfigAware interface {
 	WithConfig(*Config)
 }

@@ -47,19 +47,21 @@ func New(opts ...Option) PFlag {
 
 func (f PFlag) Load() (map[string]any, error) {
 	values := make(map[string]any)
-	f.set.VisitAll(func(flag *pflag.Flag) {
-		if f.prefix != "" && !strings.HasPrefix(flag.Name, f.prefix) {
-			return
-		}
+	f.set.VisitAll(
+		func(flag *pflag.Flag) {
+			if f.prefix != "" && !strings.HasPrefix(flag.Name, f.prefix) {
+				return
+			}
 
-		val := f.flagVal(flag)
-		// Skip zero default value to avoid overriding values set by other loader.
-		if !flag.Changed && reflect.ValueOf(val).IsZero() {
-			return
-		}
+			val := f.flagVal(flag)
+			// Skip zero default value to avoid overriding values set by other loader.
+			if !flag.Changed && reflect.ValueOf(val).IsZero() {
+				return
+			}
 
-		maps.Insert(values, strings.Split(flag.Name, f.delimiter), val)
-	})
+			maps.Insert(values, strings.Split(flag.Name, f.delimiter), val)
+		},
+	)
 
 	return values, nil
 }

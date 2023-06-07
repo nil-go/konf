@@ -43,7 +43,7 @@ linters:
     - contextcheck
     - cyclop
     - decorder
-    - depguard
+    # depguard
     - dogsled
     - dupl
     - durationcheck
@@ -81,6 +81,7 @@ linters:
     - goprintffuncname
     - gosec
     - gosimple
+    - gosmopolitan
     - govet
     - grouper
     - importas
@@ -91,6 +92,7 @@ linters:
     - loggercheck
     - maintidx
     - makezero
+    - mirror
     - misspell
     - musttag
     - nakedret
@@ -112,6 +114,7 @@ linters:
     - sqlclosecheck
     - staticcheck
     - stylecheck
+    - tagalign
     - tagliatelle
     - tenv
     - testableexamples
@@ -128,6 +131,7 @@ linters:
     - whitespace
     - wrapcheck
     # wsl
+    - zerologlint
 
 issues:
   exclude-rules:
