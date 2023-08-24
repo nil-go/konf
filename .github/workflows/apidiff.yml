@@ -16,4 +16,4 @@ jobs:
       - uses: actions/setup-go@v4
         with:
           go-version: 'stable'
-      - uses: joelanford/go-apidiff@v0.6.0
+      - uses: joelanford/go-apidiff@v0.6.1
