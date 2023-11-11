@@ -8,7 +8,7 @@ package file
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 	"path/filepath"
 	"time"
 
@@ -26,7 +26,7 @@ func (f File) Watch(ctx context.Context, watchFunc func(map[string]any)) error {
 	}
 	defer func() {
 		if err := watcher.Close(); err != nil {
-			log.Printf("Error when closing watcher for %s: %v", f.path, err)
+			slog.Error("Error when closing file watcher.", "file", f.path, "error", err)
 		}
 	}()
 
@@ -73,12 +73,12 @@ func (f File) Watch(ctx context.Context, watchFunc func(map[string]any)) error {
 
 			switch {
 			case event.Has(fsnotify.Remove):
-				log.Printf("Config file %s has been removed.", f.path)
+				slog.Warn("Config file has been removed.", "file", f.path)
 				watchFunc(nil)
 			case event.Has(fsnotify.Create) || event.Has(fsnotify.Write):
 				values, err := f.Load()
 				if err != nil {
-					log.Printf("Error when reloading configuration from %s: %v", f.path, err)
+					slog.Error("Error when reloading config file", "file", f.path, "error", err)
 
 					continue
 				}
@@ -90,7 +90,7 @@ func (f File) Watch(ctx context.Context, watchFunc func(map[string]any)) error {
 				return nil
 			}
 
-			log.Printf("Error when watching file %s: %v", f.path, err)
+			slog.Error("Error when watching file", "file", f.path, "error", err)
 
 		case <-ctx.Done():
 			return nil

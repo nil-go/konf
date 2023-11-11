@@ -7,12 +7,12 @@ package file
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"runtime"
 )
 
 func (f File) Watch(context.Context, func(map[string]any)) error {
-	log.Printf("File.Watch does not supported on %s.", runtime.GOOS)
+	slog.Warn("File.Watch does not supported on runtime.", "runtime", runtime.GOOS)
 
 	return nil
 }

@@ -17,7 +17,7 @@ package file
 import (
 	"fmt"
 	"io/fs"
-	"log"
+	"log/slog"
 	"os"
 )
 
@@ -47,7 +47,7 @@ func (f File) Load() (map[string]any, error) {
 	}
 	if err != nil {
 		if f.ignoreNotExist && os.IsNotExist(err) {
-			log.Printf("Config file %s does not exist.", f.path)
+			slog.Warn("Config file does not exist.", "file", f.path)
 
 			return make(map[string]any), nil
 		}
