@@ -17,7 +17,7 @@ func WithPrefix(prefix string) Option {
 
 // WithFlagSet provides the [pflag.FlagSet] that loads configuration from.
 //
-// The default flag set is [pflag.CommandLine].
+// The default flag set is [pflag.CommandLine] plus [flag.CommandLine].
 func WithFlagSet(set *pflag.FlagSet) Option {
 	return func(pflag *options) {
 		pflag.set = set
