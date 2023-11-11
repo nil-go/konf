@@ -16,11 +16,11 @@ type Loader interface {
 
 // Watcher is the interface that wraps the Watch method.
 //
-// Watch watches configuration and triggers a callback with full new configurations
+// Watch watches configuration and triggers onchange callback with full new configurations
 // as a nested map[string]any when it changes.
 // It blocks until ctx is done, or the service returns an error.
 type Watcher interface {
-	Watch(context.Context, func(map[string]any)) error
+	Watch(ctx context.Context, onchange func(map[string]any)) error
 }
 
 // ConfigAware is the interface that wraps the WithConfig method.
@@ -28,5 +28,5 @@ type Watcher interface {
 // WithConfig enables provider loads configuration from providers before it.
 // It ensures the WithConfig is called before executing methods in Loader and Watcher.
 type ConfigAware interface {
-	WithConfig(*Config)
+	WithConfig(config *Config)
 }
