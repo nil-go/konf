@@ -108,4 +108,3 @@ compatibility with these versions in the following manner:
   testing for the oldest (now archived upstream) version of Go. This, and
   future, releases of konf may include features only supported by
   the currently supported versions of Go.
-

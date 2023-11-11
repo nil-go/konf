@@ -64,7 +64,7 @@ func Watch(ctx context.Context, fns ...func()) error {
 }
 
 // SetGlobal makes c the global Config. After this call,
-// the konf package's functions (e.g. konf.Get) will read from config.
+// the konf package's functions (e.g. konf.Get) will read from the global config.
 //
 // The default global config only loads configuration from environment variables.
 func SetGlobal(config *Config) {
