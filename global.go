@@ -15,7 +15,7 @@ import (
 // It returns zero value if there is an error while getting configuration.
 //
 // The path is case-insensitive.
-func Get[T any](path string) T {
+func Get[T any](path string) T { //nolint:ireturn
 	mux.RLock()
 	defer mux.RUnlock()
 

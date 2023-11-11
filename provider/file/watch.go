@@ -18,7 +18,7 @@ import (
 // Watch watches the file and triggers a callback when it changes.
 // It blocks until ctx is done, or the service returns a non-retryable error.
 //
-//nolint:cyclop,funlen,gocognit
+//nolint:cyclop,funlen
 func (f File) Watch(ctx context.Context, watchFunc func(map[string]any)) error {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
