@@ -22,15 +22,6 @@ func WithDelimiter(delimiter string) Option {
 	}
 }
 
-// WithLogger provides a Logger implementation to logger.
-//
-// The default implementation is using standard [log].
-func WithLogger(logger Logger) Option {
-	return func(config *options) {
-		config.logger = logger
-	}
-}
-
 // Option configures the given Config.
 type Option func(*options)
 
@@ -44,7 +35,6 @@ func apply(opts []Option) options {
 	option := &options{
 		Config: &Config{
 			delimiter: ".",
-			logger:    stdlog{},
 			values:    make(map[string]any),
 		},
 	}

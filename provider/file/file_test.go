@@ -6,11 +6,9 @@
 package file_test
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"io/fs"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -120,20 +118,6 @@ func TestFile_Load(t *testing.T) {
 			}
 		})
 	}
-}
-
-func TestFile_log(t *testing.T) {
-	buf := new(bytes.Buffer)
-	log.SetOutput(buf)
-	log.SetFlags(0)
-
-	_, err := file.New(
-		"not_found.json",
-		file.IgnoreFileNotExit(),
-	).Load()
-
-	require.NoError(t, err)
-	require.Equal(t, "Config file not_found.json does not exist.\n", buf.String())
 }
 
 func TestFile_Watch(t *testing.T) {

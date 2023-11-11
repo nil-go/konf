@@ -47,8 +47,8 @@ func TestGet_error(t *testing.T) {
 	log.SetFlags(0)
 
 	require.False(t, konf.Get[bool]("config"))
-	expected := "Error Could not read config, return empty value instead." +
-		" error=[konf] decode: cannot parse '' as bool: strconv.ParseBool: parsing \"string\": invalid syntax" +
+	expected := "ERROR Could not read config, return empty value instead." +
+		" error=\"[konf] decode: cannot parse '' as bool: strconv.ParseBool: parsing \\\"string\\\": invalid syntax\"" +
 		" path=config type=bool\n"
 	require.Equal(t, expected, buf.String())
 }

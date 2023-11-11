@@ -12,7 +12,7 @@ jobs:
     strategy:
       matrix:
         run-on: [ 'ubuntu', 'macOS', 'windows' ]
-        go-version: [ 'oldstable', 'stable' ]
+        go-version: [ 'stable' ]
     name: Test
     runs-on: ${{ matrix.run-on }}-latest
     steps:
