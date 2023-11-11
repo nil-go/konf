@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"strings"
 	"sync"
 
@@ -18,7 +19,6 @@ import (
 // Config is a registry which holds configuration loaded by Loader(s).
 type Config struct {
 	delimiter string
-	logger    Logger
 
 	values    map[string]any
 	providers []*provider
@@ -45,7 +45,7 @@ func New(opts ...Option) (*Config, error) {
 			return nil, fmt.Errorf("[konf] load configuration: %w", err)
 		}
 		maps.Merge(config.values, values)
-		config.logger.Info(
+		slog.Info(
 			"Configuration has been loaded.",
 			"loader", loader,
 		)
@@ -170,7 +170,7 @@ func (c *Config) Watch(ctx context.Context, fns ...func(*Config)) error { //noli
 					ctx,
 					func(values map[string]any) {
 						provider.values = values
-						c.logger.Info(
+						slog.Info(
 							"Configuration has been changed.",
 							"watcher", provider.watcher,
 						)

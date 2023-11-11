@@ -5,6 +5,7 @@ package konf
 
 import (
 	"context"
+	"log/slog"
 	"reflect"
 	"sync"
 
@@ -21,9 +22,9 @@ func Get[T any](path string) T { //nolint:ireturn
 
 	var value T
 	if err := global.Unmarshal(path, &value); err != nil {
-		global.logger.Error(
+		slog.Error(
 			"Could not read config, return empty value instead.",
-			err,
+			"error", err,
 			"path", path,
 			"type", reflect.TypeOf(value),
 		)

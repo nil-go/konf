@@ -254,25 +254,3 @@ type errorLoader struct{}
 func (errorLoader) Load() (map[string]any, error) {
 	return nil, errors.New("load error")
 }
-
-func TestConfig_logger(t *testing.T) {
-	t.Parallel()
-
-	logger := &logger{}
-	_, err := konf.New(konf.WithLogger(logger), konf.WithLoader(mapLoader{}))
-	require.NoError(t, err)
-
-	require.Equal(t, "Configuration has been loaded.", logger.message)
-	require.Equal(t, []any{"loader", mapLoader{"configured": true}}, logger.keyAndValues)
-}
-
-type logger struct {
-	konf.Logger
-	message      string
-	keyAndValues []any
-}
-
-func (l *logger) Info(message string, keyAndValues ...any) {
-	l.message = message
-	l.keyAndValues = keyAndValues
-}

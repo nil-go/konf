@@ -7,6 +7,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Removed
+
+- Remove konf.Logger in favor of slog (#48).
+
 ## [v0.2.0] - 3/18/2023
 
 ### Removed
