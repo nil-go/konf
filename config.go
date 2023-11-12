@@ -20,7 +20,7 @@ import (
 type Config struct {
 	delimiter string
 
-	values    map[string]any
+	values    *provider
 	providers []*provider
 	watchOnce sync.Once
 }
@@ -29,6 +29,7 @@ type Config struct {
 func New(opts ...Option) (*Config, error) {
 	option := apply(opts)
 	config := option.Config
+	config.values = &provider{values: make(map[string]any)}
 	config.providers = make([]*provider, 0, len(option.loaders))
 
 	for _, loader := range option.loaders {
@@ -44,7 +45,7 @@ func New(opts ...Option) (*Config, error) {
 		if err != nil {
 			return nil, fmt.Errorf("[konf] load configuration: %w", err)
 		}
-		maps.Merge(config.values, values)
+		maps.Merge(config.values.values, values)
 		slog.Info(
 			"Configuration has been loaded.",
 			"loader", loader,
@@ -92,10 +93,10 @@ func (c *Config) Unmarshal(path string, target any) error {
 
 func (c *Config) sub(path string) any {
 	if path == "" {
-		return c.values
+		return c.values.values
 	}
 
-	var next any = c.values
+	var next any = c.values.values
 	for _, key := range strings.Split(strings.ToLower(path), c.delimiter) {
 		mp, ok := next.(map[string]any)
 		if !ok {
@@ -142,7 +143,7 @@ func (c *Config) Watch(ctx context.Context, fns ...func(*Config)) error { //noli
 				for _, w := range c.providers {
 					maps.Merge(values, w.values)
 				}
-				c.values = values
+				c.values.values = values
 
 				for _, fn := range fns {
 					fn(c)
