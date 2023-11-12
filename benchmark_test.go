@@ -61,8 +61,8 @@ func BenchmarkWatch(b *testing.B) {
 	b.StopTimer()
 
 	var cfg string
-	config.OnChange(func(unmarshaler konf.Unmarshaler) {
-		assert.NoError(b, config.Unmarshal("config", &cfg))
+	konf.OnChange(func() {
+		assert.NoError(b, konf.Unmarshal("config", &cfg))
 	})
 	watcher.change(map[string]any{"config": "changed"})
 	assert.Equal(b, "changed", cfg)
