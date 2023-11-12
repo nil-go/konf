@@ -88,6 +88,7 @@ There are providers for the following configuration sources:
 - `env` loads configuration from environment variables.
 - `file` loads configuration from a file.
 - `flag` loads configuration from flags.
+- `fs` loads configuration from fs.FS.
 - `pflag` loads configuration from [spf13/pflag](https://github.com/spf13/pflag).
 
 ## Compatibility

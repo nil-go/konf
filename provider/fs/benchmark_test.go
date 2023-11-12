@@ -1,20 +1,28 @@
 // Copyright (c) 2023 The konf authors
 // Use of this source code is governed by a MIT license found in the LICENSE file.
 
-package file_test
+package fs_test
 
 import (
 	"testing"
+	"testing/fstest"
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/ktong/konf/provider/file"
+	pfs "github.com/ktong/konf/provider/fs"
 )
 
 func BenchmarkNew(b *testing.B) {
-	var loader file.File
+	mapFS := fstest.MapFS{
+		"config.json": {
+			Data: []byte(`{"k":"v"}`),
+		},
+	}
+	b.ResetTimer()
+
+	var loader pfs.FS
 	for i := 0; i < b.N; i++ {
-		loader = file.New("testdata/config.json")
+		loader = pfs.New(mapFS, "config.json")
 	}
 	b.StopTimer()
 
@@ -24,7 +32,12 @@ func BenchmarkNew(b *testing.B) {
 }
 
 func BenchmarkLoad(b *testing.B) {
-	loader := file.New("testdata/config.json")
+	fs := fstest.MapFS{
+		"config.json": {
+			Data: []byte(`{"k":"v"}`),
+		},
+	}
+	loader := pfs.New(fs, "config.json")
 	b.ResetTimer()
 
 	var (

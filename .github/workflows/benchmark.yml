@@ -18,6 +18,9 @@ jobs:
           go-version: 'stable'
       - name: Benchmark
         run: go test -v -shuffle=on -bench=. ./...
+      - name: Benchmark (file)
+        run: go test -v -shuffle=on -bench=. ./...
+        working-directory: provider/file
       - name: Benchmark (pflag)
         run: go test -v -shuffle=on -bench=. ./...
         working-directory: provider/pflag

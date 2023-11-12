@@ -16,13 +16,6 @@ linters-settings:
     local-prefixes: github.com/ktong/konf
   govet:
     check-shadowing: true
-  ireturn:
-    allow:
-      - anon
-      - error
-      - empty
-      - stdlib
-      - T
   makezero:
     always: true
   misspell:
@@ -86,7 +79,7 @@ linters:
     - govet
     - grouper
     - importas
-    # inamedparam
+    - inamedparam
     - ineffassign
     - interfacebloat
     - ireturn

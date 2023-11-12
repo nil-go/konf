@@ -18,6 +18,9 @@ jobs:
           go-version: 'stable'
       - name: Coverage
         run: go test -v -covermode=count -coverprofile=coverage.txt ./...
+      - name: Coverage (file)
+        run: go test -v -covermode=count -coverprofile=coverage.txt ./...
+        working-directory: provider/file
       - name: Coverage (pflag)
         run: go test -v -covermode=count -coverprofile=coverage.txt ./...
         working-directory: provider/pflag

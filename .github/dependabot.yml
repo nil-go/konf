@@ -7,6 +7,11 @@ updates:
       interval: daily
 
   - package-ecosystem: gomod
+    directory: /provider/file
+    schedule:
+      interval: daily
+
+  - package-ecosystem: gomod
     directory: /provider/pflag
     schedule:
       interval: daily
