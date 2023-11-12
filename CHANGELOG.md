@@ -7,6 +7,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- Split file and fs provider (#49).
+
 ### Removed
 
 - Remove konf.Logger in favor of slog (#48).
