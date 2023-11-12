@@ -19,7 +19,7 @@ import (
 // It blocks until ctx is done, or the service returns a non-retryable error.
 //
 //nolint:cyclop,funlen
-func (f File) Watch(ctx context.Context, watchFunc func(map[string]any)) error {
+func (f File) Watch(ctx context.Context, onChange func(map[string]any)) error {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		return fmt.Errorf("create file watcher for %s: %w", f.path, err)
@@ -74,7 +74,7 @@ func (f File) Watch(ctx context.Context, watchFunc func(map[string]any)) error {
 			switch {
 			case event.Has(fsnotify.Remove):
 				slog.Warn("Config file has been removed.", "file", f.path)
-				watchFunc(nil)
+				onChange(nil)
 			case event.Has(fsnotify.Create) || event.Has(fsnotify.Write):
 				values, err := f.Load()
 				if err != nil {
@@ -82,7 +82,7 @@ func (f File) Watch(ctx context.Context, watchFunc func(map[string]any)) error {
 
 					continue
 				}
-				watchFunc(values)
+				onChange(values)
 			}
 
 		case err, ok := <-watcher.Errors:
