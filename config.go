@@ -21,7 +21,7 @@ type Config struct {
 
 	values    *provider
 	providers []*provider
-	onChanges map[string][]func(Unmarshaler)
+	onChanges *onChanges
 }
 
 type Unmarshaler interface {
@@ -34,7 +34,7 @@ func New(opts ...Option) (Config, error) {
 	config := option.Config
 	config.values = &provider{values: make(map[string]any)}
 	config.providers = make([]*provider, 0, len(option.loaders))
-	config.onChanges = make(map[string][]func(Unmarshaler))
+	config.onChanges = &onChanges{onChanges: make(map[string][]func(Unmarshaler))}
 
 	for _, loader := range option.loaders {
 		if loader == nil {
@@ -71,7 +71,7 @@ func New(opts ...Option) (Config, error) {
 // It blocks until ctx is done, or the service returns an error.
 //
 // It only can be called once. Call after first has no effects.
-func (c Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocognit
+func (c Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen
 	changeChan := make(chan []func(Unmarshaler))
 	defer close(changeChan)
 	ctx, cancel := context.WithCancel(ctx)
@@ -103,15 +103,11 @@ func (c Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocogn
 						// Find the onChanges should be triggered.
 						oldValues := &provider{values: watcher.values}
 						newValues := &provider{values: values}
-						var callbacks []func(Unmarshaler)
-						for path, onChanges := range c.onChanges {
-							if oldValues.sub(path, c.delimiter) != nil || newValues.sub(path, c.delimiter) != nil {
-								callbacks = append(callbacks, onChanges...)
-							}
-						}
-
+						onChanges := c.onChanges.filter(func(path string) bool {
+							return oldValues.sub(path, c.delimiter) != nil || newValues.sub(path, c.delimiter) != nil
+						})
 						watcher.values = values
-						changeChan <- callbacks
+						changeChan <- onChanges
 					}
 					if err := watcher.watcher.Watch(ctx, onChange); err != nil {
 						errOnce.Do(func() {
@@ -188,6 +184,18 @@ func (p *provider) sub(path string, delimiter string) any {
 //
 // It requires Config.Watch has been called.
 func (c Config) OnChange(onchange func(Unmarshaler), paths ...string) {
+	c.onChanges.append(onchange, paths)
+}
+
+type onChanges struct {
+	onChanges map[string][]func(Unmarshaler)
+	mutex     sync.RWMutex
+}
+
+func (c *onChanges) append(onchange func(Unmarshaler), paths []string) {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+
 	if len(paths) == 0 {
 		paths = []string{""}
 	}
@@ -195,6 +203,20 @@ func (c Config) OnChange(onchange func(Unmarshaler), paths ...string) {
 	for _, path := range paths {
 		c.onChanges[path] = append(c.onChanges[path], onchange)
 	}
+}
+
+func (c *onChanges) filter(predict func(string) bool) []func(Unmarshaler) {
+	c.mutex.RLock()
+	defer c.mutex.RUnlock()
+
+	var callbacks []func(Unmarshaler)
+	for path, onChanges := range c.onChanges {
+		if predict(path) {
+			callbacks = append(callbacks, onChanges...)
+		}
+	}
+
+	return callbacks
 }
 
 // Unmarshal loads configuration under the given path into the given object
