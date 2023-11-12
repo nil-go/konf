@@ -46,29 +46,22 @@ func Unmarshal(path string, target any) error {
 	return global.Unmarshal(path, target)
 }
 
-// Watch watches configuration and triggers callbacks when it changes.
+// Watch watches and updates configuration when it changes.
 // It blocks until ctx is done, or the service returns an error.
 //
-// It only can be called once. Call after first returns an error.
-func Watch(ctx context.Context, fns ...func()) error {
+// It only can be called once. Call after first has no effects.
+func Watch(ctx context.Context) error {
 	mux.RLock()
 	defer mux.RUnlock()
 
-	return global.Watch(
-		ctx,
-		func(*Config) {
-			for _, fn := range fns {
-				fn()
-			}
-		},
-	)
+	return global.Watch(ctx)
 }
 
 // SetGlobal makes c the global Config. After this call,
 // the konf package's functions (e.g. konf.Get) will read from the global config.
 //
 // The default global config only loads configuration from environment variables.
-func SetGlobal(config *Config) {
+func SetGlobal(config Config) {
 	mux.Lock()
 	defer mux.Unlock()
 

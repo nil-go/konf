@@ -7,7 +7,6 @@ import (
 	"bytes"
 	"context"
 	"log"
-	"sync"
 	"testing"
 
 	"github.com/ktong/konf"
@@ -57,26 +56,14 @@ func TestWatch(t *testing.T) {
 	config, err := konf.New(konf.WithLoader(watcher))
 	assert.NoError(t, err)
 	konf.SetGlobal(config)
-
-	cfg := konf.Get[string]("config")
-	assert.Equal(t, "string", cfg)
+	assert.Equal(t, "string", konf.Get[string]("config"))
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-
-	var waitGroup sync.WaitGroup
-	waitGroup.Add(1)
 	go func() {
-		err := konf.Watch(ctx, func() {
-			defer waitGroup.Done()
-
-			cfg = konf.Get[string]("config")
-		})
-		assert.NoError(t, err)
+		assert.NoError(t, konf.Watch(ctx))
 	}()
 
 	watcher.change(map[string]any{"config": "changed"})
-	waitGroup.Wait()
-
-	assert.Equal(t, "changed", cfg)
+	assert.Equal(t, "changed", konf.Get[string]("config"))
 }

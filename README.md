@@ -52,9 +52,11 @@ Application also can watch the changes of configuration like:
     func main() {
         // ... setup global Config ...
 
-        konf.Watch(func(){
-            // Read configuration and reconfig application.
-        })
+        go func() {
+          if err := konf.Watch(ctx); err != nil {
+            // Handle error here.
+          }
+        }
 
         // ... other setup code ...
     }

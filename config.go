@@ -5,7 +5,6 @@ package konf
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log/slog"
 	"strings"
@@ -22,11 +21,10 @@ type Config struct {
 
 	values    *provider
 	providers []*provider
-	watchOnce sync.Once
 }
 
 // New returns a Config with the given Option(s).
-func New(opts ...Option) (*Config, error) {
+func New(opts ...Option) (Config, error) {
 	option := apply(opts)
 	config := option.Config
 	config.values = &provider{values: make(map[string]any)}
@@ -43,7 +41,7 @@ func New(opts ...Option) (*Config, error) {
 
 		values, err := loader.Load()
 		if err != nil {
-			return nil, fmt.Errorf("[konf] load configuration: %w", err)
+			return Config{}, fmt.Errorf("[konf] load configuration: %w", err)
 		}
 		maps.Merge(config.values.values, values)
 		slog.Info(
@@ -67,7 +65,7 @@ func New(opts ...Option) (*Config, error) {
 // pointed to by target. It supports [mapstructure] tags on struct fields.
 //
 // The path is case-insensitive.
-func (c *Config) Unmarshal(path string, target any) error {
+func (c Config) Unmarshal(path string, target any) error {
 	decoder, err := mapstructure.NewDecoder(
 		&mapstructure.DecoderConfig{
 			Metadata:         nil,
@@ -91,7 +89,7 @@ func (c *Config) Unmarshal(path string, target any) error {
 	return nil
 }
 
-func (c *Config) sub(path string) any {
+func (c Config) sub(path string) any {
 	if path == "" {
 		return c.values.values
 	}
@@ -113,25 +111,58 @@ func (c *Config) sub(path string) any {
 	return next
 }
 
-// Watch watches configuration and triggers callbacks when it changes.
+// Watch watches and updates configuration when it changes.
 // It blocks until ctx is done, or the service returns an error.
 //
-// It only can be called once. Call after first returns an error.
-func (c *Config) Watch(ctx context.Context, fns ...func(*Config)) error { //nolint:funlen
-	var first bool
-	c.watchOnce.Do(func() {
-		first = true
-	})
-	if !first {
-		return errOnlyOnce
-	}
-
+// It only can be called once. Call after first has no effects.
+func (c Config) Watch(ctx context.Context) error { //nolint:funlen
 	changeChan := make(chan struct{})
 	defer close(changeChan)
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	var waitGroup sync.WaitGroup
+	var (
+		firstErr   error
+		errOnce    sync.Once
+		waitGroup  sync.WaitGroup
+		hasWatcher bool
+	)
+	for _, provider := range c.providers {
+		if provider.watcher != nil {
+			provider := provider
+
+			provider.watchOnce.Do(func() {
+				hasWatcher = true
+
+				waitGroup.Add(1)
+				go func() {
+					defer waitGroup.Done()
+
+					if err := provider.watcher.Watch(
+						ctx,
+						func(values map[string]any) {
+							provider.values = values
+							slog.Info(
+								"Configuration has been changed.",
+								"watcher", provider.watcher,
+							)
+							changeChan <- struct{}{}
+						},
+					); err != nil {
+						errOnce.Do(func() {
+							firstErr = fmt.Errorf("[konf] watch configuration change: %w", err)
+							cancel()
+						})
+					}
+				}()
+			})
+		}
+	}
+
+	if !hasWatcher {
+		return nil
+	}
+
 	waitGroup.Add(1)
 	go func() {
 		defer waitGroup.Done()
@@ -145,55 +176,18 @@ func (c *Config) Watch(ctx context.Context, fns ...func(*Config)) error { //noli
 				}
 				c.values.values = values
 
-				for _, fn := range fns {
-					fn(c)
-				}
-
 			case <-ctx.Done():
 				return
 			}
 		}
 	}()
-
-	var (
-		firstErr error
-		errOnce  sync.Once
-	)
-	for _, provider := range c.providers {
-		if provider.watcher != nil {
-			provider := provider
-
-			waitGroup.Add(1)
-			go func() {
-				defer waitGroup.Done()
-
-				if err := provider.watcher.Watch(
-					ctx,
-					func(values map[string]any) {
-						provider.values = values
-						slog.Info(
-							"Configuration has been changed.",
-							"watcher", provider.watcher,
-						)
-						changeChan <- struct{}{}
-					},
-				); err != nil {
-					errOnce.Do(func() {
-						firstErr = fmt.Errorf("[konf] watch configuration change: %w", err)
-						cancel()
-					})
-				}
-			}()
-		}
-	}
 	waitGroup.Wait()
 
 	return firstErr
 }
 
-var errOnlyOnce = errors.New("[konf] Watch only can be called once")
-
 type provider struct {
-	watcher Watcher
-	values  map[string]any
+	watcher   Watcher
+	watchOnce sync.Once
+	values    map[string]any
 }
