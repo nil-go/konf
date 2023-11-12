@@ -5,6 +5,7 @@ package konf_test
 
 import (
 	"context"
+	"sync/atomic"
 	"testing"
 
 	"github.com/ktong/konf"
@@ -55,15 +56,13 @@ func BenchmarkWatch(b *testing.B) {
 	}()
 	b.ResetTimer()
 
+	var cfg atomic.Value
+	konf.OnChange(func() {
+		cfg.Store(konf.Get[string]("config"))
+	})
 	for i := 0; i < b.N; i++ {
 		watcher.change(map[string]any{"config": "changed"})
 	}
 	b.StopTimer()
-
-	var cfg string
-	konf.OnChange(func() {
-		assert.NoError(b, konf.Unmarshal("config", &cfg))
-	})
-	watcher.change(map[string]any{"config": "changed"})
-	assert.Equal(b, "changed", cfg)
+	assert.Equal(b, "changed", cfg.Load())
 }

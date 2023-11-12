@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"context"
 	"log"
+	"sync/atomic"
 	"testing"
 
 	"github.com/ktong/konf"
@@ -64,10 +65,10 @@ func TestWatch(t *testing.T) {
 		assert.NoError(t, konf.Watch(ctx))
 	}()
 
-	var cfg string
+	var cfg atomic.Value
 	konf.OnChange(func() {
-		assert.NoError(t, konf.Unmarshal("config", &cfg))
+		cfg.Store(konf.Get[string]("config"))
 	})
 	watcher.change(map[string]any{"config": "changed"})
-	assert.Equal(t, "changed", cfg)
+	assert.Equal(t, "changed", cfg.Load())
 }

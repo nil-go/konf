@@ -6,6 +6,7 @@ package konf_test
 import (
 	"context"
 	"errors"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -167,11 +168,14 @@ func TestConfig_Watch(t *testing.T) {
 		assert.NoError(t, config.Watch(ctx))
 	}()
 
+	var newCfg atomic.Value
 	config.OnChange(func(unmarshaler konf.Unmarshaler) {
+		var cfg string
 		assert.NoError(t, config.Unmarshal("config", &cfg))
+		newCfg.Store(cfg)
 	})
 	watcher.change(map[string]any{"config": "changed"})
-	assert.Equal(t, "changed", cfg)
+	assert.Equal(t, "changed", newCfg.Load())
 }
 
 type mapWatcher chan map[string]any
