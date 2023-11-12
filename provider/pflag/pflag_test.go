@@ -9,9 +9,9 @@ import (
 	"testing"
 
 	"github.com/spf13/pflag"
-	"github.com/stretchr/testify/require"
 
 	kflag "github.com/ktong/konf/provider/pflag"
+	"github.com/ktong/konf/provider/pflag/internal/assert"
 )
 
 func TestFlag_Load(t *testing.T) {
@@ -54,8 +54,8 @@ func TestFlag_Load(t *testing.T) {
 
 		t.Run(testcase.description, func(t *testing.T) {
 			values, err := kflag.New(testcase.opts...).Load()
-			require.NoError(t, err)
-			require.Equal(t, testcase.expected, values)
+			assert.NoError(t, err)
+			assert.Equal(t, testcase.expected, values)
 		})
 	}
 }
@@ -85,7 +85,7 @@ func TestFlag_String(t *testing.T) {
 		t.Run(testcase.description, func(t *testing.T) {
 			t.Parallel()
 
-			require.Equal(
+			assert.Equal(
 				t,
 				testcase.expected,
 				kflag.New(

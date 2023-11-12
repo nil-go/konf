@@ -6,9 +6,8 @@ package env_test
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/ktong/konf"
+	"github.com/ktong/konf/internal/assert"
 	"github.com/ktong/konf/provider/env"
 )
 
@@ -50,8 +49,8 @@ func TestEnv_Load(t *testing.T) {
 
 		t.Run(testcase.description, func(t *testing.T) {
 			values, err := env.New(testcase.opts...).Load()
-			require.NoError(t, err)
-			require.Equal(t, testcase.expected, values)
+			assert.NoError(t, err)
+			assert.Equal(t, testcase.expected, values)
 		})
 	}
 }
@@ -81,7 +80,7 @@ func TestEnv_String(t *testing.T) {
 		t.Run(testcase.description, func(t *testing.T) {
 			t.Parallel()
 
-			require.Equal(t, testcase.expected, env.New(env.WithPrefix(testcase.prefix)).String())
+			assert.Equal(t, testcase.expected, env.New(env.WithPrefix(testcase.prefix)).String())
 		})
 	}
 }

@@ -12,8 +12,7 @@ import (
 	"testing"
 	"testing/fstest"
 
-	"github.com/stretchr/testify/require"
-
+	"github.com/ktong/konf/internal/assert"
 	pfs "github.com/ktong/konf/provider/fs"
 )
 
@@ -82,10 +81,10 @@ func TestFile_Load(t *testing.T) {
 
 			values, err := pfs.New(testcase.fs, testcase.path, testcase.opts...).Load()
 			if err != nil {
-				require.True(t, strings.HasPrefix(err.Error(), testcase.err))
+				assert.True(t, strings.HasPrefix(err.Error(), testcase.err))
 			} else {
-				require.NoError(t, err)
-				require.Equal(t, testcase.expected, values)
+				assert.NoError(t, err)
+				assert.Equal(t, testcase.expected, values)
 			}
 		})
 	}
@@ -94,5 +93,5 @@ func TestFile_Load(t *testing.T) {
 func TestFile_String(t *testing.T) {
 	t.Parallel()
 
-	require.Equal(t, "fs:config.json", pfs.New(fstest.MapFS{}, "config.json").String())
+	assert.Equal(t, "fs:config.json", pfs.New(fstest.MapFS{}, "config.json").String())
 }

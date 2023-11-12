@@ -3,12 +3,10 @@
 
 // Package file loads configuration from files.
 //
-// File loads file with given path from OS file system and returns nested map[string]any
-// that is parsed as json.
+// File loads file with given path from OS file system
+// and returns nested map[string]any that is parsed as json.
 //
 // The default behavior can be changed with following options:
-//   - WithFS provides the fs.FS that config file is loaded from.
-//     E.g. `WithFS(cfg)` will load configuration from embed file while cfg is embed.FS.
 //   - WithUnmarshal provides the function that parses config file.
 //     E.g. `WithUnmarshal(yaml.Unmarshal)` will parse the file as yaml.
 //   - IgnoreFileNotExit ignores the error if config file does not exist.

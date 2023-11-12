@@ -1,14 +1,12 @@
 // Copyright (c) 2023 The konf authors
 // Use of this source code is governed by a MIT license found in the LICENSE file.
 
-// Package fs loads configuration from files.
+// Package fs loads configuration from file system.
 //
-// FS loads file with given path from OS file system and returns nested map[string]any
-// that is parsed as json.
+// FS loads file with given path from file system
+// and returns nested map[string]any that is parsed as json.
 //
 // The default behavior can be changed with following options:
-//   - WithFS provides the fs.FS that config file is loaded from.
-//     E.g. `WithFS(cfg)` will load configuration from embed file while cfg is embed.FS.
 //   - WithUnmarshal provides the function that parses config file.
 //     E.g. `WithUnmarshal(yaml.Unmarshal)` will parse the file as yaml.
 //   - IgnoreFileNotExit ignores the error if config file does not exist.
@@ -22,7 +20,7 @@ import (
 	"os"
 )
 
-// FS is a Provider that loads configuration from file.
+// FS is a Provider that loads configuration from file system.
 type FS struct {
 	fs             fs.FS
 	path           string
@@ -30,7 +28,7 @@ type FS struct {
 	ignoreNotExist bool
 }
 
-// New returns a FS with the given path and Option(s).
+// New returns a FS with the given fs.FS, path and Option(s).
 func New(fs fs.FS, path string, opts ...Option) FS {
 	option := &options{
 		fs:        fs,

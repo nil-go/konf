@@ -7,9 +7,9 @@ import (
 	"testing"
 
 	"github.com/spf13/pflag"
-	"github.com/stretchr/testify/require"
 
 	kflag "github.com/ktong/konf/provider/pflag"
+	"github.com/ktong/konf/provider/pflag/internal/assert"
 )
 
 func BenchmarkNew(b *testing.B) {
@@ -24,8 +24,8 @@ func BenchmarkNew(b *testing.B) {
 	b.StopTimer()
 
 	values, err := loader.Load()
-	require.NoError(b, err)
-	require.Equal(b, "v", values["k"])
+	assert.NoError(b, err)
+	assert.Equal(b, "v", values["k"])
 }
 
 func BenchmarkLoad(b *testing.B) {
@@ -43,6 +43,6 @@ func BenchmarkLoad(b *testing.B) {
 	}
 	b.StopTimer()
 
-	require.NoError(b, err)
-	require.Equal(b, "v", values["k"])
+	assert.NoError(b, err)
+	assert.Equal(b, "v", values["k"])
 }
