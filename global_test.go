@@ -64,6 +64,10 @@ func TestWatch(t *testing.T) {
 		assert.NoError(t, konf.Watch(ctx))
 	}()
 
+	var cfg string
+	config.OnChange(func(unmarshaler konf.Unmarshaler) {
+		assert.NoError(t, config.Unmarshal("config", &cfg))
+	})
 	watcher.change(map[string]any{"config": "changed"})
-	assert.Equal(t, "changed", konf.Get[string]("config"))
+	assert.Equal(t, "changed", cfg)
 }

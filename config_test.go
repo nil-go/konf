@@ -167,8 +167,10 @@ func TestConfig_Watch(t *testing.T) {
 		assert.NoError(t, config.Watch(ctx))
 	}()
 
+	config.OnChange(func(unmarshaler konf.Unmarshaler) {
+		assert.NoError(t, config.Unmarshal("config", &cfg))
+	})
 	watcher.change(map[string]any{"config": "changed"})
-	assert.NoError(t, config.Unmarshal("config", &cfg))
 	assert.Equal(t, "changed", cfg)
 }
 

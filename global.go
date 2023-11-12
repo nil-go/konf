@@ -57,6 +57,15 @@ func Watch(ctx context.Context) error {
 	return global.Watch(ctx)
 }
 
+// OnChange executes the given onChange function while the value of any given path
+// (or any value is no paths) have been changed.
+func OnChange(onChange func(), paths ...string) {
+	mux.RLock()
+	defer mux.RUnlock()
+
+	global.OnChange(func(Unmarshaler) { onChange() }, paths...)
+}
+
 // SetGlobal makes c the global Config. After this call,
 // the konf package's functions (e.g. konf.Get) will read from the global config.
 //
