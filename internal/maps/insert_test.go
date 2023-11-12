@@ -6,8 +6,7 @@ package maps_test
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
+	"github.com/ktong/konf/internal/assert"
 	"github.com/ktong/konf/internal/maps"
 )
 
@@ -69,7 +68,7 @@ func TestInsert(t *testing.T) {
 			t.Parallel()
 
 			maps.Insert(testcase.dst, testcase.keys, testcase.val)
-			require.Equal(t, testcase.expected, testcase.dst)
+			assert.Equal(t, testcase.expected, testcase.dst)
 		})
 	}
 }

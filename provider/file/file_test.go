@@ -15,9 +15,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/ktong/konf/provider/file"
+	"github.com/ktong/konf/provider/file/internal/assert"
 )
 
 func TestFile_Load(t *testing.T) {
@@ -68,10 +67,10 @@ func TestFile_Load(t *testing.T) {
 
 			values, err := file.New(testcase.path, testcase.opts...).Load()
 			if err != nil {
-				require.True(t, strings.HasPrefix(err.Error(), testcase.err))
+				assert.True(t, strings.HasPrefix(err.Error(), testcase.err))
 			} else {
-				require.NoError(t, err)
-				require.Equal(t, testcase.expected, values)
+				assert.NoError(t, err)
+				assert.Equal(t, testcase.expected, values)
 			}
 		})
 	}
@@ -108,7 +107,7 @@ func TestFile_Watch(t *testing.T) {
 
 		t.Run(testcase.description, func(t *testing.T) {
 			tmpFile := filepath.Join(t.TempDir(), "watch.json")
-			require.NoError(t, os.WriteFile(tmpFile, []byte(`{"p": {"k": "v"}}`), 0o600))
+			assert.NoError(t, os.WriteFile(tmpFile, []byte(`{"p": {"k": "v"}}`), 0o600))
 
 			loader := file.New(tmpFile)
 			var values map[string]any
@@ -122,13 +121,13 @@ func TestFile_Watch(t *testing.T) {
 					defer waitGroup.Done()
 					values = changed
 				})
-				require.NoError(t, err)
+				assert.NoError(t, err)
 			}()
 
 			time.Sleep(time.Second)
-			require.NoError(t, testcase.action(tmpFile))
+			assert.NoError(t, testcase.action(tmpFile))
 			waitGroup.Wait()
-			require.Equal(t, testcase.expacted, values)
+			assert.Equal(t, testcase.expacted, values)
 		})
 	}
 }
@@ -136,5 +135,5 @@ func TestFile_Watch(t *testing.T) {
 func TestFile_String(t *testing.T) {
 	t.Parallel()
 
-	require.Equal(t, "file:config.json", file.New("config.json").String())
+	assert.Equal(t, "file:config.json", file.New("config.json").String())
 }

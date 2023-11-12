@@ -9,9 +9,8 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/ktong/konf"
+	"github.com/ktong/konf/internal/assert"
 )
 
 func TestConfig_Unmarshal(t *testing.T) {
@@ -26,8 +25,8 @@ func TestConfig_Unmarshal(t *testing.T) {
 			description: "empty values",
 			assert: func(config *konf.Config) {
 				var cfg string
-				require.NoError(t, config.Unmarshal("config", &cfg))
-				require.Equal(t, "", cfg)
+				assert.NoError(t, config.Unmarshal("config", &cfg))
+				assert.Equal(t, "", cfg)
 			},
 		},
 		{
@@ -35,8 +34,8 @@ func TestConfig_Unmarshal(t *testing.T) {
 			opts:        []konf.Option{konf.WithLoader(nil)},
 			assert: func(config *konf.Config) {
 				var cfg string
-				require.NoError(t, config.Unmarshal("config", &cfg))
-				require.Equal(t, "", cfg)
+				assert.NoError(t, config.Unmarshal("config", &cfg))
+				assert.Equal(t, "", cfg)
 			},
 		},
 		{
@@ -44,8 +43,8 @@ func TestConfig_Unmarshal(t *testing.T) {
 			opts:        []konf.Option{konf.WithLoader(mapLoader{"config": "string"})},
 			assert: func(config *konf.Config) {
 				var cfg string
-				require.NoError(t, config.Unmarshal("config", &cfg))
-				require.Equal(t, "string", cfg)
+				assert.NoError(t, config.Unmarshal("config", &cfg))
+				assert.Equal(t, "string", cfg)
 			},
 		},
 		{
@@ -55,8 +54,8 @@ func TestConfig_Unmarshal(t *testing.T) {
 				var cfg struct {
 					Config string
 				}
-				require.NoError(t, config.Unmarshal("", &cfg))
-				require.Equal(t, "struct", cfg.Config)
+				assert.NoError(t, config.Unmarshal("", &cfg))
+				assert.Equal(t, "struct", cfg.Config)
 			},
 		},
 		{
@@ -72,8 +71,8 @@ func TestConfig_Unmarshal(t *testing.T) {
 			},
 			assert: func(config *konf.Config) {
 				var cfg string
-				require.NoError(t, config.Unmarshal("config.nest", &cfg))
-				require.Equal(t, "string", cfg)
+				assert.NoError(t, config.Unmarshal("config.nest", &cfg))
+				assert.Equal(t, "string", cfg)
 			},
 		},
 		{
@@ -90,8 +89,8 @@ func TestConfig_Unmarshal(t *testing.T) {
 			},
 			assert: func(config *konf.Config) {
 				var cfg string
-				require.NoError(t, config.Unmarshal("config_nest", &cfg))
-				require.Equal(t, "string", cfg)
+				assert.NoError(t, config.Unmarshal("config_nest", &cfg))
+				assert.Equal(t, "string", cfg)
 			},
 		},
 		{
@@ -107,8 +106,8 @@ func TestConfig_Unmarshal(t *testing.T) {
 			},
 			assert: func(config *konf.Config) {
 				var cfg string
-				require.NoError(t, config.Unmarshal("config.nest", &cfg))
-				require.Equal(t, "", cfg)
+				assert.NoError(t, config.Unmarshal("config.nest", &cfg))
+				assert.Equal(t, "", cfg)
 			},
 		},
 		{
@@ -118,8 +117,8 @@ func TestConfig_Unmarshal(t *testing.T) {
 			},
 			assert: func(config *konf.Config) {
 				var configured bool
-				require.NoError(t, config.Unmarshal("configured", &configured))
-				require.True(t, configured)
+				assert.NoError(t, config.Unmarshal("configured", &configured))
+				assert.True(t, configured)
 			},
 		},
 	}
@@ -131,7 +130,7 @@ func TestConfig_Unmarshal(t *testing.T) {
 			t.Parallel()
 
 			config, err := konf.New(testcase.opts...)
-			require.NoError(t, err)
+			assert.NoError(t, err)
 			testcase.assert(config)
 		})
 	}
@@ -152,11 +151,11 @@ func TestConfig_Watch(t *testing.T) {
 
 	watcher := mapWatcher(make(chan map[string]any))
 	config, err := konf.New(konf.WithLoader(watcher))
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	var cfg string
-	require.NoError(t, config.Unmarshal("config", &cfg))
-	require.Equal(t, "string", cfg)
+	assert.NoError(t, config.Unmarshal("config", &cfg))
+	assert.Equal(t, "string", cfg)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -167,15 +166,15 @@ func TestConfig_Watch(t *testing.T) {
 		err := config.Watch(ctx, func(config *konf.Config) {
 			defer waitGroup.Done()
 
-			require.NoError(t, config.Unmarshal("config", &cfg))
+			assert.NoError(t, config.Unmarshal("config", &cfg))
 		})
-		require.NoError(t, err)
+		assert.NoError(t, err)
 	}()
 
 	watcher.change(map[string]any{"config": "changed"})
 	waitGroup.Wait()
 
-	require.Equal(t, "changed", cfg)
+	assert.Equal(t, "changed", cfg)
 }
 
 type mapWatcher chan map[string]any
@@ -203,12 +202,12 @@ func TestConfig_Watch_error(t *testing.T) {
 	t.Parallel()
 
 	config, err := konf.New(konf.WithLoader(errorWatcher{}))
-	require.NoError(t, err)
+	assert.NoError(t, err)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	require.EqualError(t, config.Watch(ctx), "[konf] watch configuration change: watch error")
+	assert.EqualError(t, config.Watch(ctx), "[konf] watch configuration change: watch error")
 }
 
 type errorWatcher struct{}
@@ -225,7 +224,7 @@ func TestConfig_error(t *testing.T) {
 	t.Parallel()
 
 	_, err := konf.New(konf.WithLoader(errorLoader{}))
-	require.EqualError(t, err, "[konf] load configuration: load error")
+	assert.EqualError(t, err, "[konf] load configuration: load error")
 }
 
 type errorLoader struct{}

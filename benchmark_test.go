@@ -8,9 +8,8 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
 	"github.com/ktong/konf"
+	"github.com/ktong/konf/internal/assert"
 )
 
 func BenchmarkNew(b *testing.B) {
@@ -24,13 +23,13 @@ func BenchmarkNew(b *testing.B) {
 	b.StopTimer()
 
 	konf.SetGlobal(config)
-	require.NoError(b, err)
-	require.Equal(b, "v", konf.Get[string]("k"))
+	assert.NoError(b, err)
+	assert.Equal(b, "v", konf.Get[string]("k"))
 }
 
 func BenchmarkGet(b *testing.B) {
 	config, err := konf.New(konf.WithLoader(mapLoader{"k": "v"}))
-	require.NoError(b, err)
+	assert.NoError(b, err)
 	konf.SetGlobal(config)
 	b.ResetTimer()
 
@@ -40,17 +39,17 @@ func BenchmarkGet(b *testing.B) {
 	}
 	b.StopTimer()
 
-	require.Equal(b, "v", value)
+	assert.Equal(b, "v", value)
 }
 
 func BenchmarkWatch(b *testing.B) {
 	watcher := mapWatcher(make(chan map[string]any))
 	config, err := konf.New(konf.WithLoader(watcher))
-	require.NoError(b, err)
+	assert.NoError(b, err)
 	konf.SetGlobal(config)
 
 	cfg := konf.Get[string]("config")
-	require.Equal(b, "string", cfg)
+	assert.Equal(b, "string", cfg)
 	var waitGroup sync.WaitGroup
 	waitGroup.Add(b.N)
 	ctx, cancel := context.WithCancel(context.Background())
@@ -61,7 +60,7 @@ func BenchmarkWatch(b *testing.B) {
 
 			cfg = konf.Get[string]("config")
 		})
-		require.NoError(b, err)
+		assert.NoError(b, err)
 	}()
 	b.ResetTimer()
 
@@ -71,5 +70,5 @@ func BenchmarkWatch(b *testing.B) {
 	waitGroup.Wait()
 	b.StopTimer()
 
-	require.Equal(b, "changed", cfg)
+	assert.Equal(b, "changed", cfg)
 }
