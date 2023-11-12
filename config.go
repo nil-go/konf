@@ -61,56 +61,6 @@ func New(opts ...Option) (Config, error) {
 	return config, nil
 }
 
-// Unmarshal loads configuration under the given path into the given object
-// pointed to by target. It supports [mapstructure] tags on struct fields.
-//
-// The path is case-insensitive.
-func (c Config) Unmarshal(path string, target any) error {
-	decoder, err := mapstructure.NewDecoder(
-		&mapstructure.DecoderConfig{
-			Metadata:         nil,
-			Result:           target,
-			WeaklyTypedInput: true,
-			DecodeHook: mapstructure.ComposeDecodeHookFunc(
-				mapstructure.StringToTimeDurationHookFunc(),
-				mapstructure.StringToSliceHookFunc(","),
-				mapstructure.TextUnmarshallerHookFunc(),
-			),
-		},
-	)
-	if err != nil {
-		return fmt.Errorf("[konf] new decoder: %w", err)
-	}
-
-	if err := decoder.Decode(c.sub(path)); err != nil {
-		return fmt.Errorf("[konf] decode: %w", err)
-	}
-
-	return nil
-}
-
-func (c Config) sub(path string) any {
-	if path == "" {
-		return c.values.values
-	}
-
-	var next any = c.values.values
-	for _, key := range strings.Split(strings.ToLower(path), c.delimiter) {
-		mp, ok := next.(map[string]any)
-		if !ok {
-			return nil
-		}
-
-		val, exist := mp[key]
-		if !exist {
-			return nil
-		}
-		next = val
-	}
-
-	return next
-}
-
 // Watch watches and updates configuration when it changes.
 // It blocks until ctx is done, or the service returns an error.
 //
@@ -190,4 +140,54 @@ type provider struct {
 	watcher   Watcher
 	watchOnce sync.Once
 	values    map[string]any
+}
+
+// Unmarshal loads configuration under the given path into the given object
+// pointed to by target. It supports [mapstructure] tags on struct fields.
+//
+// The path is case-insensitive.
+func (c Config) Unmarshal(path string, target any) error {
+	decoder, err := mapstructure.NewDecoder(
+		&mapstructure.DecoderConfig{
+			Metadata:         nil,
+			Result:           target,
+			WeaklyTypedInput: true,
+			DecodeHook: mapstructure.ComposeDecodeHookFunc(
+				mapstructure.StringToTimeDurationHookFunc(),
+				mapstructure.StringToSliceHookFunc(","),
+				mapstructure.TextUnmarshallerHookFunc(),
+			),
+		},
+	)
+	if err != nil {
+		return fmt.Errorf("[konf] new decoder: %w", err)
+	}
+
+	if err := decoder.Decode(c.sub(path)); err != nil {
+		return fmt.Errorf("[konf] decode: %w", err)
+	}
+
+	return nil
+}
+
+func (c Config) sub(path string) any {
+	if path == "" {
+		return c.values.values
+	}
+
+	var next any = c.values.values
+	for _, key := range strings.Split(strings.ToLower(path), c.delimiter) {
+		mp, ok := next.(map[string]any)
+		if !ok {
+			return nil
+		}
+
+		val, exist := mp[key]
+		if !exist {
+			return nil
+		}
+		next = val
+	}
+
+	return next
 }

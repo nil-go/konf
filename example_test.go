@@ -9,7 +9,7 @@ import (
 
 	"github.com/ktong/konf"
 	"github.com/ktong/konf/provider/env"
-	pfs "github.com/ktong/konf/provider/fs"
+	kfs "github.com/ktong/konf/provider/fs"
 )
 
 func ExampleGet() {
@@ -44,7 +44,7 @@ var testdata embed.FS
 func ExampleSetGlobal() {
 	cfg, err := konf.New(
 		konf.WithLoader(
-			pfs.New(testdata, "testdata/config.json"),
+			kfs.New(testdata, "testdata/config.json"),
 			env.New(env.WithPrefix("server")),
 		),
 	)

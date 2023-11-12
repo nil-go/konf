@@ -13,7 +13,7 @@ import (
 	"testing/fstest"
 
 	"github.com/ktong/konf/internal/assert"
-	pfs "github.com/ktong/konf/provider/fs"
+	kfs "github.com/ktong/konf/provider/fs"
 )
 
 func TestFile_Load(t *testing.T) {
@@ -23,7 +23,7 @@ func TestFile_Load(t *testing.T) {
 		description string
 		fs          fs.FS
 		path        string
-		opts        []pfs.Option
+		opts        []kfs.Option
 		expected    map[string]any
 		err         string
 	}{
@@ -51,8 +51,8 @@ func TestFile_Load(t *testing.T) {
 			description: "fs file (ignore not exist)",
 			fs:          fstest.MapFS{},
 			path:        "not_found.json",
-			opts: []pfs.Option{
-				pfs.IgnoreFileNotExit(),
+			opts: []kfs.Option{
+				kfs.IgnoreFileNotExit(),
 			},
 			expected: map[string]any{},
 		},
@@ -64,8 +64,8 @@ func TestFile_Load(t *testing.T) {
 				},
 			},
 			path: "config.json",
-			opts: []pfs.Option{
-				pfs.WithUnmarshal(func([]byte, any) error {
+			opts: []kfs.Option{
+				kfs.WithUnmarshal(func([]byte, any) error {
 					return errors.New("unmarshal error")
 				}),
 			},
@@ -79,7 +79,7 @@ func TestFile_Load(t *testing.T) {
 		t.Run(testcase.description, func(t *testing.T) {
 			t.Parallel()
 
-			values, err := pfs.New(testcase.fs, testcase.path, testcase.opts...).Load()
+			values, err := kfs.New(testcase.fs, testcase.path, testcase.opts...).Load()
 			if err != nil {
 				assert.True(t, strings.HasPrefix(err.Error(), testcase.err))
 			} else {
@@ -93,5 +93,5 @@ func TestFile_Load(t *testing.T) {
 func TestFile_String(t *testing.T) {
 	t.Parallel()
 
-	assert.Equal(t, "fs:config.json", pfs.New(fstest.MapFS{}, "config.json").String())
+	assert.Equal(t, "fs:config.json", kfs.New(fstest.MapFS{}, "config.json").String())
 }
