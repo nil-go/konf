@@ -59,6 +59,8 @@ func Watch(ctx context.Context) error {
 
 // OnChange executes the given onChange function while the value of any given path
 // (or any value is no paths) have been changed.
+//
+// It requires Watch has been called.
 func OnChange(onChange func(), paths ...string) {
 	mux.RLock()
 	defer mux.RUnlock()

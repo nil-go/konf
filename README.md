@@ -67,11 +67,17 @@ configuration source(s). They read configuration in terms of functions in packag
 
 ```
     func (app *appObject) Run() {
+        // Read the server configuration.
         type serverConfig struct {
             Host string
             Port int
         }
         cfg := konf.Get[serverConfig]("server")
+
+        // Register callbacks while server configuration changes.
+        konf.OnChange(func() {
+		      // Reconfig the application object.
+	      }, "server")
 
         // ... use cfg in app code ...
     }

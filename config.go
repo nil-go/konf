@@ -185,6 +185,8 @@ func (p *provider) sub(path string, delimiter string) any {
 
 // OnChange executes the given onChange function while the value of any given path
 // (or any value is no paths) have been changed.
+//
+// It requires Config.Watch has been called.
 func (c Config) OnChange(onchange func(Unmarshaler), paths ...string) {
 	if len(paths) == 0 {
 		paths = []string{""}
