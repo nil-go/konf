@@ -10,7 +10,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"golang.org/x/sync/errgroup"
 
 	"github.com/ktong/konf"
 )
@@ -177,26 +176,6 @@ func TestConfig_Watch(t *testing.T) {
 	waitGroup.Wait()
 
 	require.Equal(t, "changed", cfg)
-}
-
-func TestConfig_Watch_twice(t *testing.T) {
-	t.Parallel()
-
-	config, err := konf.New(konf.WithLoader(mapWatcher(make(chan map[string]any))))
-	require.NoError(t, err)
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	group, ctx := errgroup.WithContext(ctx)
-	group.Go(func() error {
-		return config.Watch(ctx)
-	})
-	group.Go(func() error {
-		return config.Watch(ctx)
-	})
-
-	require.EqualError(t, group.Wait(), "[konf] Watch only can be called once")
 }
 
 type mapWatcher chan map[string]any

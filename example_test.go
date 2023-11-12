@@ -7,9 +7,8 @@ import (
 	"context"
 	"embed"
 	"fmt"
+	"sync"
 	"time"
-
-	"golang.org/x/sync/errgroup"
 
 	"github.com/ktong/konf"
 	"github.com/ktong/konf/provider/env"
@@ -48,17 +47,16 @@ func ExampleWatch() {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	group, ctx := errgroup.WithContext(ctx)
-	group.Go(func() error {
-		return konf.Watch(ctx, func() {
+	var waitGroup sync.WaitGroup
+	waitGroup.Add(1)
+	go func() {
+		if err := konf.Watch(ctx, func() {
 			fmt.Print(konf.Get[string]("server.host"))
-		})
-	})
-
-	if err := group.Wait(); err != nil {
-		// Handle error here.
-		panic(err)
-	}
+		}); err != nil {
+			panic(err)
+		}
+	}()
+	waitGroup.Wait()
 	// Output:
 }
 
