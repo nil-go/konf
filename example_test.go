@@ -4,15 +4,12 @@
 package konf_test
 
 import (
-	"context"
 	"embed"
 	"fmt"
-	"sync"
-	"time"
 
 	"github.com/ktong/konf"
 	"github.com/ktong/konf/provider/env"
-	"github.com/ktong/konf/provider/file"
+	pfs "github.com/ktong/konf/provider/fs"
 )
 
 func ExampleGet() {
@@ -41,32 +38,13 @@ func ExampleUnmarshal() {
 	// Output: example.com:8080
 }
 
-func ExampleWatch() {
-	ExampleSetGlobal()
-
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
-
-	var waitGroup sync.WaitGroup
-	waitGroup.Add(1)
-	go func() {
-		if err := konf.Watch(ctx, func() {
-			fmt.Print(konf.Get[string]("server.host"))
-		}); err != nil {
-			panic(err)
-		}
-	}()
-	waitGroup.Wait()
-	// Output:
-}
-
 //go:embed testdata
 var testdata embed.FS
 
 func ExampleSetGlobal() {
 	cfg, err := konf.New(
 		konf.WithLoader(
-			file.New("testdata/config.json", file.WithFS(testdata)),
+			pfs.New(testdata, "testdata/config.json"),
 			env.New(env.WithPrefix("server")),
 		),
 	)

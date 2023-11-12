@@ -20,6 +20,10 @@ component_management:
     - component_id: konf
       paths:
         - "!provider/pflag/"
+        - "!provider/file/"
+    - component_id: file
+      paths:
+        - "provider/file/"
     - component_id: pflag
       paths:
         - "provider/pflag/"

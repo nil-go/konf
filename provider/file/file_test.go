@@ -8,24 +8,16 @@ package file_test
 import (
 	"context"
 	"errors"
-	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
-	"testing/fstest"
 	"time"
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/ktong/konf"
 	"github.com/ktong/konf/provider/file"
-)
-
-var (
-	_ konf.Loader  = (*file.File)(nil)
-	_ konf.Watcher = (*file.File)(nil)
 )
 
 func TestFile_Load(t *testing.T) {
@@ -39,57 +31,22 @@ func TestFile_Load(t *testing.T) {
 		err         string
 	}{
 		{
-			description: "os file",
+			description: "file",
 			path:        "testdata/config.json",
 			expected: map[string]any{
-				"p": map[string]any{
-					"k": "v",
-				},
+				"k": "v",
 			},
 		},
 		{
-			description: "os file (not exist)",
+			description: "file (not exist)",
 			path:        "not_found.json",
 			err:         "read file: open not_found.json: ",
 		},
 		{
-			description: "os file (ignore not exist)",
+			description: "file (ignore not exist)",
 			path:        "not_found.json",
 			opts:        []file.Option{file.IgnoreFileNotExit()},
 			expected:    map[string]any{},
-		},
-		{
-			description: "fs file",
-			path:        "config.json",
-			opts: []file.Option{
-				file.WithFS(fstest.MapFS{
-					"config.json": {
-						Data: []byte(`{"p":{"k":"v"}}`),
-					},
-				}),
-			},
-			expected: map[string]any{
-				"p": map[string]any{
-					"k": "v",
-				},
-			},
-		},
-		{
-			description: "fs file (not exist)",
-			path:        "not_found.json",
-			opts: []file.Option{
-				file.WithFS(fstest.MapFS{}),
-			},
-			err: "read file: open not_found.json: file does not exist",
-		},
-		{
-			description: "fs file (ignore not exist)",
-			path:        "not_found.json",
-			opts: []file.Option{
-				file.WithFS(fstest.MapFS{}),
-				file.IgnoreFileNotExit(),
-			},
-			expected: map[string]any{},
 		},
 		{
 			description: "unmarshal error",
@@ -179,32 +136,5 @@ func TestFile_Watch(t *testing.T) {
 func TestFile_String(t *testing.T) {
 	t.Parallel()
 
-	testcases := []struct {
-		description string
-		path        string
-		fs          fs.FS
-		expected    string
-	}{
-		{
-			description: "fs file",
-			path:        "config.json",
-			fs:          fstest.MapFS{},
-			expected:    "fs file:config.json",
-		},
-		{
-			description: "os file",
-			path:        "config.json",
-			expected:    "os file:config.json",
-		},
-	}
-
-	for i := range testcases {
-		testcase := testcases[i]
-
-		t.Run(testcase.description, func(t *testing.T) {
-			t.Parallel()
-
-			require.Equal(t, testcase.expected, file.New(testcase.path, file.WithFS(testcase.fs)).String())
-		})
-	}
+	require.Equal(t, "file:config.json", file.New("config.json").String())
 }
