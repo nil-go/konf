@@ -27,7 +27,10 @@ func NoError(tb testing.TB, err error) {
 func EqualError(tb testing.TB, err error, message string) {
 	tb.Helper()
 
-	if err.Error() != message {
+	switch {
+	case err == nil:
+		tb.Errorf("expected: %v; actual: <nil>", message)
+	case err.Error() != message:
 		tb.Errorf("expected: %v; actual: %v", message, err.Error())
 	}
 }
@@ -37,13 +40,5 @@ func True(tb testing.TB, value bool) {
 
 	if !value {
 		tb.Errorf("expected True")
-	}
-}
-
-func NotEmpty(tb testing.TB, value any) {
-	tb.Helper()
-
-	if reflect.ValueOf(value).IsZero() {
-		tb.Errorf("expected not empty")
 	}
 }
