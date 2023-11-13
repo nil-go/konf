@@ -19,7 +19,7 @@ func BenchmarkNew(b *testing.B) {
 
 	values, err := loader.Load()
 	assert.NoError(b, err)
-	assert.NotEmpty(b, values["USER"])
+	assert.True(b, values["USER"] != "")
 }
 
 func BenchmarkLoad(b *testing.B) {
@@ -36,5 +36,5 @@ func BenchmarkLoad(b *testing.B) {
 	b.StopTimer()
 
 	assert.NoError(b, err)
-	assert.NotEmpty(b, values["USER"])
+	assert.True(b, values["USER"] != "")
 }
