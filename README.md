@@ -25,7 +25,7 @@ Somewhere, early in an application's life, it will make a decision about which
 configuration source(s) (implementation) it actually wants to use. Something like:
 
 ```
-    //go:embed testdata
+    //go:embed config
     var config embed.FS
 
     func main() {
@@ -33,7 +33,7 @@ configuration source(s) (implementation) it actually wants to use. Something lik
         // from embed file system and environment variables.
         cfg, err := konf.New(
             konf.WithLoader(
-                file.New("config/config.json", file.WithFS(config)),
+                fs.New(config, "config/config.json"),
                 env.New(env.WithPrefix("server")),
             ),
         )
@@ -76,8 +76,8 @@ configuration source(s). They read configuration in terms of functions in packag
 
         // Register callbacks while server configuration changes.
         konf.OnChange(func() {
-		      // Reconfig the application object.
-	      }, "server")
+          // Reconfig the application object.
+        }, "server")
 
         // ... use cfg in app code ...
     }
