@@ -28,5 +28,7 @@ type Watcher interface {
 // WithConfig enables provider uses configuration loaded by providers before it.
 // It ensures the WithConfig is called before executing methods in Loader and Watcher.
 type ConfigAware interface {
-	WithConfig(config *Config)
+	WithConfig(config interface {
+		Unmarshal(path string, target any) error
+	})
 }

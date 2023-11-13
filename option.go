@@ -26,14 +26,14 @@ func WithDelimiter(delimiter string) Option {
 type Option func(*options)
 
 type options struct {
-	*Config
+	Config
 
 	loaders []Loader
 }
 
 func apply(opts []Option) options {
 	option := &options{
-		Config: &Config{
+		Config: Config{
 			delimiter: ".",
 		},
 	}

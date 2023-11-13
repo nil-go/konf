@@ -8,7 +8,7 @@ import (
 	"testing/fstest"
 
 	"github.com/ktong/konf/internal/assert"
-	pfs "github.com/ktong/konf/provider/fs"
+	kfs "github.com/ktong/konf/provider/fs"
 )
 
 func BenchmarkNew(b *testing.B) {
@@ -19,9 +19,9 @@ func BenchmarkNew(b *testing.B) {
 	}
 	b.ResetTimer()
 
-	var loader pfs.FS
+	var loader kfs.FS
 	for i := 0; i < b.N; i++ {
-		loader = pfs.New(mapFS, "config.json")
+		loader = kfs.New(mapFS, "config.json")
 	}
 	b.StopTimer()
 
@@ -36,7 +36,7 @@ func BenchmarkLoad(b *testing.B) {
 			Data: []byte(`{"k":"v"}`),
 		},
 	}
-	loader := pfs.New(fs, "config.json")
+	loader := kfs.New(fs, "config.json")
 	b.ResetTimer()
 
 	var (

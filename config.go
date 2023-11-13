@@ -5,7 +5,6 @@ package konf
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log/slog"
 	"strings"
@@ -22,15 +21,20 @@ type Config struct {
 
 	values    *provider
 	providers []*provider
-	watchOnce sync.Once
+	onChanges *onChanges
+}
+
+type Unmarshaler interface {
+	Unmarshal(path string, target any) error
 }
 
 // New returns a Config with the given Option(s).
-func New(opts ...Option) (*Config, error) {
+func New(opts ...Option) (Config, error) {
 	option := apply(opts)
 	config := option.Config
 	config.values = &provider{values: make(map[string]any)}
 	config.providers = make([]*provider, 0, len(option.loaders))
+	config.onChanges = &onChanges{onChanges: make(map[string][]func(Unmarshaler))}
 
 	for _, loader := range option.loaders {
 		if loader == nil {
@@ -43,7 +47,7 @@ func New(opts ...Option) (*Config, error) {
 
 		values, err := loader.Load()
 		if err != nil {
-			return nil, fmt.Errorf("[konf] load configuration: %w", err)
+			return Config{}, fmt.Errorf("[konf] load configuration: %w", err)
 		}
 		maps.Merge(config.values.values, values)
 		slog.Info(
@@ -63,11 +67,163 @@ func New(opts ...Option) (*Config, error) {
 	return config, nil
 }
 
+// Watch watches and updates configuration when it changes.
+// It blocks until ctx is done, or the service returns an error.
+//
+// It only can be called once. Call after first has no effects.
+func (c Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen
+	changeChan := make(chan []func(Unmarshaler))
+	defer close(changeChan)
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	var (
+		firstErr   error
+		errOnce    sync.Once
+		waitGroup  sync.WaitGroup
+		hasWatcher bool
+	)
+	for _, p := range c.providers {
+		if p.watcher != nil {
+			watcher := p
+
+			watcher.watchOnce.Do(func() {
+				hasWatcher = true
+
+				waitGroup.Add(1)
+				go func() {
+					defer waitGroup.Done()
+
+					onChange := func(values map[string]any) {
+						slog.Info(
+							"Configuration has been changed.",
+							"watcher", watcher.watcher,
+						)
+
+						// Find the onChanges should be triggered.
+						oldValues := &provider{values: watcher.values}
+						newValues := &provider{values: values}
+						onChanges := c.onChanges.filter(func(path string) bool {
+							return oldValues.sub(path, c.delimiter) != nil || newValues.sub(path, c.delimiter) != nil
+						})
+						watcher.values = values
+						changeChan <- onChanges
+					}
+					if err := watcher.watcher.Watch(ctx, onChange); err != nil {
+						errOnce.Do(func() {
+							firstErr = fmt.Errorf("[konf] watch configuration change: %w", err)
+							cancel()
+						})
+					}
+				}()
+			})
+		}
+	}
+
+	if !hasWatcher {
+		return nil
+	}
+
+	waitGroup.Add(1)
+	go func() {
+		defer waitGroup.Done()
+
+		for {
+			select {
+			case onChanges := <-changeChan:
+				values := make(map[string]any)
+				for _, w := range c.providers {
+					maps.Merge(values, w.values)
+				}
+				c.values.values = values
+
+				for _, onChange := range onChanges {
+					onChange(c)
+				}
+
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+	waitGroup.Wait()
+
+	return firstErr
+}
+
+type provider struct {
+	watcher   Watcher
+	watchOnce sync.Once
+	values    map[string]any
+}
+
+func (p *provider) sub(path string, delimiter string) any {
+	if path == "" {
+		return p.values
+	}
+
+	var next any = p.values
+	for _, key := range strings.Split(strings.ToLower(path), delimiter) {
+		mp, ok := next.(map[string]any)
+		if !ok {
+			return nil
+		}
+
+		val, exist := mp[key]
+		if !exist {
+			return nil
+		}
+		next = val
+	}
+
+	return next
+}
+
+// OnChange executes the given onChange function while the value of any given path
+// (or any value is no paths) have been changed.
+//
+// It requires Config.Watch has been called.
+func (c Config) OnChange(onchange func(Unmarshaler), paths ...string) {
+	c.onChanges.append(onchange, paths)
+}
+
+type onChanges struct {
+	onChanges map[string][]func(Unmarshaler)
+	mutex     sync.RWMutex
+}
+
+func (c *onChanges) append(onchange func(Unmarshaler), paths []string) {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+
+	if len(paths) == 0 {
+		paths = []string{""}
+	}
+
+	for _, path := range paths {
+		c.onChanges[path] = append(c.onChanges[path], onchange)
+	}
+}
+
+func (c *onChanges) filter(predict func(string) bool) []func(Unmarshaler) {
+	c.mutex.RLock()
+	defer c.mutex.RUnlock()
+
+	var callbacks []func(Unmarshaler)
+	for path, onChanges := range c.onChanges {
+		if predict(path) {
+			callbacks = append(callbacks, onChanges...)
+		}
+	}
+
+	return callbacks
+}
+
 // Unmarshal loads configuration under the given path into the given object
 // pointed to by target. It supports [mapstructure] tags on struct fields.
 //
 // The path is case-insensitive.
-func (c *Config) Unmarshal(path string, target any) error {
+func (c Config) Unmarshal(path string, target any) error {
 	decoder, err := mapstructure.NewDecoder(
 		&mapstructure.DecoderConfig{
 			Metadata:         nil,
@@ -84,116 +240,9 @@ func (c *Config) Unmarshal(path string, target any) error {
 		return fmt.Errorf("[konf] new decoder: %w", err)
 	}
 
-	if err := decoder.Decode(c.sub(path)); err != nil {
+	if err := decoder.Decode(c.values.sub(path, c.delimiter)); err != nil {
 		return fmt.Errorf("[konf] decode: %w", err)
 	}
 
 	return nil
-}
-
-func (c *Config) sub(path string) any {
-	if path == "" {
-		return c.values.values
-	}
-
-	var next any = c.values.values
-	for _, key := range strings.Split(strings.ToLower(path), c.delimiter) {
-		mp, ok := next.(map[string]any)
-		if !ok {
-			return nil
-		}
-
-		val, exist := mp[key]
-		if !exist {
-			return nil
-		}
-		next = val
-	}
-
-	return next
-}
-
-// Watch watches configuration and triggers callbacks when it changes.
-// It blocks until ctx is done, or the service returns an error.
-//
-// It only can be called once. Call after first returns an error.
-func (c *Config) Watch(ctx context.Context, fns ...func(*Config)) error { //nolint:funlen
-	var first bool
-	c.watchOnce.Do(func() {
-		first = true
-	})
-	if !first {
-		return errOnlyOnce
-	}
-
-	changeChan := make(chan struct{})
-	defer close(changeChan)
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
-	var waitGroup sync.WaitGroup
-	waitGroup.Add(1)
-	go func() {
-		defer waitGroup.Done()
-
-		for {
-			select {
-			case <-changeChan:
-				values := make(map[string]any)
-				for _, w := range c.providers {
-					maps.Merge(values, w.values)
-				}
-				c.values.values = values
-
-				for _, fn := range fns {
-					fn(c)
-				}
-
-			case <-ctx.Done():
-				return
-			}
-		}
-	}()
-
-	var (
-		firstErr error
-		errOnce  sync.Once
-	)
-	for _, provider := range c.providers {
-		if provider.watcher != nil {
-			provider := provider
-
-			waitGroup.Add(1)
-			go func() {
-				defer waitGroup.Done()
-
-				if err := provider.watcher.Watch(
-					ctx,
-					func(values map[string]any) {
-						provider.values = values
-						slog.Info(
-							"Configuration has been changed.",
-							"watcher", provider.watcher,
-						)
-						changeChan <- struct{}{}
-					},
-				); err != nil {
-					errOnce.Do(func() {
-						firstErr = fmt.Errorf("[konf] watch configuration change: %w", err)
-						cancel()
-					})
-				}
-			}()
-		}
-	}
-	waitGroup.Wait()
-
-	return firstErr
-}
-
-var errOnlyOnce = errors.New("[konf] Watch only can be called once")
-
-type provider struct {
-	watcher Watcher
-	values  map[string]any
 }

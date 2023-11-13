@@ -14,8 +14,8 @@
 // Config has following main methods:
 //   - Config.Unmarshal loads configuration under the given path
 //     into the given object pointed to by target.
-//   - Config.Watch reloads configuration and triggers callbacks
-//     when configuration changes.
+//   - Config.Watch reloads configuration when it changes.
+//   - Config.OnChange register callback on configuration changes.
 //
 // # Global Config
 //
@@ -26,6 +26,6 @@
 //     It returns zero value if there is an error while getting configuration.
 //   - Unmarshal loads configuration under the given path
 //     into the given object pointed to by target.
-//   - Watch reloads configuration and triggers callbacks
-//     when configuration changes.
+//   - Watch reloads configuration when it changes.
+//   - OnChange register callback on configuration changes.
 package konf

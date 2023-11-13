@@ -5,7 +5,7 @@ package konf_test
 
 import (
 	"context"
-	"sync"
+	"sync/atomic"
 	"testing"
 
 	"github.com/ktong/konf"
@@ -14,7 +14,7 @@ import (
 
 func BenchmarkNew(b *testing.B) {
 	var (
-		config *konf.Config
+		config konf.Config
 		err    error
 	)
 	for i := 0; i < b.N; i++ {
@@ -48,27 +48,21 @@ func BenchmarkWatch(b *testing.B) {
 	assert.NoError(b, err)
 	konf.SetGlobal(config)
 
-	cfg := konf.Get[string]("config")
-	assert.Equal(b, "string", cfg)
-	var waitGroup sync.WaitGroup
-	waitGroup.Add(b.N)
+	assert.Equal(b, "string", konf.Get[string]("config"))
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	go func() {
-		err := konf.Watch(ctx, func() {
-			defer waitGroup.Done()
-
-			cfg = konf.Get[string]("config")
-		})
-		assert.NoError(b, err)
+		assert.NoError(b, konf.Watch(ctx))
 	}()
 	b.ResetTimer()
 
+	var cfg atomic.Value
+	konf.OnChange(func() {
+		cfg.Store(konf.Get[string]("config"))
+	})
 	for i := 0; i < b.N; i++ {
 		watcher.change(map[string]any{"config": "changed"})
 	}
-	waitGroup.Wait()
 	b.StopTimer()
-
-	assert.Equal(b, "changed", cfg)
+	assert.Equal(b, "changed", cfg.Load())
 }

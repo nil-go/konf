@@ -52,9 +52,11 @@ Application also can watch the changes of configuration like:
     func main() {
         // ... setup global Config ...
 
-        konf.Watch(func(){
-            // Read configuration and reconfig application.
-        })
+        go func() {
+          if err := konf.Watch(ctx); err != nil {
+            // Handle error here.
+          }
+        }
 
         // ... other setup code ...
     }
@@ -65,11 +67,17 @@ configuration source(s). They read configuration in terms of functions in packag
 
 ```
     func (app *appObject) Run() {
+        // Read the server configuration.
         type serverConfig struct {
             Host string
             Port int
         }
         cfg := konf.Get[serverConfig]("server")
+
+        // Register callbacks while server configuration changes.
+        konf.OnChange(func() {
+		      // Reconfig the application object.
+	      }, "server")
 
         // ... use cfg in app code ...
     }

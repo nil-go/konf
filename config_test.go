@@ -6,8 +6,9 @@ package konf_test
 import (
 	"context"
 	"errors"
-	"sync"
+	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/ktong/konf"
 	"github.com/ktong/konf/internal/assert"
@@ -19,11 +20,11 @@ func TestConfig_Unmarshal(t *testing.T) {
 	testcases := []struct {
 		description string
 		opts        []konf.Option
-		assert      func(*konf.Config)
+		assert      func(konf.Config)
 	}{
 		{
 			description: "empty values",
-			assert: func(config *konf.Config) {
+			assert: func(config konf.Config) {
 				var cfg string
 				assert.NoError(t, config.Unmarshal("config", &cfg))
 				assert.Equal(t, "", cfg)
@@ -32,7 +33,7 @@ func TestConfig_Unmarshal(t *testing.T) {
 		{
 			description: "nil loader",
 			opts:        []konf.Option{konf.WithLoader(nil)},
-			assert: func(config *konf.Config) {
+			assert: func(config konf.Config) {
 				var cfg string
 				assert.NoError(t, config.Unmarshal("config", &cfg))
 				assert.Equal(t, "", cfg)
@@ -41,7 +42,7 @@ func TestConfig_Unmarshal(t *testing.T) {
 		{
 			description: "for primary type",
 			opts:        []konf.Option{konf.WithLoader(mapLoader{"config": "string"})},
-			assert: func(config *konf.Config) {
+			assert: func(config konf.Config) {
 				var cfg string
 				assert.NoError(t, config.Unmarshal("config", &cfg))
 				assert.Equal(t, "string", cfg)
@@ -50,7 +51,7 @@ func TestConfig_Unmarshal(t *testing.T) {
 		{
 			description: "config for struct",
 			opts:        []konf.Option{konf.WithLoader(mapLoader{"config": "struct"})},
-			assert: func(config *konf.Config) {
+			assert: func(config konf.Config) {
 				var cfg struct {
 					Config string
 				}
@@ -69,7 +70,7 @@ func TestConfig_Unmarshal(t *testing.T) {
 					},
 				),
 			},
-			assert: func(config *konf.Config) {
+			assert: func(config konf.Config) {
 				var cfg string
 				assert.NoError(t, config.Unmarshal("config.nest", &cfg))
 				assert.Equal(t, "string", cfg)
@@ -87,7 +88,7 @@ func TestConfig_Unmarshal(t *testing.T) {
 					},
 				),
 			},
-			assert: func(config *konf.Config) {
+			assert: func(config konf.Config) {
 				var cfg string
 				assert.NoError(t, config.Unmarshal("config_nest", &cfg))
 				assert.Equal(t, "string", cfg)
@@ -104,7 +105,7 @@ func TestConfig_Unmarshal(t *testing.T) {
 					},
 				),
 			},
-			assert: func(config *konf.Config) {
+			assert: func(config konf.Config) {
 				var cfg string
 				assert.NoError(t, config.Unmarshal("config.nest", &cfg))
 				assert.Equal(t, "", cfg)
@@ -115,7 +116,7 @@ func TestConfig_Unmarshal(t *testing.T) {
 			opts: []konf.Option{
 				konf.WithLoader(mapLoader{}),
 			},
-			assert: func(config *konf.Config) {
+			assert: func(config konf.Config) {
 				var configured bool
 				assert.NoError(t, config.Unmarshal("configured", &configured))
 				assert.True(t, configured)
@@ -138,7 +139,11 @@ func TestConfig_Unmarshal(t *testing.T) {
 
 type mapLoader map[string]any
 
-func (m mapLoader) WithConfig(*konf.Config) {
+func (m mapLoader) WithConfig(
+	interface {
+		Unmarshal(path string, target any) error
+	},
+) {
 	m["configured"] = true
 }
 
@@ -159,22 +164,18 @@ func TestConfig_Watch(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-
-	var waitGroup sync.WaitGroup
-	waitGroup.Add(1)
 	go func() {
-		err := config.Watch(ctx, func(config *konf.Config) {
-			defer waitGroup.Done()
-
-			assert.NoError(t, config.Unmarshal("config", &cfg))
-		})
-		assert.NoError(t, err)
+		assert.NoError(t, config.Watch(ctx))
 	}()
 
+	var newCfg atomic.Value
+	config.OnChange(func(unmarshaler konf.Unmarshaler) {
+		var cfg string
+		assert.NoError(t, config.Unmarshal("config", &cfg))
+		newCfg.Store(cfg)
+	})
 	watcher.change(map[string]any{"config": "changed"})
-	waitGroup.Wait()
-
-	assert.Equal(t, "changed", cfg)
+	assert.Equal(t, "changed", newCfg.Load())
 }
 
 type mapWatcher chan map[string]any
@@ -196,6 +197,8 @@ func (m mapWatcher) Watch(ctx context.Context, fn func(map[string]any)) error {
 
 func (m mapWatcher) change(values map[string]any) {
 	m <- values
+
+	time.Sleep(time.Second) // Wait for change gets propagated.
 }
 
 func TestConfig_Watch_error(t *testing.T) {

@@ -10,6 +10,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Changed
 
 - Split file and fs provider (#49).
+- Split Watch and OnChange for watching configuration changes (#52).
 
 ### Removed
 
