@@ -12,9 +12,9 @@
 // and reloads latest configuration when it has changes from a Watcher interface.
 //
 // Config has following main methods:
+//   - Config.Watch reloads configuration when it changes.
 //   - Config.Unmarshal loads configuration under the given path
 //     into the given object pointed to by target.
-//   - Config.Watch reloads configuration when it changes.
 //   - Config.OnChange register callback on configuration changes.
 //
 // # Global Config
@@ -26,6 +26,5 @@
 //     It returns zero value if there is an error while getting configuration.
 //   - Unmarshal loads configuration under the given path
 //     into the given object pointed to by target.
-//   - Watch reloads configuration when it changes.
 //   - OnChange register callback on configuration changes.
 package konf

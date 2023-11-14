@@ -25,38 +25,38 @@ func TestConfig_Unmarshal(t *testing.T) {
 		{
 			description: "empty values",
 			assert: func(config konf.Config) {
-				var cfg string
-				assert.NoError(t, config.Unmarshal("config", &cfg))
-				assert.Equal(t, "", cfg)
+				var value string
+				assert.NoError(t, config.Unmarshal("config", &value))
+				assert.Equal(t, "", value)
 			},
 		},
 		{
 			description: "nil loader",
 			opts:        []konf.Option{konf.WithLoader(nil)},
 			assert: func(config konf.Config) {
-				var cfg string
-				assert.NoError(t, config.Unmarshal("config", &cfg))
-				assert.Equal(t, "", cfg)
+				var value string
+				assert.NoError(t, config.Unmarshal("config", &value))
+				assert.Equal(t, "", value)
 			},
 		},
 		{
 			description: "for primary type",
 			opts:        []konf.Option{konf.WithLoader(mapLoader{"config": "string"})},
 			assert: func(config konf.Config) {
-				var cfg string
-				assert.NoError(t, config.Unmarshal("config", &cfg))
-				assert.Equal(t, "string", cfg)
+				var value string
+				assert.NoError(t, config.Unmarshal("config", &value))
+				assert.Equal(t, "string", value)
 			},
 		},
 		{
 			description: "config for struct",
 			opts:        []konf.Option{konf.WithLoader(mapLoader{"config": "struct"})},
 			assert: func(config konf.Config) {
-				var cfg struct {
+				var value struct {
 					Config string
 				}
-				assert.NoError(t, config.Unmarshal("", &cfg))
-				assert.Equal(t, "struct", cfg.Config)
+				assert.NoError(t, config.Unmarshal("", &value))
+				assert.Equal(t, "struct", value.Config)
 			},
 		},
 		{
@@ -71,9 +71,9 @@ func TestConfig_Unmarshal(t *testing.T) {
 				),
 			},
 			assert: func(config konf.Config) {
-				var cfg string
-				assert.NoError(t, config.Unmarshal("config.nest", &cfg))
-				assert.Equal(t, "string", cfg)
+				var value string
+				assert.NoError(t, config.Unmarshal("config.nest", &value))
+				assert.Equal(t, "string", value)
 			},
 		},
 		{
@@ -89,9 +89,9 @@ func TestConfig_Unmarshal(t *testing.T) {
 				),
 			},
 			assert: func(config konf.Config) {
-				var cfg string
-				assert.NoError(t, config.Unmarshal("config_nest", &cfg))
-				assert.Equal(t, "string", cfg)
+				var value string
+				assert.NoError(t, config.Unmarshal("config_nest", &value))
+				assert.Equal(t, "string", value)
 			},
 		},
 		{
@@ -106,9 +106,9 @@ func TestConfig_Unmarshal(t *testing.T) {
 				),
 			},
 			assert: func(config konf.Config) {
-				var cfg string
-				assert.NoError(t, config.Unmarshal("config.nest", &cfg))
-				assert.Equal(t, "", cfg)
+				var value string
+				assert.NoError(t, config.Unmarshal("config.nest", &value))
+				assert.Equal(t, "", value)
 			},
 		},
 	}
@@ -139,9 +139,9 @@ func TestConfig_Watch(t *testing.T) {
 	config, err := konf.New(konf.WithLoader(watcher))
 	assert.NoError(t, err)
 
-	var cfg string
-	assert.NoError(t, config.Unmarshal("config", &cfg))
-	assert.Equal(t, "string", cfg)
+	var value string
+	assert.NoError(t, config.Unmarshal("config", &value))
+	assert.Equal(t, "string", value)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -149,14 +149,14 @@ func TestConfig_Watch(t *testing.T) {
 		assert.NoError(t, config.Watch(ctx))
 	}()
 
-	var newCfg atomic.Value
+	var newValue atomic.Value
 	config.OnChange(func(unmarshaler konf.Unmarshaler) {
-		var cfg string
-		assert.NoError(t, config.Unmarshal("config", &cfg))
-		newCfg.Store(cfg)
+		var value string
+		assert.NoError(t, config.Unmarshal("config", &value))
+		newValue.Store(value)
 	})
 	watcher.change(map[string]any{"config": "changed"})
-	assert.Equal(t, "changed", newCfg.Load())
+	assert.Equal(t, "changed", newValue.Load())
 }
 
 type mapWatcher chan map[string]any
