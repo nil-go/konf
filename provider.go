@@ -22,13 +22,3 @@ type Loader interface {
 type Watcher interface {
 	Watch(ctx context.Context, onChange func(map[string]any)) error
 }
-
-// ConfigAware is the interface that wraps the WithConfig method.
-//
-// WithConfig enables provider uses configuration loaded by providers before it.
-// It ensures the WithConfig is called before executing methods in Loader and Watcher.
-type ConfigAware interface {
-	WithConfig(config interface {
-		Unmarshal(path string, target any) error
-	})
-}

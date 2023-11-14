@@ -33,13 +33,18 @@ type Flag struct {
 
 // New returns a Flag with the given Option(s).
 func New(opts ...Option) Flag {
-	option := apply(opts)
+	option := &options{
+		delimiter: ".",
+	}
+	for _, opt := range opts {
+		opt(option)
+	}
 	if option.set == nil {
 		flag.Parse()
 		option.set = flag.CommandLine
 	}
 
-	return Flag(option)
+	return Flag(*option)
 }
 
 func (f Flag) Load() (map[string]any, error) {

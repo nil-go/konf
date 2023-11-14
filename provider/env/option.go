@@ -8,8 +8,8 @@ package env
 // E.g. if the given prefix is "server", it only loads environment variables
 // which name starts with "server".
 func WithPrefix(prefix string) Option {
-	return func(env *options) {
-		env.prefix = prefix
+	return func(options *options) {
+		options.prefix = prefix
 	}
 }
 
@@ -18,8 +18,8 @@ func WithPrefix(prefix string) Option {
 // The default delimiter is `_`, which loads the environment variable `PARENT_CHILD_KEY="1"`
 // as `{PARENT: {CHILD: {KEY: "1"}}}`.
 func WithDelimiter(delimiter string) Option {
-	return func(env *options) {
-		env.delimiter = delimiter
+	return func(options *options) {
+		options.delimiter = delimiter
 	}
 }
 
@@ -27,14 +27,3 @@ func WithDelimiter(delimiter string) Option {
 type Option func(*options)
 
 type options Env
-
-func apply(opts []Option) options {
-	option := &options{
-		delimiter: "_",
-	}
-	for _, opt := range opts {
-		opt(option)
-	}
-
-	return *option
-}

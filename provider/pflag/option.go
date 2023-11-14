@@ -10,8 +10,8 @@ import "github.com/spf13/pflag"
 // E.g. if the given prefix is "server", it only loads flags
 // which name starts with "server".
 func WithPrefix(prefix string) Option {
-	return func(pflag *options) {
-		pflag.prefix = prefix
+	return func(options *options) {
+		options.prefix = prefix
 	}
 }
 
@@ -19,8 +19,8 @@ func WithPrefix(prefix string) Option {
 //
 // The default flag set is [pflag.CommandLine] plus [flag.CommandLine].
 func WithFlagSet(set *pflag.FlagSet) Option {
-	return func(pflag *options) {
-		pflag.set = set
+	return func(options *options) {
+		options.set = set
 	}
 }
 
@@ -29,8 +29,8 @@ func WithFlagSet(set *pflag.FlagSet) Option {
 // The default delimiter is `_`, which loads the flag `parent.child.key` with value 1
 // as `{parent: {child: {key: 1}}}`.
 func WithDelimiter(delimiter string) Option {
-	return func(pflag *options) {
-		pflag.delimiter = delimiter
+	return func(options *options) {
+		options.delimiter = delimiter
 	}
 }
 
@@ -38,14 +38,3 @@ func WithDelimiter(delimiter string) Option {
 type Option func(*options)
 
 type options PFlag
-
-func apply(opts []Option) options {
-	option := &options{
-		delimiter: ".",
-	}
-	for _, opt := range opts {
-		opt(option)
-	}
-
-	return *option
-}

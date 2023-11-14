@@ -111,17 +111,6 @@ func TestConfig_Unmarshal(t *testing.T) {
 				assert.Equal(t, "", cfg)
 			},
 		},
-		{
-			description: "configer",
-			opts: []konf.Option{
-				konf.WithLoader(mapLoader{}),
-			},
-			assert: func(config konf.Config) {
-				var configured bool
-				assert.NoError(t, config.Unmarshal("configured", &configured))
-				assert.True(t, configured)
-			},
-		},
 	}
 
 	for i := range testcases {
@@ -138,14 +127,6 @@ func TestConfig_Unmarshal(t *testing.T) {
 }
 
 type mapLoader map[string]any
-
-func (m mapLoader) WithConfig(
-	interface {
-		Unmarshal(path string, target any) error
-	},
-) {
-	m["configured"] = true
-}
 
 func (m mapLoader) Load() (map[string]any, error) {
 	return m, nil

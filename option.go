@@ -8,8 +8,8 @@ package konf
 // Each loader takes precedence over the loaders before it
 // while multiple loaders are specified.
 func WithLoader(loaders ...Loader) Option {
-	return func(config *options) {
-		config.loaders = append(config.loaders, loaders...)
+	return func(options *options) {
+		options.loaders = append(options.loaders, loaders...)
 	}
 }
 
@@ -17,8 +17,8 @@ func WithLoader(loaders ...Loader) Option {
 //
 // The default delimiter is `.`, which makes config path like `parent.child.key`.
 func WithDelimiter(delimiter string) Option {
-	return func(config *options) {
-		config.delimiter = delimiter
+	return func(options *options) {
+		options.delimiter = delimiter
 	}
 }
 
@@ -29,17 +29,4 @@ type options struct {
 	Config
 
 	loaders []Loader
-}
-
-func apply(opts []Option) options {
-	option := &options{
-		Config: Config{
-			delimiter: ".",
-		},
-	}
-	for _, opt := range opts {
-		opt(option)
-	}
-
-	return *option
 }

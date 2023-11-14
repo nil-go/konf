@@ -30,26 +30,28 @@ type Unmarshaler interface {
 
 // New returns a Config with the given Option(s).
 func New(opts ...Option) (Config, error) {
-	option := apply(opts)
-	config := option.Config
-	config.values = &provider{values: make(map[string]any)}
-	config.providers = make([]*provider, 0, len(option.loaders))
-	config.onChanges = &onChanges{onChanges: make(map[string][]func(Unmarshaler))}
+	option := &options{
+		Config: Config{
+			delimiter: ".",
+		},
+	}
+	for _, opt := range opts {
+		opt(option)
+	}
+	option.values = &provider{values: make(map[string]any)}
+	option.providers = make([]*provider, 0, len(option.loaders))
+	option.onChanges = &onChanges{onChanges: make(map[string][]func(Unmarshaler))}
 
 	for _, loader := range option.loaders {
 		if loader == nil {
 			continue
 		}
 
-		if configAware, ok := loader.(ConfigAware); ok {
-			configAware.WithConfig(config)
-		}
-
 		values, err := loader.Load()
 		if err != nil {
 			return Config{}, fmt.Errorf("[konf] load configuration: %w", err)
 		}
-		maps.Merge(config.values.values, values)
+		maps.Merge(option.values.values, values)
 		slog.Info(
 			"Configuration has been loaded.",
 			"loader", loader,
@@ -61,10 +63,10 @@ func New(opts ...Option) (Config, error) {
 		if w, ok := loader.(Watcher); ok {
 			provider.watcher = w
 		}
-		config.providers = append(config.providers, provider)
+		option.providers = append(option.providers, provider)
 	}
 
-	return config, nil
+	return option.Config, nil
 }
 
 // Watch watches and updates configuration when it changes.
