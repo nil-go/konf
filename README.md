@@ -31,7 +31,7 @@ configuration source(s) (implementation) it actually wants to use. Something lik
     func main() {
         // Create the global Config that loads configuration
         // from embed file system and environment variables.
-        cfg, err := konf.New(
+        config, err := konf.New(
             konf.WithLoader(
                 fs.New(config, "config/config.json"),
                 env.New(env.WithPrefix("server")),
@@ -40,23 +40,15 @@ configuration source(s) (implementation) it actually wants to use. Something lik
         if err != nil {
             // Handle error here.
         }
-        konf.SetGlobal(cfg)
 
-        // ... other setup code ...
-    }
-```
-
-Application also can watch the changes of configuration like:
-
-```
-    func main() {
-        // ... setup global Config ...
-
+        // Watch the changes of configuration.
         go func() {
-          if err := konf.Watch(ctx); err != nil {
+          if err := config.Watch(ctx); err != nil {
             // Handle error here.
           }
         }
+
+        konf.SetGlobal(config)
 
         // ... other setup code ...
     }

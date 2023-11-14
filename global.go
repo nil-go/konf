@@ -4,7 +4,6 @@
 package konf
 
 import (
-	"context"
 	"log/slog"
 	"reflect"
 	"sync"
@@ -44,17 +43,6 @@ func Unmarshal(path string, target any) error {
 	defer mux.RUnlock()
 
 	return global.Unmarshal(path, target)
-}
-
-// Watch watches and updates configuration when it changes.
-// It blocks until ctx is done, or the service returns an error.
-//
-// It only can be called once. Call after first has no effects.
-func Watch(ctx context.Context) error {
-	mux.RLock()
-	defer mux.RUnlock()
-
-	return global.Watch(ctx)
 }
 
 // OnChange executes the given onChange function while the value of any given path

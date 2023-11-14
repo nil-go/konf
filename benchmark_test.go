@@ -4,8 +4,6 @@
 package konf_test
 
 import (
-	"context"
-	"sync/atomic"
 	"testing"
 
 	"github.com/ktong/konf"
@@ -42,27 +40,17 @@ func BenchmarkGet(b *testing.B) {
 	assert.Equal(b, "v", value)
 }
 
-func BenchmarkWatch(b *testing.B) {
-	watcher := mapWatcher(make(chan map[string]any))
-	config, err := konf.New(konf.WithLoader(watcher))
+func BenchmarkUnmarshal(b *testing.B) {
+	config, err := konf.New(konf.WithLoader(mapLoader{"k": "v"}))
 	assert.NoError(b, err)
 	konf.SetGlobal(config)
-
-	assert.Equal(b, "string", konf.Get[string]("config"))
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	go func() {
-		assert.NoError(b, konf.Watch(ctx))
-	}()
 	b.ResetTimer()
 
-	var cfg atomic.Value
-	konf.OnChange(func() {
-		cfg.Store(konf.Get[string]("config"))
-	})
+	var value string
 	for i := 0; i < b.N; i++ {
-		watcher.change(map[string]any{"config": "changed"})
+		_ = konf.Unmarshal("k", &value)
 	}
 	b.StopTimer()
-	assert.Equal(b, "changed", cfg.Load())
+
+	assert.Equal(b, "v", value)
 }
