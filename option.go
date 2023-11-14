@@ -22,6 +22,15 @@ func WithDelimiter(delimiter string) Option {
 	}
 }
 
+// WithTagName provides the tag name that it reads for field names.
+//
+// The default tag name is `konf`.
+func WithTagName(tagName string) Option {
+	return func(options *options) {
+		options.tagName = tagName
+	}
+}
+
 // Option configures the given Config.
 type Option func(*options)
 
