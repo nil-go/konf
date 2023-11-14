@@ -35,14 +35,19 @@ type PFlag struct {
 
 // New returns a PFlag with the given Option(s).
 func New(opts ...Option) PFlag {
-	option := apply(opts)
+	option := &options{
+		delimiter: ".",
+	}
+	for _, opt := range opts {
+		opt(option)
+	}
 	if option.set == nil {
 		pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
 		pflag.Parse()
 		option.set = pflag.CommandLine
 	}
 
-	return PFlag(option)
+	return PFlag(*option)
 }
 
 func (f PFlag) Load() (map[string]any, error) {
