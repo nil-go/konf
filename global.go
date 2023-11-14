@@ -6,6 +6,7 @@ package konf
 import (
 	"log/slog"
 	"reflect"
+	"sync"
 
 	"github.com/ktong/konf/provider/env"
 )
@@ -16,7 +17,7 @@ import (
 // The path is case-insensitive.
 func Get[T any](path string) T { //nolint:ireturn
 	var value T
-	if err := global.Unmarshal(path, &value); err != nil {
+	if err := Unmarshal(path, &value); err != nil {
 		slog.Error(
 			"Could not read config, return empty value instead.",
 			"error", err,
@@ -35,6 +36,8 @@ func Get[T any](path string) T { //nolint:ireturn
 //
 // The path is case-insensitive.
 func Unmarshal(path string, target any) error {
+	initIfNecessary()
+
 	return global.Unmarshal(path, target)
 }
 
@@ -43,6 +46,7 @@ func Unmarshal(path string, target any) error {
 //
 // It requires Watch has been called.
 func OnChange(onChange func(), paths ...string) {
+	initIfNecessary()
 	global.OnChange(func(Unmarshaler) { onChange() }, paths...)
 }
 
@@ -55,4 +59,16 @@ func SetGlobal(config Config) {
 	global = config
 }
 
-var global, _ = New(WithLoader(env.New())) //nolint:gochecknoglobals
+func initIfNecessary() {
+	globalOnce.Do(func() {
+		if reflect.ValueOf(global).IsZero() {
+			global, _ = New(WithLoader(env.New()))
+		}
+	})
+}
+
+//nolint:gochecknoglobals
+var (
+	global     Config
+	globalOnce sync.Once
+)
