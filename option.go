@@ -3,6 +3,8 @@
 
 package konf
 
+import "github.com/mitchellh/mapstructure"
+
 // WithLoader provides the loaders that configuration is loaded from.
 //
 // Each loader takes precedence over the loaders before it
@@ -19,6 +21,22 @@ func WithLoader(loaders ...Loader) Option {
 func WithDelimiter(delimiter string) Option {
 	return func(options *options) {
 		options.delimiter = delimiter
+	}
+}
+
+// WithTagName provides the tag name that [mapstructure] reads for field names.
+//
+// The default tag name is `konf`.
+func WithTagName(tagName string) Option {
+	return func(options *options) {
+		options.tagName = tagName
+	}
+}
+
+// WithDecodeHook provides the decode hook for [mapstructure] decoding.
+func WithDecodeHook(decodeHook mapstructure.DecodeHookFunc) Option {
+	return func(options *options) {
+		options.decodeHook = decodeHook
 	}
 }
 
