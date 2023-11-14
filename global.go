@@ -31,7 +31,7 @@ func Get[T any](path string) T { //nolint:ireturn
 }
 
 // Unmarshal loads configuration under the given path into the given object
-// pointed to by target. It supports [mapstructure] tags on struct fields.
+// pointed to by target. It supports [konf] tags on struct fields for customized field name.
 //
 // The path is case-insensitive.
 func Unmarshal(path string, target any) error {

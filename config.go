@@ -19,8 +19,9 @@ import (
 
 // Config is a registry which holds configuration loaded by Loader(s).
 type Config struct {
-	delimiter string
-	tagName   string
+	delimiter  string
+	tagName    string
+	decodeHook mapstructure.DecodeHookFunc
 
 	values    *provider
 	providers []*provider
@@ -37,6 +38,10 @@ func New(opts ...Option) (Config, error) {
 		Config: Config{
 			delimiter: ".",
 			tagName:   "konf",
+			decodeHook: mapstructure.ComposeDecodeHookFunc(
+				mapstructure.StringToTimeDurationHookFunc(),
+				textUnmarshalerHookFunc(),
+			),
 		},
 	}
 	for _, opt := range opts {
@@ -226,7 +231,7 @@ func (c *onChanges) filter(predict func(string) bool) []func(Unmarshaler) {
 }
 
 // Unmarshal loads configuration under the given path into the given object
-// pointed to by target. It supports [mapstructure] tags on struct fields.
+// pointed to by target. It supports [konf] tags on struct fields for customized field name.
 //
 // The path is case-insensitive.
 func (c Config) Unmarshal(path string, target any) error {
@@ -234,11 +239,8 @@ func (c Config) Unmarshal(path string, target any) error {
 		&mapstructure.DecoderConfig{
 			Result:           target,
 			WeaklyTypedInput: true,
-			DecodeHook: mapstructure.ComposeDecodeHookFunc(
-				mapstructure.StringToTimeDurationHookFunc(),
-				textUnmarshalerHookFunc(),
-			),
-			TagName: c.tagName,
+			DecodeHook:       c.decodeHook,
+			TagName:          c.tagName,
 		},
 	)
 	if err != nil {
