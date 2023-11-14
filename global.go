@@ -6,7 +6,6 @@ package konf
 import (
 	"log/slog"
 	"reflect"
-	"sync"
 
 	"github.com/ktong/konf/provider/env"
 )
@@ -16,9 +15,6 @@ import (
 //
 // The path is case-insensitive.
 func Get[T any](path string) T { //nolint:ireturn
-	mux.RLock()
-	defer mux.RUnlock()
-
 	var value T
 	if err := global.Unmarshal(path, &value); err != nil {
 		slog.Error(
@@ -39,9 +35,6 @@ func Get[T any](path string) T { //nolint:ireturn
 //
 // The path is case-insensitive.
 func Unmarshal(path string, target any) error {
-	mux.RLock()
-	defer mux.RUnlock()
-
 	return global.Unmarshal(path, target)
 }
 
@@ -50,25 +43,16 @@ func Unmarshal(path string, target any) error {
 //
 // It requires Watch has been called.
 func OnChange(onChange func(), paths ...string) {
-	mux.RLock()
-	defer mux.RUnlock()
-
 	global.OnChange(func(Unmarshaler) { onChange() }, paths...)
 }
 
-// SetGlobal makes c the global Config. After this call,
+// SetGlobal makes config as the global Config. After this call,
 // the konf package's functions (e.g. konf.Get) will read from the global config.
+// This method is not concurrency-safe.
 //
 // The default global config only loads configuration from environment variables.
 func SetGlobal(config Config) {
-	mux.Lock()
-	defer mux.Unlock()
-
 	global = config
 }
 
-//nolint:gochecknoglobals
-var (
-	global, _ = New(WithLoader(env.New()))
-	mux       sync.RWMutex
-)
+var global, _ = New(WithLoader(env.New())) //nolint:gochecknoglobals
