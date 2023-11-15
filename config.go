@@ -19,13 +19,13 @@ import (
 
 // Config is a registry which holds configuration loaded by Loader(s).
 type Config struct {
+	decodeHook mapstructure.DecodeHookFunc
 	delimiter  string
 	tagName    string
-	decodeHook mapstructure.DecodeHookFunc
 
+	onChanges *onChanges
 	values    *provider
 	providers []*provider
-	onChanges *onChanges
 }
 
 type Unmarshaler interface {
@@ -163,9 +163,9 @@ func (c Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen
 }
 
 type provider struct {
+	values    map[string]any
 	watcher   Watcher
 	watchOnce sync.Once
-	values    map[string]any
 }
 
 func (p *provider) sub(path string, delimiter string) any {

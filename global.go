@@ -24,8 +24,6 @@ func Get[T any](path string) T { //nolint:ireturn
 			"path", path,
 			"type", reflect.TypeOf(value),
 		)
-
-		return *new(T)
 	}
 
 	return value
