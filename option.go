@@ -44,7 +44,6 @@ func WithDecodeHook(decodeHook mapstructure.DecodeHookFunc) Option {
 type Option func(*options)
 
 type options struct {
-	Config
-
 	loaders []Loader
+	Config
 }

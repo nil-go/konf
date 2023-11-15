@@ -191,7 +191,7 @@ func TestConfig_Watch_error(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	assert.EqualError(t, config.Watch(ctx), "[konf] watch configuration change: watch error")
+	assert.EqualError(t, config.Watch(ctx), "watch configuration change: watch error")
 }
 
 type errorWatcher struct{}
@@ -208,7 +208,7 @@ func TestConfig_error(t *testing.T) {
 	t.Parallel()
 
 	_, err := konf.New(konf.WithLoader(errorLoader{}))
-	assert.EqualError(t, err, "[konf] load configuration: load error")
+	assert.EqualError(t, err, "load configuration: load error")
 }
 
 type errorLoader struct{}

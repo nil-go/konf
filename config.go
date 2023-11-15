@@ -6,6 +6,7 @@ package konf
 import (
 	"context"
 	"encoding"
+	"errors"
 	"fmt"
 	"log/slog"
 	"reflect"
@@ -23,9 +24,12 @@ type Config struct {
 	delimiter  string
 	tagName    string
 
-	onChanges *onChanges
 	values    *provider
 	providers []*provider
+
+	onChanges        map[string][]func(Unmarshaler)
+	onChangesChannel chan []func(Unmarshaler)
+	onChangesMutex   sync.RWMutex
 }
 
 type Unmarshaler interface {
@@ -49,7 +53,7 @@ func New(opts ...Option) (*Config, error) {
 	}
 	option.values = &provider{values: make(map[string]any)}
 	option.providers = make([]*provider, 0, len(option.loaders))
-	option.onChanges = &onChanges{onChanges: make(map[string][]func(Unmarshaler))}
+	option.onChanges = make(map[string][]func(Unmarshaler))
 
 	for _, loader := range option.loaders {
 		if loader == nil {
@@ -58,7 +62,7 @@ func New(opts ...Option) (*Config, error) {
 
 		values, err := loader.Load()
 		if err != nil {
-			return nil, fmt.Errorf("[konf] load configuration: %w", err)
+			return nil, fmt.Errorf("load configuration: %w", err)
 		}
 		maps.Merge(option.values.values, values)
 		slog.Info(
@@ -82,66 +86,20 @@ func New(opts ...Option) (*Config, error) {
 // It blocks until ctx is done, or the service returns an error.
 //
 // It only can be called once. Call after first has no effects.
-func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen
-	changeChan := make(chan []func(Unmarshaler))
-	defer close(changeChan)
+func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocognit
+	c.onChangesChannel = make(chan []func(Unmarshaler))
+	defer close(c.onChangesChannel)
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	var (
-		firstErr   error
-		errOnce    sync.Once
-		waitGroup  sync.WaitGroup
-		hasWatcher bool
-	)
-	for _, p := range c.providers {
-		if p.watcher != nil {
-			watcher := p
-
-			watcher.watchOnce.Do(func() {
-				hasWatcher = true
-
-				waitGroup.Add(1)
-				go func() {
-					defer waitGroup.Done()
-
-					onChange := func(values map[string]any) {
-						slog.Info(
-							"Configuration has been changed.",
-							"watcher", watcher.watcher,
-						)
-
-						// Find the onChanges should be triggered.
-						oldValues := &provider{values: watcher.values}
-						newValues := &provider{values: values}
-						onChanges := c.onChanges.filter(func(path string) bool {
-							return oldValues.sub(path, c.delimiter) != nil || newValues.sub(path, c.delimiter) != nil
-						})
-						watcher.values = values
-						changeChan <- onChanges
-					}
-					if err := watcher.watcher.Watch(ctx, onChange); err != nil {
-						errOnce.Do(func() {
-							firstErr = fmt.Errorf("[konf] watch configuration change: %w", err)
-							cancel()
-						})
-					}
-				}()
-			})
-		}
-	}
-
-	if !hasWatcher {
-		return nil
-	}
-
+	var waitGroup sync.WaitGroup
 	waitGroup.Add(1)
 	go func() {
 		defer waitGroup.Done()
 
 		for {
 			select {
-			case onChanges := <-changeChan:
+			case onChanges := <-c.onChangesChannel:
 				values := make(map[string]any)
 				for _, w := range c.providers {
 					maps.Merge(values, w.values)
@@ -157,9 +115,60 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen
 			}
 		}
 	}()
-	waitGroup.Wait()
 
-	return firstErr
+	errChan := make(chan error, len(c.providers))
+	for _, p := range c.providers {
+		if p.watcher != nil {
+			watcher := p
+
+			watcher.watchOnce.Do(func() {
+				waitGroup.Add(1)
+				go func() {
+					defer waitGroup.Done()
+
+					onChange := func(values map[string]any) {
+						slog.Info(
+							"Configuration has been changed.",
+							"watcher", watcher.watcher,
+						)
+
+						// Find the onChanges should be triggered.
+						oldValues := &provider{values: watcher.values}
+						newValues := &provider{values: values}
+						onChanges := func() []func(Unmarshaler) {
+							c.onChangesMutex.RLock()
+							defer c.onChangesMutex.RUnlock()
+
+							var callbacks []func(Unmarshaler)
+							for path, onChanges := range c.onChanges {
+								if oldValues.sub(path, c.delimiter) != nil || newValues.sub(path, c.delimiter) != nil {
+									callbacks = append(callbacks, onChanges...)
+								}
+							}
+
+							return callbacks
+						}
+
+						watcher.values = values
+						c.onChangesChannel <- onChanges()
+					}
+					if err := watcher.watcher.Watch(ctx, onChange); err != nil {
+						cancel()
+						errChan <- fmt.Errorf("watch configuration change: %w", err)
+					}
+				}()
+			})
+		}
+	}
+	waitGroup.Wait()
+	close(errChan)
+
+	var err error
+	for e := range errChan {
+		err = errors.Join(e)
+	}
+
+	return err
 }
 
 type provider struct {
@@ -195,17 +204,8 @@ func (p *provider) sub(path string, delimiter string) any {
 //
 // It requires Config.Watch has been called.
 func (c *Config) OnChange(onchange func(Unmarshaler), paths ...string) {
-	c.onChanges.append(onchange, paths)
-}
-
-type onChanges struct {
-	onChanges map[string][]func(Unmarshaler)
-	mutex     sync.RWMutex
-}
-
-func (c *onChanges) append(onchange func(Unmarshaler), paths []string) {
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
+	c.onChangesMutex.Lock()
+	defer c.onChangesMutex.Unlock()
 
 	if len(paths) == 0 {
 		paths = []string{""}
@@ -214,20 +214,6 @@ func (c *onChanges) append(onchange func(Unmarshaler), paths []string) {
 	for _, path := range paths {
 		c.onChanges[path] = append(c.onChanges[path], onchange)
 	}
-}
-
-func (c *onChanges) filter(predict func(string) bool) []func(Unmarshaler) {
-	c.mutex.RLock()
-	defer c.mutex.RUnlock()
-
-	var callbacks []func(Unmarshaler)
-	for path, onChanges := range c.onChanges {
-		if predict(path) {
-			callbacks = append(callbacks, onChanges...)
-		}
-	}
-
-	return callbacks
 }
 
 // Unmarshal loads configuration under the given path into the given object
@@ -244,11 +230,11 @@ func (c *Config) Unmarshal(path string, target any) error {
 		},
 	)
 	if err != nil {
-		return fmt.Errorf("[konf] new decoder: %w", err)
+		return fmt.Errorf("new decoder: %w", err)
 	}
 
 	if err := decoder.Decode(c.values.sub(path, c.delimiter)); err != nil {
-		return fmt.Errorf("[konf] decode: %w", err)
+		return fmt.Errorf("decode: %w", err)
 	}
 
 	return nil
