@@ -12,7 +12,7 @@ import (
 
 func BenchmarkNew(b *testing.B) {
 	var (
-		config konf.Config
+		config *konf.Config
 		err    error
 	)
 	for i := 0; i < b.N; i++ {

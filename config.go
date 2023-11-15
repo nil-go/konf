@@ -33,7 +33,7 @@ type Unmarshaler interface {
 }
 
 // New returns a Config with the given Option(s).
-func New(opts ...Option) (Config, error) {
+func New(opts ...Option) (*Config, error) {
 	option := &options{
 		Config: Config{
 			delimiter: ".",
@@ -58,7 +58,7 @@ func New(opts ...Option) (Config, error) {
 
 		values, err := loader.Load()
 		if err != nil {
-			return Config{}, fmt.Errorf("[konf] load configuration: %w", err)
+			return nil, fmt.Errorf("[konf] load configuration: %w", err)
 		}
 		maps.Merge(option.values.values, values)
 		slog.Info(
@@ -75,14 +75,14 @@ func New(opts ...Option) (Config, error) {
 		option.providers = append(option.providers, provider)
 	}
 
-	return option.Config, nil
+	return &option.Config, nil
 }
 
 // Watch watches and updates configuration when it changes.
 // It blocks until ctx is done, or the service returns an error.
 //
 // It only can be called once. Call after first has no effects.
-func (c Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen
+func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen
 	changeChan := make(chan []func(Unmarshaler))
 	defer close(changeChan)
 	ctx, cancel := context.WithCancel(ctx)
@@ -194,7 +194,7 @@ func (p *provider) sub(path string, delimiter string) any {
 // (or any value is no paths) have been changed.
 //
 // It requires Config.Watch has been called.
-func (c Config) OnChange(onchange func(Unmarshaler), paths ...string) {
+func (c *Config) OnChange(onchange func(Unmarshaler), paths ...string) {
 	c.onChanges.append(onchange, paths)
 }
 
@@ -234,7 +234,7 @@ func (c *onChanges) filter(predict func(string) bool) []func(Unmarshaler) {
 // pointed to by target. It supports [konf] tags on struct fields for customized field name.
 //
 // The path is case-insensitive.
-func (c Config) Unmarshal(path string, target any) error {
+func (c *Config) Unmarshal(path string, target any) error {
 	decoder, err := mapstructure.NewDecoder(
 		&mapstructure.DecoderConfig{
 			Result:           target,

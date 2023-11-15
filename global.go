@@ -50,13 +50,13 @@ func OnChange(onChange func(), paths ...string) {
 // This method is not concurrency-safe.
 //
 // The default global config only loads configuration from environment variables.
-func SetGlobal(config Config) {
+func SetGlobal(config *Config) {
 	global = config
 }
 
-func getGlobal() Config {
+func getGlobal() *Config {
 	globalOnce.Do(func() {
-		if reflect.ValueOf(global).IsZero() {
+		if global == nil {
 			global, _ = New(WithLoader(env.New()))
 		}
 	})
@@ -66,6 +66,6 @@ func getGlobal() Config {
 
 //nolint:gochecknoglobals
 var (
-	global     Config
+	global     *Config
 	globalOnce sync.Once
 )

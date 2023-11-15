@@ -15,7 +15,7 @@ It defers the actual configuration loading to the `Loader` interface.
 The `Loader` and `Watcher` interface is intended for configuration source library implementers.
 They are pure interfaces which can be implemented to provide the actual configuration.
 
-This decoupling allows application developers to write code in terms of `konf.Config`
+This decoupling allows application developers to write code in terms of `*konf.Config`
 while the configuration source(s) is managed "up stack" (e.g. in or near `main()`).
 Application developers can then switch configuration sources(s) as necessary.
 

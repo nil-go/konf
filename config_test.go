@@ -20,11 +20,11 @@ func TestConfig_Unmarshal(t *testing.T) {
 	testcases := []struct {
 		description string
 		opts        []konf.Option
-		assert      func(konf.Config)
+		assert      func(*konf.Config)
 	}{
 		{
 			description: "empty values",
-			assert: func(config konf.Config) {
+			assert: func(config *konf.Config) {
 				var value string
 				assert.NoError(t, config.Unmarshal("config", &value))
 				assert.Equal(t, "", value)
@@ -33,7 +33,7 @@ func TestConfig_Unmarshal(t *testing.T) {
 		{
 			description: "nil loader",
 			opts:        []konf.Option{konf.WithLoader(nil)},
-			assert: func(config konf.Config) {
+			assert: func(config *konf.Config) {
 				var value string
 				assert.NoError(t, config.Unmarshal("config", &value))
 				assert.Equal(t, "", value)
@@ -42,7 +42,7 @@ func TestConfig_Unmarshal(t *testing.T) {
 		{
 			description: "for primary type",
 			opts:        []konf.Option{konf.WithLoader(mapLoader{"config": "string"})},
-			assert: func(config konf.Config) {
+			assert: func(config *konf.Config) {
 				var value string
 				assert.NoError(t, config.Unmarshal("config", &value))
 				assert.Equal(t, "string", value)
@@ -51,7 +51,7 @@ func TestConfig_Unmarshal(t *testing.T) {
 		{
 			description: "config for struct",
 			opts:        []konf.Option{konf.WithLoader(mapLoader{"config": "struct"})},
-			assert: func(config konf.Config) {
+			assert: func(config *konf.Config) {
 				var value struct {
 					Config string
 				}
@@ -70,7 +70,7 @@ func TestConfig_Unmarshal(t *testing.T) {
 					},
 				),
 			},
-			assert: func(config konf.Config) {
+			assert: func(config *konf.Config) {
 				var value string
 				assert.NoError(t, config.Unmarshal("config.nest", &value))
 				assert.Equal(t, "string", value)
@@ -88,7 +88,7 @@ func TestConfig_Unmarshal(t *testing.T) {
 					},
 				),
 			},
-			assert: func(config konf.Config) {
+			assert: func(config *konf.Config) {
 				var value string
 				assert.NoError(t, config.Unmarshal("config_nest", &value))
 				assert.Equal(t, "string", value)
@@ -105,7 +105,7 @@ func TestConfig_Unmarshal(t *testing.T) {
 					},
 				),
 			},
-			assert: func(config konf.Config) {
+			assert: func(config *konf.Config) {
 				var value string
 				assert.NoError(t, config.Unmarshal("config.nest", &value))
 				assert.Equal(t, "", value)
