@@ -36,9 +36,7 @@ func Get[T any](path string) T { //nolint:ireturn
 //
 // The path is case-insensitive.
 func Unmarshal(path string, target any) error {
-	initIfNecessary()
-
-	return global.Unmarshal(path, target)
+	return getGlobal().Unmarshal(path, target)
 }
 
 // OnChange executes the given onChange function while the value of any given path
@@ -46,8 +44,7 @@ func Unmarshal(path string, target any) error {
 //
 // It requires Watch has been called.
 func OnChange(onChange func(), paths ...string) {
-	initIfNecessary()
-	global.OnChange(func(Unmarshaler) { onChange() }, paths...)
+	getGlobal().OnChange(func(Unmarshaler) { onChange() }, paths...)
 }
 
 // SetGlobal makes config as the global Config. After this call,
@@ -59,12 +56,14 @@ func SetGlobal(config Config) {
 	global = config
 }
 
-func initIfNecessary() {
+func getGlobal() Config {
 	globalOnce.Do(func() {
 		if reflect.ValueOf(global).IsZero() {
 			global, _ = New(WithLoader(env.New()))
 		}
 	})
+
+	return global
 }
 
 //nolint:gochecknoglobals
