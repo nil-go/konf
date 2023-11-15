@@ -22,9 +22,9 @@ import (
 
 // FS is a Provider that loads configuration from file system.
 type FS struct {
+	unmarshal      func([]byte, any) error
 	fs             fs.FS
 	path           string
-	unmarshal      func([]byte, any) error
 	ignoreNotExist bool
 }
 
