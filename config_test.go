@@ -20,11 +20,12 @@ func TestConfig_Unmarshal(t *testing.T) {
 	testcases := []struct {
 		description string
 		opts        []konf.Option
-		assert      func(konf.Config)
+		loaders     []konf.Loader
+		assert      func(*konf.Config)
 	}{
 		{
 			description: "empty values",
-			assert: func(config konf.Config) {
+			assert: func(config *konf.Config) {
 				var value string
 				assert.NoError(t, config.Unmarshal("config", &value))
 				assert.Equal(t, "", value)
@@ -32,8 +33,9 @@ func TestConfig_Unmarshal(t *testing.T) {
 		},
 		{
 			description: "nil loader",
-			opts:        []konf.Option{konf.WithLoader(nil)},
-			assert: func(config konf.Config) {
+			opts:        []konf.Option{},
+			loaders:     []konf.Loader{nil},
+			assert: func(config *konf.Config) {
 				var value string
 				assert.NoError(t, config.Unmarshal("config", &value))
 				assert.Equal(t, "", value)
@@ -41,8 +43,8 @@ func TestConfig_Unmarshal(t *testing.T) {
 		},
 		{
 			description: "for primary type",
-			opts:        []konf.Option{konf.WithLoader(mapLoader{"config": "string"})},
-			assert: func(config konf.Config) {
+			loaders:     []konf.Loader{mapLoader{"config": "string"}},
+			assert: func(config *konf.Config) {
 				var value string
 				assert.NoError(t, config.Unmarshal("config", &value))
 				assert.Equal(t, "string", value)
@@ -50,8 +52,8 @@ func TestConfig_Unmarshal(t *testing.T) {
 		},
 		{
 			description: "config for struct",
-			opts:        []konf.Option{konf.WithLoader(mapLoader{"config": "struct"})},
-			assert: func(config konf.Config) {
+			loaders:     []konf.Loader{mapLoader{"config": "struct"}},
+			assert: func(config *konf.Config) {
 				var value struct {
 					Config string
 				}
@@ -61,16 +63,14 @@ func TestConfig_Unmarshal(t *testing.T) {
 		},
 		{
 			description: "default delimiter",
-			opts: []konf.Option{
-				konf.WithLoader(
-					mapLoader{
-						"config": map[string]any{
-							"nest": "string",
-						},
+			loaders: []konf.Loader{
+				mapLoader{
+					"config": map[string]any{
+						"nest": "string",
 					},
-				),
+				},
 			},
-			assert: func(config konf.Config) {
+			assert: func(config *konf.Config) {
 				var value string
 				assert.NoError(t, config.Unmarshal("config.nest", &value))
 				assert.Equal(t, "string", value)
@@ -80,15 +80,15 @@ func TestConfig_Unmarshal(t *testing.T) {
 			description: "customized delimiter",
 			opts: []konf.Option{
 				konf.WithDelimiter("_"),
-				konf.WithLoader(
-					mapLoader{
-						"config": map[string]any{
-							"nest": "string",
-						},
-					},
-				),
 			},
-			assert: func(config konf.Config) {
+			loaders: []konf.Loader{
+				mapLoader{
+					"config": map[string]any{
+						"nest": "string",
+					},
+				},
+			},
+			assert: func(config *konf.Config) {
 				var value string
 				assert.NoError(t, config.Unmarshal("config_nest", &value))
 				assert.Equal(t, "string", value)
@@ -96,16 +96,14 @@ func TestConfig_Unmarshal(t *testing.T) {
 		},
 		{
 			description: "non string key",
-			opts: []konf.Option{
-				konf.WithLoader(
-					mapLoader{
-						"config": map[int]any{
-							1: "string",
-						},
+			loaders: []konf.Loader{
+				mapLoader{
+					"config": map[int]any{
+						1: "string",
 					},
-				),
+				},
 			},
-			assert: func(config konf.Config) {
+			assert: func(config *konf.Config) {
 				var value string
 				assert.NoError(t, config.Unmarshal("config.nest", &value))
 				assert.Equal(t, "", value)
@@ -119,7 +117,8 @@ func TestConfig_Unmarshal(t *testing.T) {
 		t.Run(testcase.description, func(t *testing.T) {
 			t.Parallel()
 
-			config, err := konf.New(testcase.opts...)
+			config := konf.New(testcase.opts...)
+			err := config.Load(testcase.loaders...)
 			assert.NoError(t, err)
 			testcase.assert(config)
 		})
@@ -135,8 +134,9 @@ func (m mapLoader) Load() (map[string]any, error) {
 func TestConfig_Watch(t *testing.T) {
 	t.Parallel()
 
+	config := konf.New()
 	watcher := mapWatcher(make(chan map[string]any))
-	config, err := konf.New(konf.WithLoader(watcher))
+	err := config.Load(watcher)
 	assert.NoError(t, err)
 
 	var value string
@@ -150,7 +150,7 @@ func TestConfig_Watch(t *testing.T) {
 	}()
 
 	var newValue atomic.Value
-	config.OnChange(func(unmarshaler konf.Unmarshaler) {
+	config.OnChange(func(config *konf.Config) {
 		var value string
 		assert.NoError(t, config.Unmarshal("config", &value))
 		newValue.Store(value)
@@ -185,13 +185,14 @@ func (m mapWatcher) change(values map[string]any) {
 func TestConfig_Watch_error(t *testing.T) {
 	t.Parallel()
 
-	config, err := konf.New(konf.WithLoader(errorWatcher{}))
+	config := konf.New()
+	err := config.Load(errorWatcher{})
 	assert.NoError(t, err)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	assert.EqualError(t, config.Watch(ctx), "[konf] watch configuration change: watch error")
+	assert.EqualError(t, config.Watch(ctx), "watch configuration change: watch error")
 }
 
 type errorWatcher struct{}
@@ -207,8 +208,9 @@ func (errorWatcher) Watch(context.Context, func(map[string]any)) error {
 func TestConfig_error(t *testing.T) {
 	t.Parallel()
 
-	_, err := konf.New(konf.WithLoader(errorLoader{}))
-	assert.EqualError(t, err, "[konf] load configuration: load error")
+	config := konf.New()
+	err := config.Load(errorLoader{})
+	assert.EqualError(t, err, "load configuration: load error")
 }
 
 type errorLoader struct{}

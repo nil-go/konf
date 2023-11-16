@@ -12,11 +12,12 @@ import (
 
 func BenchmarkNew(b *testing.B) {
 	var (
-		config konf.Config
+		config *konf.Config
 		err    error
 	)
 	for i := 0; i < b.N; i++ {
-		config, err = konf.New(konf.WithLoader(mapLoader{"k": "v"}))
+		config = konf.New()
+		err = config.Load(mapLoader{"k": "v"})
 	}
 	b.StopTimer()
 
@@ -26,7 +27,8 @@ func BenchmarkNew(b *testing.B) {
 }
 
 func BenchmarkGet(b *testing.B) {
-	config, err := konf.New(konf.WithLoader(mapLoader{"k": "v"}))
+	config := konf.New()
+	err := config.Load(mapLoader{"k": "v"})
 	assert.NoError(b, err)
 	konf.SetGlobal(config)
 	b.ResetTimer()
@@ -41,7 +43,8 @@ func BenchmarkGet(b *testing.B) {
 }
 
 func BenchmarkUnmarshal(b *testing.B) {
-	config, err := konf.New(konf.WithLoader(mapLoader{"k": "v"}))
+	config := konf.New()
+	err := config.Load(mapLoader{"k": "v"})
 	assert.NoError(b, err)
 	konf.SetGlobal(config)
 	b.ResetTimer()

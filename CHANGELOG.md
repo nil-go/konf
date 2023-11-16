@@ -9,12 +9,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
-- Split file and fs provider (#49).
-- Split Watch and OnChange for watching configuration changes (#52).
-
-### Removed
-
-- Remove konf.Logger in favor of slog (#48).
+- [BREAKING] Redesign API.
 
 ## [v0.2.0] - 3/18/2023
 

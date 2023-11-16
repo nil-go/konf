@@ -42,22 +42,25 @@ func Unmarshal(path string, target any) error {
 //
 // It requires Watch has been called.
 func OnChange(onChange func(), paths ...string) {
-	getGlobal().OnChange(func(Unmarshaler) { onChange() }, paths...)
+	getGlobal().OnChange(func(*Config) { onChange() }, paths...)
 }
 
 // SetGlobal makes config as the global Config. After this call,
 // the konf package's functions (e.g. konf.Get) will read from the global config.
-// This method is not concurrency-safe.
 //
 // The default global config only loads configuration from environment variables.
-func SetGlobal(config Config) {
+//
+// This method can be called multiple times but it is not concurrency-safe.
+func SetGlobal(config *Config) {
 	global = config
 }
 
-func getGlobal() Config {
+func getGlobal() *Config {
 	globalOnce.Do(func() {
-		if reflect.ValueOf(global).IsZero() {
-			global, _ = New(WithLoader(env.New()))
+		if global == nil {
+			global = New()
+			// It's safe to ignore error here since env loader does not return error.
+			_ = global.Load(env.New())
 		}
 	})
 
@@ -66,6 +69,6 @@ func getGlobal() Config {
 
 //nolint:gochecknoglobals
 var (
-	global     Config
+	global     *Config
 	globalOnce sync.Once
 )

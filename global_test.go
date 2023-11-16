@@ -17,9 +17,10 @@ import (
 func TestUnmarshal(t *testing.T) {
 	t.Parallel()
 
-	cfg, err := konf.New(konf.WithLoader(mapLoader{"config": "string"}))
+	config := konf.New()
+	err := config.Load(mapLoader{"config": "string"})
 	assert.NoError(t, err)
-	konf.SetGlobal(cfg)
+	konf.SetGlobal(config)
 
 	var v string
 	assert.NoError(t, konf.Unmarshal("config", &v))
@@ -29,17 +30,19 @@ func TestUnmarshal(t *testing.T) {
 func TestGet(t *testing.T) {
 	t.Parallel()
 
-	cfg, err := konf.New(konf.WithLoader(mapLoader{"config": "string"}))
+	config := konf.New()
+	err := config.Load(mapLoader{"config": "string"})
 	assert.NoError(t, err)
-	konf.SetGlobal(cfg)
+	konf.SetGlobal(config)
 
 	assert.Equal(t, "string", konf.Get[string]("config"))
 }
 
 func TestGet_error(t *testing.T) {
-	cfg, err := konf.New(konf.WithLoader(mapLoader{"config": "string"}))
+	config := konf.New()
+	err := config.Load(mapLoader{"config": "string"})
 	assert.NoError(t, err)
-	konf.SetGlobal(cfg)
+	konf.SetGlobal(config)
 
 	buf := new(bytes.Buffer)
 	log.SetOutput(buf)
@@ -47,7 +50,7 @@ func TestGet_error(t *testing.T) {
 
 	assert.True(t, !konf.Get[bool]("config"))
 	expected := "ERROR Could not read config, return empty value instead." +
-		" error=\"[konf] decode: cannot parse '' as bool: strconv.ParseBool: parsing \\\"string\\\": invalid syntax\"" +
+		" error=\"decode: cannot parse '' as bool: strconv.ParseBool: parsing \\\"string\\\": invalid syntax\"" +
 		" path=config type=bool\n"
 	assert.Equal(t, expected, buf.String())
 }
