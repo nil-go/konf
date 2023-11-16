@@ -24,47 +24,57 @@ type Config struct {
 	delimiter  string
 	tagName    string
 
-	values    *provider
+	values    map[string]any
 	providers []*provider
 
-	onChanges        map[string][]func(Unmarshaler)
-	onChangesChannel chan []func(Unmarshaler)
+	onChanges        map[string][]func(*Config)
+	onChangesChannel chan []func(*Config)
 	onChangesMutex   sync.RWMutex
+
+	watchOnce sync.Once
 }
 
-type Unmarshaler interface {
-	Unmarshal(path string, target any) error
+type provider struct {
+	values  map[string]any
+	watcher Watcher
 }
 
 // New returns a Config with the given Option(s).
-func New(opts ...Option) (*Config, error) {
+func New(opts ...Option) *Config {
 	option := &options{
-		Config: Config{
-			delimiter: ".",
-			tagName:   "konf",
-			decodeHook: mapstructure.ComposeDecodeHookFunc(
-				mapstructure.StringToTimeDurationHookFunc(),
-				textUnmarshalerHookFunc(),
-			),
-		},
+		delimiter: ".",
+		tagName:   "konf",
+		decodeHook: mapstructure.ComposeDecodeHookFunc(
+			mapstructure.StringToTimeDurationHookFunc(),
+			textUnmarshalerHookFunc(),
+		),
+		values:    make(map[string]any),
+		onChanges: make(map[string][]func(*Config)),
 	}
 	for _, opt := range opts {
 		opt(option)
 	}
-	option.values = &provider{values: make(map[string]any)}
-	option.providers = make([]*provider, 0, len(option.loaders))
-	option.onChanges = make(map[string][]func(Unmarshaler))
 
-	for _, loader := range option.loaders {
+	return (*Config)(option)
+}
+
+// Load loads configuration from given loaders.
+//
+// Each loader takes precedence over the loaders before it
+// while multiple loaders are specified.
+//
+// This method can be called multiple times but it is not concurrency-safe.
+func (c *Config) Load(loaders ...Loader) error {
+	for _, loader := range loaders {
 		if loader == nil {
 			continue
 		}
 
 		values, err := loader.Load()
 		if err != nil {
-			return nil, fmt.Errorf("load configuration: %w", err)
+			return fmt.Errorf("load configuration: %w", err)
 		}
-		maps.Merge(option.values.values, values)
+		maps.Merge(c.values, values)
 		slog.Info(
 			"Configuration has been loaded.",
 			"loader", loader,
@@ -76,18 +86,27 @@ func New(opts ...Option) (*Config, error) {
 		if w, ok := loader.(Watcher); ok {
 			provider.watcher = w
 		}
-		option.providers = append(option.providers, provider)
+		c.providers = append(c.providers, provider)
 	}
 
-	return &option.Config, nil
+	return nil
 }
 
 // Watch watches and updates configuration when it changes.
 // It blocks until ctx is done, or the service returns an error.
+// WARNING: All loaders passed in Load after calling Watch do not get watched.
 //
 // It only can be called once. Call after first has no effects.
 func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocognit
-	c.onChangesChannel = make(chan []func(Unmarshaler))
+	initialized := true
+	c.watchOnce.Do(func() {
+		initialized = false
+	})
+	if initialized {
+		return nil
+	}
+
+	c.onChangesChannel = make(chan []func(*Config))
 	defer close(c.onChangesChannel)
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -104,7 +123,7 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 				for _, w := range c.providers {
 					maps.Merge(values, w.values)
 				}
-				c.values.values = values
+				c.values = values
 
 				for _, onChange := range onChanges {
 					onChange(c)
@@ -117,47 +136,44 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 	}()
 
 	errChan := make(chan error, len(c.providers))
-	for _, p := range c.providers {
-		if p.watcher != nil {
-			watcher := p
+	for _, provider := range c.providers {
+		if provider.watcher != nil {
+			provider := provider
 
-			watcher.watchOnce.Do(func() {
-				waitGroup.Add(1)
-				go func() {
-					defer waitGroup.Done()
+			waitGroup.Add(1)
+			go func() {
+				defer waitGroup.Done()
 
-					onChange := func(values map[string]any) {
-						slog.Info(
-							"Configuration has been changed.",
-							"watcher", watcher.watcher,
-						)
+				onChange := func(values map[string]any) {
+					slog.Info(
+						"Configuration has been changed.",
+						"provider", provider.watcher,
+					)
 
-						// Find the onChanges should be triggered.
-						oldValues := &provider{values: watcher.values}
-						newValues := &provider{values: values}
-						onChanges := func() []func(Unmarshaler) {
-							c.onChangesMutex.RLock()
-							defer c.onChangesMutex.RUnlock()
+					// Find the onChanges should be triggered.
+					oldValues := provider.values
+					provider.values = values
 
-							var callbacks []func(Unmarshaler)
-							for path, onChanges := range c.onChanges {
-								if oldValues.sub(path, c.delimiter) != nil || newValues.sub(path, c.delimiter) != nil {
-									callbacks = append(callbacks, onChanges...)
-								}
+					onChanges := func() []func(*Config) {
+						c.onChangesMutex.RLock()
+						defer c.onChangesMutex.RUnlock()
+
+						var callbacks []func(*Config)
+						for path, onChanges := range c.onChanges {
+							if sub(oldValues, path, c.delimiter) != nil || sub(values, path, c.delimiter) != nil {
+								callbacks = append(callbacks, onChanges...)
 							}
-
-							return callbacks
 						}
 
-						watcher.values = values
-						c.onChangesChannel <- onChanges()
+						return callbacks
 					}
-					if err := watcher.watcher.Watch(ctx, onChange); err != nil {
-						cancel()
-						errChan <- fmt.Errorf("watch configuration change: %w", err)
-					}
-				}()
-			})
+					c.onChangesChannel <- onChanges()
+				}
+				if err := provider.watcher.Watch(ctx, onChange); err != nil {
+					errChan <- fmt.Errorf("watch configuration change: %w", err)
+					cancel()
+				}
+			}()
 		}
 	}
 	waitGroup.Wait()
@@ -171,19 +187,13 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 	return err
 }
 
-type provider struct {
-	values    map[string]any
-	watcher   Watcher
-	watchOnce sync.Once
-}
-
-func (p *provider) sub(path string, delimiter string) any {
+func sub(values map[string]any, path string, delimiter string) any {
 	if path == "" {
-		return p.values
+		return values
 	}
 
-	var next any = p.values
-	for _, key := range strings.Split(strings.ToLower(path), delimiter) {
+	var next any = values
+	for _, key := range strings.Split(path, delimiter) {
 		mp, ok := next.(map[string]any)
 		if !ok {
 			return nil
@@ -201,9 +211,12 @@ func (p *provider) sub(path string, delimiter string) any {
 
 // OnChange executes the given onChange function while the value of any given path
 // (or any value is no paths) have been changed.
-//
 // It requires Config.Watch has been called.
-func (c *Config) OnChange(onchange func(Unmarshaler), paths ...string) {
+//
+// The paths are case-insensitive.
+//
+// This method is concurrency-safe.
+func (c *Config) OnChange(onchange func(*Config), paths ...string) {
 	c.onChangesMutex.Lock()
 	defer c.onChangesMutex.Unlock()
 
@@ -212,6 +225,7 @@ func (c *Config) OnChange(onchange func(Unmarshaler), paths ...string) {
 	}
 
 	for _, path := range paths {
+		path = strings.ToLower(path)
 		c.onChanges[path] = append(c.onChanges[path], onchange)
 	}
 }
@@ -233,7 +247,7 @@ func (c *Config) Unmarshal(path string, target any) error {
 		return fmt.Errorf("new decoder: %w", err)
 	}
 
-	if err := decoder.Decode(c.values.sub(path, c.delimiter)); err != nil {
+	if err := decoder.Decode(sub(c.values, strings.ToLower(path), c.delimiter)); err != nil {
 		return fmt.Errorf("decode: %w", err)
 	}
 

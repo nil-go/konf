@@ -29,15 +29,14 @@ configuration source(s) (implementation) it actually wants to use. Something lik
     var config embed.FS
 
     func main() {
-        // Create the global Config that loads configuration
-        // from embed file system and environment variables.
-        config, err := konf.New(
-            konf.WithLoader(
-                fs.New(config, "config/config.json"),
-                env.New(env.WithPrefix("server")),
-            ),
-        )
-        if err != nil {
+        // Create the Config.
+        config := konf.New()
+
+        // Load configuration from embed file system and environment variables.
+        if err := config.Load(
+            fs.New(config, "config/config.json"),
+            env.New(env.WithPrefix("server")),
+        ); err != nil {
             // Handle error here.
         }
 

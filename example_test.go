@@ -42,16 +42,15 @@ func ExampleUnmarshal() {
 var testdata embed.FS
 
 func ExampleSetGlobal() {
-	cfg, err := konf.New(
-		konf.WithLoader(
-			kfs.New(testdata, "testdata/config.json"),
-			env.New(env.WithPrefix("server")),
-		),
+	config := konf.New()
+	err := config.Load(
+		kfs.New(testdata, "testdata/config.json"),
+		env.New(env.WithPrefix("server")),
 	)
 	if err != nil {
 		// Handle error here.
 		panic(err)
 	}
-	konf.SetGlobal(cfg)
+	konf.SetGlobal(config)
 	// Output:
 }

@@ -5,16 +5,6 @@ package konf
 
 import "github.com/mitchellh/mapstructure"
 
-// WithLoader provides the loaders that configuration is loaded from.
-//
-// Each loader takes precedence over the loaders before it
-// while multiple loaders are specified.
-func WithLoader(loaders ...Loader) Option {
-	return func(options *options) {
-		options.loaders = append(options.loaders, loaders...)
-	}
-}
-
 // WithDelimiter provides the delimiter when specifying config path.
 //
 // The default delimiter is `.`, which makes config path like `parent.child.key`.
@@ -43,7 +33,4 @@ func WithDecodeHook(decodeHook mapstructure.DecodeHookFunc) Option {
 // Option configures the given Config.
 type Option func(*options)
 
-type options struct {
-	loaders []Loader
-	Config
-}
+type options Config

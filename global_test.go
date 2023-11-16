@@ -17,9 +17,10 @@ import (
 func TestUnmarshal(t *testing.T) {
 	t.Parallel()
 
-	cfg, err := konf.New(konf.WithLoader(mapLoader{"config": "string"}))
+	config := konf.New()
+	err := config.Load(mapLoader{"config": "string"})
 	assert.NoError(t, err)
-	konf.SetGlobal(cfg)
+	konf.SetGlobal(config)
 
 	var v string
 	assert.NoError(t, konf.Unmarshal("config", &v))
@@ -29,17 +30,19 @@ func TestUnmarshal(t *testing.T) {
 func TestGet(t *testing.T) {
 	t.Parallel()
 
-	cfg, err := konf.New(konf.WithLoader(mapLoader{"config": "string"}))
+	config := konf.New()
+	err := config.Load(mapLoader{"config": "string"})
 	assert.NoError(t, err)
-	konf.SetGlobal(cfg)
+	konf.SetGlobal(config)
 
 	assert.Equal(t, "string", konf.Get[string]("config"))
 }
 
 func TestGet_error(t *testing.T) {
-	cfg, err := konf.New(konf.WithLoader(mapLoader{"config": "string"}))
+	config := konf.New()
+	err := config.Load(mapLoader{"config": "string"})
 	assert.NoError(t, err)
-	konf.SetGlobal(cfg)
+	konf.SetGlobal(config)
 
 	buf := new(bytes.Buffer)
 	log.SetOutput(buf)
