@@ -73,6 +73,12 @@ func TestMerge(t *testing.T) {
 			dst:         map[string]any{"a": 1},
 			expected:    map[string]any{"a": map[string]any{"x": 2}},
 		},
+		{
+			description: "mix case",
+			src:         map[string]any{"a": map[string]any{"X": 2}},
+			dst:         map[string]any{},
+			expected:    map[string]any{"a": map[string]any{"x": 2}},
+		},
 	}
 
 	for _, testcase := range testcases {

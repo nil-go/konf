@@ -14,18 +14,20 @@ func Merge(dst, src map[string]any) {
 		// Ensure key is lower case since the path is case-insensitive.
 		key = strings.ToLower(key)
 
-		// Direct override if the dstVal is not map[string]any.
-		dstMap, succeed := dst[key].(map[string]any)
-		if !succeed {
+		// Direct override if the srcVal is not map[string]any.
+		srcMap, srcOk := srcVal.(map[string]any)
+		if !srcOk {
 			dst[key] = srcVal
 
 			continue
 		}
 
-		// Direct override if the srcVal is not map[string]any.
-		srcMap, succeed := srcVal.(map[string]any)
-		if !succeed {
-			dst[key] = srcVal
+		// Direct override if the dstVal is not map[string]any.
+		dstMap, dstOk := dst[key].(map[string]any)
+		if !dstOk {
+			values := make(map[string]any)
+			Merge(values, srcMap)
+			dst[key] = values
 
 			continue
 		}
