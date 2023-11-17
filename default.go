@@ -11,9 +11,8 @@ import (
 	"github.com/ktong/konf/provider/env"
 )
 
-// Get retrieves the value given the path to use.
-// It returns zero value if there is an error while getting configuration.
-//
+// Get returns the value under the given path.
+// It returns zero value if there is an error.
 // The path is case-insensitive.
 func Get[T any](path string) T { //nolint:ireturn
 	var value T
@@ -29,18 +28,19 @@ func Get[T any](path string) T { //nolint:ireturn
 	return value
 }
 
-// Unmarshal loads configuration under the given path into the given object
-// pointed to by target. It supports [konf] tags on struct fields for customized field name.
-//
+// Unmarshal reads configuration under the given path
+// into the given object pointed to by target.
 // The path is case-insensitive.
 func Unmarshal(path string, target any) error {
 	return defaultConfig.Load().Unmarshal(path, target)
 }
 
-// OnChange executes the given onChange function while the value of any given path
-// (or any value is no paths) have been changed.
+// OnChange executes the given onChange function
+// while the value of any given path have been changed.
+// It requires Config.Watch has been called first.
+// The paths are case-insensitive.
 //
-// It requires Watch has been called.
+// This method is concurrency-safe.
 func OnChange(onChange func(), paths ...string) {
 	defaultConfig.Load().OnChange(func(*Config) { onChange() }, paths...)
 }

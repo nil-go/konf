@@ -9,9 +9,15 @@ while callers can load configuration from whatever source is appropriate.
 It defines a type, [Config], which provides a method [Config.Unmarshal]
 for loading configuration under the given path into the given object.
 
-Each Config is associated with multiple [Loader],
+Each Config is associated with multiple [Loader](s),
 Which loads configuration from a source, such as file, environment variables etc.
 There is a default Config accessible through top-level functions
 (such as [Unmarshal] and [Get]) that call the corresponding Config methods.
+
+nested
+
+tagName
+
+# Watch
 */
 package konf
