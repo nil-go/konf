@@ -7,6 +7,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [v0.3.0] - 11/17/2023
+
 ### Changed
 
 - [BREAKING] Redesign API.
