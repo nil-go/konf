@@ -6,7 +6,7 @@ package konf
 import (
 	"log/slog"
 	"reflect"
-	"sync"
+	"sync/atomic"
 
 	"github.com/ktong/konf/provider/env"
 )
@@ -34,7 +34,7 @@ func Get[T any](path string) T { //nolint:ireturn
 //
 // The path is case-insensitive.
 func Unmarshal(path string, target any) error {
-	return getGlobal().Unmarshal(path, target)
+	return defaultConfig.Load().Unmarshal(path, target)
 }
 
 // OnChange executes the given onChange function while the value of any given path
@@ -42,33 +42,21 @@ func Unmarshal(path string, target any) error {
 //
 // It requires Watch has been called.
 func OnChange(onChange func(), paths ...string) {
-	getGlobal().OnChange(func(*Config) { onChange() }, paths...)
+	defaultConfig.Load().OnChange(func(*Config) { onChange() }, paths...)
 }
 
-// SetGlobal makes config as the global Config. After this call,
-// the konf package's functions (e.g. konf.Get) will read from the global config.
-//
-// The default global config only loads configuration from environment variables.
-//
-// This method can be called multiple times but it is not concurrency-safe.
-func SetGlobal(config *Config) {
-	global = config
+// SetDefault makes c the default [Config].
+// After this call, the konf package's top functions (e.g. konf.Get)
+// will read from the default config.
+func SetDefault(c *Config) {
+	defaultConfig.Store(c)
 }
 
-func getGlobal() *Config {
-	globalOnce.Do(func() {
-		if global == nil {
-			global = New()
-			// It's safe to ignore error here since env loader does not return error.
-			_ = global.Load(env.New())
-		}
-	})
+var defaultConfig atomic.Pointer[Config] //nolint:gochecknoglobals
 
-	return global
+func init() { //nolint:gochecknoinits
+	config := New()
+	// Ignore error as env loader does not return error.
+	_ = config.Load(env.New())
+	defaultConfig.Store(config)
 }
-
-//nolint:gochecknoglobals
-var (
-	global     *Config
-	globalOnce sync.Once
-)

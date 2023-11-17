@@ -20,7 +20,7 @@ func TestUnmarshal(t *testing.T) {
 	config := konf.New()
 	err := config.Load(mapLoader{"config": "string"})
 	assert.NoError(t, err)
-	konf.SetGlobal(config)
+	konf.SetDefault(config)
 
 	var v string
 	assert.NoError(t, konf.Unmarshal("config", &v))
@@ -33,7 +33,7 @@ func TestGet(t *testing.T) {
 	config := konf.New()
 	err := config.Load(mapLoader{"config": "string"})
 	assert.NoError(t, err)
-	konf.SetGlobal(config)
+	konf.SetDefault(config)
 
 	assert.Equal(t, "string", konf.Get[string]("config"))
 }
@@ -42,7 +42,7 @@ func TestGet_error(t *testing.T) {
 	config := konf.New()
 	err := config.Load(mapLoader{"config": "string"})
 	assert.NoError(t, err)
-	konf.SetGlobal(config)
+	konf.SetDefault(config)
 
 	buf := new(bytes.Buffer)
 	log.SetOutput(buf)

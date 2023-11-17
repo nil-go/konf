@@ -13,14 +13,14 @@ import (
 )
 
 func ExampleGet() {
-	ExampleSetGlobal()
+	ExampleSetDefault()
 
 	fmt.Print(konf.Get[string]("server.host"))
 	// Output: example.com
 }
 
 func ExampleUnmarshal() {
-	ExampleSetGlobal()
+	ExampleSetDefault()
 
 	cfg := struct {
 		Host string
@@ -41,7 +41,7 @@ func ExampleUnmarshal() {
 //go:embed testdata
 var testdata embed.FS
 
-func ExampleSetGlobal() {
+func ExampleSetDefault() {
 	config := konf.New()
 	err := config.Load(
 		kfs.New(testdata, "testdata/config.json"),
@@ -51,6 +51,6 @@ func ExampleSetGlobal() {
 		// Handle error here.
 		panic(err)
 	}
-	konf.SetGlobal(config)
+	konf.SetDefault(config)
 	// Output:
 }

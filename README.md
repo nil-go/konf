@@ -47,7 +47,7 @@ configuration source(s) (implementation) it actually wants to use. Something lik
           }
         }
 
-        konf.SetGlobal(config)
+        konf.SetDefault(config)
 
         // ... other setup code ...
     }
@@ -89,22 +89,3 @@ There are providers for the following configuration sources:
 - `flag` loads configuration from flags.
 - `fs` loads configuration from fs.FS.
 - `pflag` loads configuration from [spf13/pflag](https://github.com/spf13/pflag).
-
-## Compatibility
-
-konf ensures compatibility with the current supported versions of
-the [Go language](https://golang.org/doc/devel/release#policy):
-
-> Each major Go release is supported until there are two newer major releases.
-> For example, Go 1.5 was supported until the Go 1.7 release,
-> and Go 1.6 was supported until the Go 1.8 release.
-
-For versions of Go that are no longer supported upstream, konf will stop ensuring
-compatibility with these versions in the following manner:
-
-- A minor release of konf will be made to add support for the new
-  supported release of Go.
-- The following minor release of konf will remove compatibility
-  testing for the oldest (now archived upstream) version of Go. This, and
-  future, releases of konf may include features only supported by
-  the currently supported versions of Go.
