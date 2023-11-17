@@ -26,6 +26,8 @@ import (
 )
 
 // PFlag is a Provider that loads configuration from flags defined by [spf13/pflag].
+//
+// To create a new PFlag, call [New].
 type PFlag struct {
 	_         [0]func() // Ensure it's incomparable.
 	set       *pflag.FlagSet
@@ -33,7 +35,7 @@ type PFlag struct {
 	prefix    string
 }
 
-// New returns a PFlag with the given Option(s).
+// New creates a PFlag with the given Option(s).
 func New(opts ...Option) PFlag {
 	option := &options{
 		delimiter: ".",

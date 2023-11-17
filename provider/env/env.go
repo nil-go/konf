@@ -21,13 +21,15 @@ import (
 )
 
 // Env is a Provider that loads configuration from environment variables.
+//
+// To create a new Env, call [New].
 type Env struct {
 	_         [0]func() // Ensure it's incomparable.
 	prefix    string
 	delimiter string
 }
 
-// New returns an Env with the given Option(s).
+// New creates an Env with the given Option(s).
 func New(opts ...Option) Env {
 	option := &options{
 		delimiter: "_",

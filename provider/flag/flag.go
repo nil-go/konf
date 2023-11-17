@@ -24,6 +24,8 @@ import (
 )
 
 // Flag is a Provider that loads configuration from flags.
+//
+// To create a new Flag, call [New].
 type Flag struct {
 	_         [0]func() // Ensure it's incomparable.
 	set       *flag.FlagSet
@@ -31,7 +33,7 @@ type Flag struct {
 	prefix    string
 }
 
-// New returns a Flag with the given Option(s).
+// New creates a Flag with the given Option(s).
 func New(opts ...Option) Flag {
 	option := &options{
 		delimiter: ".",
