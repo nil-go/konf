@@ -14,10 +14,15 @@ Which loads configuration from a source, such as file, environment variables etc
 There is a default Config accessible through top-level functions
 (such as [Unmarshal] and [Get]) that call the corresponding Config methods.
 
-nested
+Configuration is hierarchical, and the path is a sequence of keys that separated by delimiter.
+The default delimiter is `.`, which makes configuration path like `parent.child.key`.
 
-tagName
+# Watch Changes
 
-# Watch
+[Config.Watch] watches and updates configuration when it changes, which leads [Config.Unmarshal]
+always returns latest configuration.
+
+You may use [Config.OnChange] to register a callback if the value of any path have been changed.
+It could push the change into application objects instead pulling the configuration periodically.
 */
 package konf

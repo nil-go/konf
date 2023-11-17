@@ -1,4 +1,4 @@
-# A minimal configuration API for Go
+# A minimalist configuration API for Go
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/ktong/konf.svg)](https://pkg.go.dev/github.com/ktong/konf)
 [![Build](https://github.com/ktong/konf/actions/workflows/test.yml/badge.svg)](https://github.com/ktong/konf/actions/workflows/test.yml)
@@ -19,7 +19,7 @@ This decoupling allows application developers to write code in terms of `*konf.C
 while the configuration source(s) is managed "up stack" (e.g. in or near `main()`).
 Application developers can then switch configuration sources(s) as necessary.
 
-## Typical usage
+## Usage
 
 Somewhere, early in an application's life, it will make a decision about which
 configuration source(s) (implementation) it actually wants to use. Something like:
