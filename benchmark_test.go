@@ -21,7 +21,7 @@ func BenchmarkNew(b *testing.B) {
 	}
 	b.StopTimer()
 
-	konf.SetGlobal(config)
+	konf.SetDefault(config)
 	assert.NoError(b, err)
 	assert.Equal(b, "v", konf.Get[string]("k"))
 }
@@ -30,7 +30,7 @@ func BenchmarkGet(b *testing.B) {
 	config := konf.New()
 	err := config.Load(mapLoader{"k": "v"})
 	assert.NoError(b, err)
-	konf.SetGlobal(config)
+	konf.SetDefault(config)
 	b.ResetTimer()
 
 	var value string
@@ -46,7 +46,7 @@ func BenchmarkUnmarshal(b *testing.B) {
 	config := konf.New()
 	err := config.Load(mapLoader{"k": "v"})
 	assert.NoError(b, err)
-	konf.SetGlobal(config)
+	konf.SetDefault(config)
 	b.ResetTimer()
 
 	var value string

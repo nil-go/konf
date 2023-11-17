@@ -21,6 +21,8 @@ import (
 )
 
 // FS is a Provider that loads configuration from file system.
+//
+// To create a new FS, call [New].
 type FS struct {
 	unmarshal      func([]byte, any) error
 	fs             fs.FS
@@ -28,7 +30,7 @@ type FS struct {
 	ignoreNotExist bool
 }
 
-// New returns a FS with the given fs.FS, path and Option(s).
+// New creates a FS with the given fs.FS, path and Option(s).
 func New(fs fs.FS, path string, opts ...Option) FS {
 	option := &options{
 		fs:        fs,

@@ -18,7 +18,9 @@ import (
 	"github.com/ktong/konf/internal/maps"
 )
 
-// Config is a registry which holds configuration loaded by Loader(s).
+// Config reads configuration from appropriate sources.
+//
+// To create a new Logger, call [New].
 type Config struct {
 	decodeHook mapstructure.DecodeHookFunc
 	delimiter  string
@@ -27,11 +29,9 @@ type Config struct {
 	values    map[string]any
 	providers []*provider
 
-	onChanges        map[string][]func(*Config)
-	onChangesChannel chan []func(*Config)
-	onChangesMutex   sync.RWMutex
-
-	watchOnce sync.Once
+	onChanges      map[string][]func(*Config)
+	onChangesMutex sync.RWMutex
+	watchOnce      sync.Once
 }
 
 type provider struct {
@@ -39,7 +39,7 @@ type provider struct {
 	watcher Watcher
 }
 
-// New returns a Config with the given Option(s).
+// New creates a new Config with the given Option(s).
 func New(opts ...Option) *Config {
 	option := &options{
 		delimiter: ".",
@@ -59,7 +59,6 @@ func New(opts ...Option) *Config {
 }
 
 // Load loads configuration from given loaders.
-//
 // Each loader takes precedence over the loaders before it
 // while multiple loaders are specified.
 //
@@ -106,8 +105,8 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 		return nil
 	}
 
-	c.onChangesChannel = make(chan []func(*Config))
-	defer close(c.onChangesChannel)
+	onChangesChannel := make(chan []func(*Config))
+	defer close(onChangesChannel)
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -118,7 +117,7 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 
 		for {
 			select {
-			case onChanges := <-c.onChangesChannel:
+			case onChanges := <-onChangesChannel:
 				values := make(map[string]any)
 				for _, w := range c.providers {
 					maps.Merge(values, w.values)
@@ -167,7 +166,7 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 
 						return callbacks
 					}
-					c.onChangesChannel <- onChanges()
+					onChangesChannel <- onChanges()
 				}
 				if err := provider.watcher.Watch(ctx, onChange); err != nil {
 					errChan <- fmt.Errorf("watch configuration change: %w", err)
@@ -209,10 +208,9 @@ func sub(values map[string]any, path string, delimiter string) any {
 	return next
 }
 
-// OnChange executes the given onChange function while the value of any given path
-// (or any value is no paths) have been changed.
-// It requires Config.Watch has been called.
-//
+// OnChange executes the given onChange function
+// while the value of any given path have been changed.
+// It requires Config.Watch has been called first.
 // The paths are case-insensitive.
 //
 // This method is concurrency-safe.
@@ -230,9 +228,8 @@ func (c *Config) OnChange(onchange func(*Config), paths ...string) {
 	}
 }
 
-// Unmarshal loads configuration under the given path into the given object
-// pointed to by target. It supports [konf] tags on struct fields for customized field name.
-//
+// Unmarshal reads configuration under the given path
+// into the given object pointed to by target.
 // The path is case-insensitive.
 func (c *Config) Unmarshal(path string, target any) error {
 	decoder, err := mapstructure.NewDecoder(

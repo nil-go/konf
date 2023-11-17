@@ -20,13 +20,15 @@ import (
 )
 
 // File is a Provider that loads configuration from file.
+//
+// To create a new File, call [New].
 type File struct {
 	path           string
 	unmarshal      func([]byte, any) error
 	ignoreNotExist bool
 }
 
-// New returns a File with the given path and Option(s).
+// New creates a File with the given path and Option(s).
 func New(path string, opts ...Option) File {
 	option := &options{
 		path:      path,
