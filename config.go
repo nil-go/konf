@@ -46,6 +46,7 @@ func New(opts ...Option) *Config {
 		tagName:   "konf",
 		decodeHook: mapstructure.ComposeDecodeHookFunc(
 			mapstructure.StringToTimeDurationHookFunc(),
+			mapstructure.StringToSliceHookFunc(","),
 			textUnmarshalerHookFunc(),
 		),
 		values:    make(map[string]any),
@@ -74,18 +75,21 @@ func (c *Config) Load(loaders ...Loader) error {
 			return fmt.Errorf("load configuration: %w", err)
 		}
 		maps.Merge(c.values, values)
-		slog.Info(
-			"Configuration has been loaded.",
-			"loader", loader,
-		)
 
+		// Merged to empty map to convert to lower case.
 		provider := &provider{
-			values: values,
+			values: make(map[string]any),
 		}
+		maps.Merge(provider.values, values)
 		if w, ok := loader.(Watcher); ok {
 			provider.watcher = w
 		}
 		c.providers = append(c.providers, provider)
+
+		slog.Info(
+			"Configuration has been loaded.",
+			"loader", loader,
+		)
 	}
 
 	return nil
@@ -144,17 +148,12 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 				defer waitGroup.Done()
 
 				onChange := func(values map[string]any) {
-					slog.Info(
-						"Configuration has been changed.",
-						"provider", provider.watcher,
-					)
-
-					// Both oldValues and newValues are merged to empty map to convert to lower case.
-					oldValues := make(map[string]any)
-					maps.Merge(oldValues, provider.values)
+					// Merged to empty map to convert to lower case.
 					newValues := make(map[string]any)
 					maps.Merge(newValues, values)
-					provider.values = values
+
+					oldValues := provider.values
+					provider.values = newValues
 
 					// Find the onChanges should be triggered.
 					onChanges := func() []func(*Config) {
@@ -171,6 +170,11 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 						return callbacks
 					}
 					onChangesChannel <- onChanges()
+
+					slog.Info(
+						"Configuration has been changed.",
+						"provider", provider.watcher,
+					)
 				}
 				if err := provider.watcher.Watch(ctx, onChange); err != nil {
 					errChan <- fmt.Errorf("watch configuration change: %w", err)
