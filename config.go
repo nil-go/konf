@@ -149,17 +149,21 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 						"provider", provider.watcher,
 					)
 
-					// Find the onChanges should be triggered.
-					oldValues := provider.values
+					// Both oldValues and newValues are merged to empty map to convert to lower case.
+					oldValues := make(map[string]any)
+					maps.Merge(oldValues, provider.values)
+					newValues := make(map[string]any)
+					maps.Merge(newValues, values)
 					provider.values = values
 
+					// Find the onChanges should be triggered.
 					onChanges := func() []func(*Config) {
 						c.onChangesMutex.RLock()
 						defer c.onChangesMutex.RUnlock()
 
 						var callbacks []func(*Config)
 						for path, onChanges := range c.onChanges {
-							if sub(oldValues, path, c.delimiter) != nil || sub(values, path, c.delimiter) != nil {
+							if sub(oldValues, path, c.delimiter) != nil || sub(newValues, path, c.delimiter) != nil {
 								callbacks = append(callbacks, onChanges...)
 							}
 						}

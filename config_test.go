@@ -154,15 +154,15 @@ func TestConfig_Watch(t *testing.T) {
 		var value string
 		assert.NoError(t, config.Unmarshal("config", &value))
 		newValue.Store(value)
-	})
-	watcher.change(map[string]any{"config": "changed"})
+	}, "config")
+	watcher.change(map[string]any{"Config": "changed"})
 	assert.Equal(t, "changed", newValue.Load())
 }
 
 type mapWatcher chan map[string]any
 
 func (m mapWatcher) Load() (map[string]any, error) {
-	return map[string]any{"config": "string"}, nil
+	return map[string]any{"Config": "string"}, nil
 }
 
 func (m mapWatcher) Watch(ctx context.Context, fn func(map[string]any)) error {
