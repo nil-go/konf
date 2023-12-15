@@ -11,8 +11,8 @@ import (
 	"github.com/ktong/konf/provider/env"
 )
 
-// Get returns the value under the given path.
-// It returns zero value if there is an error.
+// Get retrieves the value under the given path from the default Config.
+// It returns the zero value of the expected type if there is an error.
 // The path is case-insensitive.
 func Get[T any](path string) T { //nolint:ireturn
 	var value T
@@ -28,16 +28,15 @@ func Get[T any](path string) T { //nolint:ireturn
 	return value
 }
 
-// Unmarshal reads configuration under the given path
-// into the given object pointed to by target.
+// Unmarshal reads configuration under the given path from the default Config
+// and decodes it into the given object pointed to by target.
 // The path is case-insensitive.
 func Unmarshal(path string, target any) error {
 	return defaultConfig.Load().Unmarshal(path, target)
 }
 
-// OnChange executes the given onChange function
-// while the value of any given path have been changed.
-// It requires Config.Watch has been called first.
+// OnChange registers a callback function that is executed
+// when the value of any given path in the default Config changes.
 // The paths are case-insensitive.
 //
 // This method is concurrency-safe.
@@ -45,9 +44,9 @@ func OnChange(onChange func(), paths ...string) {
 	defaultConfig.Load().OnChange(func(*Config) { onChange() }, paths...)
 }
 
-// SetDefault makes c the default [Config].
+// SetDefault sets the given Config as the default Config.
 // After this call, the konf package's top functions (e.g. konf.Get)
-// will read from the default config.
+// will interact with the given Config.
 func SetDefault(c *Config) {
 	defaultConfig.Store(c)
 }

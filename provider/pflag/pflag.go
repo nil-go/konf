@@ -3,16 +3,13 @@
 
 // Package pflag loads configuration from flags defined by [spf13/pflag].
 //
-// PFlag loads all flags in [pflag.CommandLine] and returns nested map[string]any.
-// by splitting the names by `.`.E.g. the flag `parent.child.key` with value 1
-// is loaded as `{parent: {child: {key: 1}}}`.
+// PFlag loads flags in [pflag.CommandLine] whose names starts with the given prefix
+// and returns them as a nested map[string]any.
 // The unchanged flags with zero default value are skipped to avoid
 // overriding values set by other loader.
 //
-// The default behavior can be changed with following options:
-//   - WithPrefix enables loads flags with the given prefix in the name.
-//   - WithFlagSet provides the flag set that loads configuration from.
-//   - WithDelimiter provides the delimiter when splitting flag name to nested keys.
+// It splits the names by delimiter. For example, with the default delimiter ".",
+// the flag `parent.child.key="1"` is loaded as `{parent: {child: {key: "1"}}}`.
 package pflag
 
 import (

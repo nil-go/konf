@@ -5,9 +5,10 @@ package konf
 
 import "github.com/mitchellh/mapstructure"
 
-// WithDelimiter provides the delimiter when specifying config path.
+// WithDelimiter provides the delimiter used when specifying config paths.
+// The delimiter is used to separate keys in the path.
 //
-// The default delimiter is `.`, which makes config path like `parent.child.key`.
+// For example, with the default delimiter `.`, a config path might look like `parent.child.key`.
 func WithDelimiter(delimiter string) Option {
 	return func(options *options) {
 		options.delimiter = delimiter
@@ -15,8 +16,9 @@ func WithDelimiter(delimiter string) Option {
 }
 
 // WithTagName provides the tag name that [mapstructure] reads for field names.
+// The tag name is used by mapstructure when decoding configuration into structs.
 //
-// The default tag name is `konf`.
+// For example, with the default tag name `konf`, mapstructure would look for `konf` tags on struct fields.
 func WithTagName(tagName string) Option {
 	return func(options *options) {
 		options.tagName = tagName
@@ -24,13 +26,17 @@ func WithTagName(tagName string) Option {
 }
 
 // WithDecodeHook provides the decode hook for [mapstructure] decoding.
+// The decode hook is a function that can transform or customize how values are decoded.
+//
+// By default, it composes mapstructure.StringToTimeDurationHookFunc,
+// mapstructure.StringToSliceHookFunc(",") and mapstructure.TextUnmarshallerHookFunc.
 func WithDecodeHook(decodeHook mapstructure.DecodeHookFunc) Option {
 	return func(options *options) {
 		options.decodeHook = decodeHook
 	}
 }
 
-// Option configures the given Config.
+// Option configures a Config with specific options.
 type Option func(*options)
 
 type options Config

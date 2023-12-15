@@ -7,16 +7,16 @@ import "context"
 
 // Loader is the interface that wraps the Load method.
 //
-// Load loads latest configuration and returns as a nested map[string]any.
-// It requires that the string keys should be nested like `{parent: {child: {key: 1}}}`.
-// The key in returned map should be case-insensitive, otherwise random overridden exists.
+// Load loads the latest configuration and returns it as a nested map[string]any.
+// The keys in the returned map should be case-insensitive to avoid random overriding.
+// The keys should be nested like `{parent: {child: {key: 1}}}`.
 type Loader interface {
 	Load() (map[string]any, error)
 }
 
 // Watcher is the interface that wraps the Watch method.
 //
-// Watch watches configuration and triggers onChange callback with latest
+// Watch watches the configuration and triggers the onChange callback with the latest
 // full configurations as a nested map[string]any when it changes.
 // It blocks until ctx is done, or the watching returns an error.
 type Watcher interface {

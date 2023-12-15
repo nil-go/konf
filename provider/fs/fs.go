@@ -3,13 +3,14 @@
 
 // Package fs loads configuration from file system.
 //
-// FS loads file with given path from file system
-// and returns nested map[string]any that is parsed as json.
+// FS loads a file with the given path from the file system and returns
+// a nested map[string]any that is parsed with the given unmarshal function.
 //
-// The default behavior can be changed with following options:
-//   - WithUnmarshal provides the function that parses config file.
-//     E.g. `WithUnmarshal(yaml.Unmarshal)` will parse the file as yaml.
-//   - IgnoreFileNotExit ignores the error if config file does not exist.
+// The unmarshal function must be able to unmarshal the file content into a map[string]any.
+// For example, with the default json.Unmarshal, the file is parsed as JSON.
+//
+// By default, it returns error while loading if the file is not found.
+// IgnoreFileNotExit can override the behavior to return an empty map[string]any.
 package fs
 
 import (
