@@ -1,15 +1,16 @@
 // Copyright (c) 2023 The konf authors
 // Use of this source code is governed by a MIT license found in the LICENSE file.
 
-// Package file loads configuration from files.
+// Package file loads configuration from OS file.
 //
-// File loads file with given path from OS file system
-// and returns nested map[string]any that is parsed as json.
+// File loads a file with the given path from the OS file system and returns
+// a nested map[string]any that is parsed with the given unmarshal function.
 //
-// The default behavior can be changed with following options:
-//   - WithUnmarshal provides the function that parses config file.
-//     E.g. `WithUnmarshal(yaml.Unmarshal)` will parse the file as yaml.
-//   - IgnoreFileNotExit ignores the error if config file does not exist.
+// The unmarshal function must be able to unmarshal the file content into a map[string]any.
+// For example, with the default json.Unmarshal, the file is parsed as JSON.
+//
+// By default, it returns error while loading if the file is not found.
+// IgnoreFileNotExit can override the behavior to return an empty map[string]any.
 package file
 
 import (
@@ -19,7 +20,7 @@ import (
 	"os"
 )
 
-// File is a Provider that loads configuration from file.
+// File is a Provider that loads configuration from a OS file.
 //
 // To create a new File, call [New].
 type File struct {

@@ -5,10 +5,11 @@ package flag
 
 import "flag"
 
-// WithPrefix enables only loads flags with the given prefix in the name.
+// WithPrefix provides the prefix used when loading flags.
+// Only flags with names that start with the prefix will be loaded.
 //
-// E.g. if the given prefix is "server", it only loads flags
-// which name starts with "server".
+// For example, if the prefix is "server", only flags whose names start with "server" will be loaded.
+// By default, it has no prefix which loads all flags.
 func WithPrefix(prefix string) Option {
 	return func(options *options) {
 		options.prefix = prefix
@@ -24,17 +25,17 @@ func WithFlagSet(set *flag.FlagSet) Option {
 	}
 }
 
-// WithDelimiter provides the delimiter when splitting flag name to nested keys.
+// WithDelimiter provides the delimiter used when splitting flag names into nested keys.
 //
-// The default delimiter is `_`, which loads the flag `parent.child.key` with value 1
-// as `{parent: {child: {key: 1}}}`.
+// For example, with the default delimiter ".", an flag name like "parent.child.key"
+// would be split into "parent", "child", and "key".
 func WithDelimiter(delimiter string) Option {
 	return func(options *options) {
 		options.delimiter = delimiter
 	}
 }
 
-// Option configures the give Flag.
+// Option configures the a Flag with specific options.
 type Option func(*options)
 
 type options Flag

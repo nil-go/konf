@@ -1,0 +1,74 @@
+// Copyright (c) 2023 The konf authors
+// Use of this source code is governed by a MIT license found in the LICENSE file.
+
+//go:build !race
+
+package file_test
+
+import (
+	"context"
+	"os"
+	"path/filepath"
+	"sync"
+	"testing"
+	"time"
+
+	"github.com/ktong/konf/provider/file"
+	"github.com/ktong/konf/provider/file/internal/assert"
+)
+
+func TestFile_Watch(t *testing.T) {
+	testcases := []struct {
+		description string
+		action      func(string) error
+		expacted    map[string]any
+	}{
+		{
+			description: "create",
+			action: func(path string) error {
+				return os.WriteFile(path, []byte(`{"p": {"k": "v"}}`), 0o600)
+			},
+			expacted: map[string]any{"p": map[string]any{"k": "v"}},
+		},
+		{
+			description: "write",
+			action: func(path string) error {
+				return os.WriteFile(path, []byte(`{"p": {"k": "c"}}`), 0o600)
+			},
+			expacted: map[string]any{"p": map[string]any{"k": "c"}},
+		},
+		{
+			description: "remove",
+			action:      os.Remove,
+		},
+	}
+
+	for i := range testcases {
+		testcase := testcases[i]
+
+		t.Run(testcase.description, func(t *testing.T) {
+			tmpFile := filepath.Join(t.TempDir(), "watch.json")
+			assert.NoError(t, os.WriteFile(tmpFile, []byte(`{"p": {"k": "v"}}`), 0o600))
+
+			loader := file.New(tmpFile)
+			var values map[string]any
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+
+			var waitGroup sync.WaitGroup
+			waitGroup.Add(1)
+			go func() {
+				err := loader.Watch(ctx, func(changed map[string]any) {
+					defer waitGroup.Done()
+					values = changed
+				})
+				assert.NoError(t, err)
+			}()
+
+			time.Sleep(time.Second)
+			assert.NoError(t, testcase.action(tmpFile))
+			waitGroup.Wait()
+			assert.Equal(t, testcase.expacted, values)
+		})
+	}
+}

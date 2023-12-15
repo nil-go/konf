@@ -3,14 +3,12 @@
 
 // Package env loads configuration from environment variables.
 //
-// Env loads all environment variables and returns nested map[string]any.
-// by splitting the names by `_`. E.g. the environment variable
-// `PARENT_CHILD_KEY="1"` is loaded as `{PARENT: {CHILD: {KEY: "1"}}}`.
-// The environment variables with empty value are treated as unset.
+// Env loads environment variables whose names starts with the given prefix
+// and returns them as a nested map[string]any.
+// Environment variables with empty values are treated as unset.
 //
-// The default behavior can be changed with following options:
-//   - WithPrefix enables loads environment variables with the given prefix in the name.
-//   - WithDelimiter provides the delimiter when splitting environment variable name to nested keys.
+// It splits the names by delimiter. For example, with the default delimiter "_",
+// the environment variable `PARENT_CHILD_KEY="1"` is loaded as `{PARENT: {CHILD: {KEY: "1"}}}`.
 package env
 
 import (
@@ -22,7 +20,7 @@ import (
 
 // Env is a Provider that loads configuration from environment variables.
 //
-// To create a new Env, call [New].
+// To create a new Env, call New.
 type Env struct {
 	_         [0]func() // Ensure it's incomparable.
 	prefix    string

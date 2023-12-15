@@ -20,7 +20,7 @@ import (
 
 // Config reads configuration from appropriate sources.
 //
-// To create a new Logger, call [New].
+// To create a new Config, call [New].
 type Config struct {
 	decodeHook mapstructure.DecodeHookFunc
 	delimiter  string
@@ -59,9 +59,8 @@ func New(opts ...Option) *Config {
 	return (*Config)(option)
 }
 
-// Load loads configuration from given loaders.
-// Each loader takes precedence over the loaders before it
-// while multiple loaders are specified.
+// Load loads configuration from the given loaders.
+// Each loader takes precedence over the loaders before it.
 //
 // This method can be called multiple times but it is not concurrency-safe.
 func (c *Config) Load(loaders ...Loader) error {
@@ -216,8 +215,8 @@ func sub(values map[string]any, path string, delimiter string) any {
 	return next
 }
 
-// OnChange executes the given onChange function
-// while the value of any given path have been changed.
+// OnChange registers a callback function that is executed
+// when the value of any given path in the Config changes.
 // It requires Config.Watch has been called first.
 // The paths are case-insensitive.
 //
@@ -236,8 +235,8 @@ func (c *Config) OnChange(onchange func(*Config), paths ...string) {
 	}
 }
 
-// Unmarshal reads configuration under the given path
-// into the given object pointed to by target.
+// Unmarshal reads configuration under the given path from the Config
+// and decodes it into the given object pointed to by target.
 // The path is case-insensitive.
 func (c *Config) Unmarshal(path string, target any) error {
 	decoder, err := mapstructure.NewDecoder(

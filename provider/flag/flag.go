@@ -1,18 +1,15 @@
 // Copyright (c) 2023 The konf authors
 // Use of this source code is governed by a MIT license found in the LICENSE file.
 
-// Package flag loads configuration from flags.
+// Package flag loads configuration from flags defined by [flag].
 //
-// Flag loads all flags in [flag.CommandLine] and returns nested map[string]any.
-// by splitting the names by `.`.E.g. the flag `parent.child.key` with value 1
-// is loaded as `{parent: {child: {key: 1}}}`.
+// Flag loads flags in [flag.CommandLine] whose names starts with the given prefix
+// and returns them as a nested map[string]any.
 // The unchanged flags with zero default value are skipped to avoid
 // overriding values set by other loader.
 //
-// The default behavior can be changed with following options:
-//   - WithPrefix enables loads flags with the given prefix in the name.
-//   - WithFlagSet provides the flag set that loads configuration from.
-//   - WithDelimiter provides the delimiter when splitting flag name to nested keys.
+// It splits the names by delimiter. For example, with the default delimiter ".",
+// the flag `parent.child.key="1"` is loaded as `{parent: {child: {key: "1"}}}`.
 package flag
 
 import (
