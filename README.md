@@ -74,18 +74,18 @@ configuration source(s). They read configuration in terms of functions in packag
     }
 ```
 
-## Inspiration
-
-konf is inspired by [spf13/viper](https://github.com/spf13/viper) and
-[knadh/koanf](https://github.com/knadh/koanf).
-Thanks for authors of both awesome configuration libraries.
-
 ## Configuration Providers
 
 There are providers for the following configuration sources:
 
 - [`env`](provider/env) loads configuration from environment variables.
+- [`fs`](provider/fs) loads configuration from fs.FS.
 - [`file`](provider/file) loads configuration from a file.
 - [`flag`](provider/flag) loads configuration from flags.
-- [`fs`](provider/fs) loads configuration from fs.FS.
 - [`pflag`](provider/pflag) loads configuration from [spf13/pflag](https://github.com/spf13/pflag).
+
+## Inspiration
+
+konf is inspired by [spf13/viper](https://github.com/spf13/viper) and
+[knadh/koanf](https://github.com/knadh/koanf).
+Thanks for authors of both awesome configuration libraries.
