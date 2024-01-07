@@ -5,15 +5,13 @@ package konf
 
 import (
 	"context"
-	"encoding"
 	"errors"
 	"fmt"
 	"log/slog"
-	"reflect"
 	"strings"
 	"sync"
 
-	"github.com/mitchellh/mapstructure"
+	"github.com/go-viper/mapstructure/v2"
 
 	"github.com/ktong/konf/internal/maps"
 )
@@ -47,7 +45,7 @@ func New(opts ...Option) *Config {
 		decodeHook: mapstructure.ComposeDecodeHookFunc(
 			mapstructure.StringToTimeDurationHookFunc(),
 			mapstructure.StringToSliceHookFunc(","),
-			textUnmarshalerHookFunc(),
+			mapstructure.TextUnmarshallerHookFunc(),
 		),
 		values:    make(map[string]any),
 		onChanges: make(map[string][]func(*Config)),
@@ -256,72 +254,4 @@ func (c *Config) Unmarshal(path string, target any) error {
 	}
 
 	return nil
-}
-
-// textUnmarshalerHookFunc is a fixed version of mapstructure.TextUnmarshallerHookFunc.
-// This hook allows to additionally unmarshal text into custom string types
-// that implement the encoding.Text(Un)Marshaler interface(s).
-//
-//nolint:wrapcheck
-func textUnmarshalerHookFunc() mapstructure.DecodeHookFuncType {
-	return func(
-		from reflect.Type,
-		to reflect.Type, //nolint:varnamelen
-		data interface{},
-	) (interface{}, error) {
-		if from.Kind() != reflect.String {
-			return data, nil
-		}
-		result := reflect.New(to).Interface()
-		unmarshaller, ok := result.(encoding.TextUnmarshaler)
-		if !ok {
-			return data, nil
-		}
-
-		// default text representation is the actual value of the `from` string
-		var (
-			dataVal = reflect.ValueOf(data)
-			text    = []byte(dataVal.String())
-		)
-		if from.Kind() == to.Kind() { //nolint:nestif
-			// source and target are of underlying type string
-			var (
-				err    error
-				ptrVal = reflect.New(dataVal.Type())
-			)
-			if !ptrVal.Elem().CanSet() {
-				// cannot set, skip, this should not happen
-				if err := unmarshaller.UnmarshalText(text); err != nil {
-					return nil, err
-				}
-
-				return result, nil
-			}
-			ptrVal.Elem().Set(dataVal)
-
-			// We need to assert that both, the value type and the pointer type
-			// do (not) implement the TextMarshaller interface before proceeding and simply
-			// using the string value of the string type.
-			// it might be the case that the internal string representation differs from
-			// the (un)marshaled string.
-			for _, v := range []reflect.Value{dataVal, ptrVal} {
-				if marshaller, ok := v.Interface().(encoding.TextMarshaler); ok {
-					text, err = marshaller.MarshalText()
-					if err != nil {
-						return nil, err
-					}
-
-					break
-				}
-			}
-		}
-
-		// text is either the source string's value or the source string type's marshaled value
-		// which may differ from its internal string value.
-		if err := unmarshaller.UnmarshalText(text); err != nil {
-			return nil, err
-		}
-
-		return result, nil
-	}
 }

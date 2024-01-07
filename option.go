@@ -3,7 +3,7 @@
 
 package konf
 
-import "github.com/mitchellh/mapstructure"
+import "github.com/go-viper/mapstructure/v2"
 
 // WithDelimiter provides the delimiter used when specifying config paths.
 // The delimiter is used to separate keys in the path.
