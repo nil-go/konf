@@ -16,6 +16,7 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: 'stable'
+          cache-dependency-path: "**/go.sum"
       - name: Benchmark
         run: go test -v -shuffle=on -bench=. ./...
       - name: Benchmark (file)

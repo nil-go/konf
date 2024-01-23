@@ -16,6 +16,7 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: 'stable'
+          cache-dependency-path: "**/go.sum"
       - name: Coverage
         run: go test -v -covermode=count -coverprofile=coverage.txt ./...
       - name: Coverage (file)

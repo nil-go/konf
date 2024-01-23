@@ -20,6 +20,7 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: ${{ matrix.go-version }}
+          cache-dependency-path: "**/go.sum"
       - name: Race Test
         run: go test -v -shuffle=on -count=10 -race ./...
       - name: Test
