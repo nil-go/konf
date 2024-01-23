@@ -3,20 +3,28 @@ version: 2
 updates:
   - package-ecosystem: gomod
     directory: /
+    labels:
+      - Skip-Changelog
     schedule:
       interval: daily
 
   - package-ecosystem: gomod
     directory: /provider/file
+    labels:
+      - Skip-Changelog
     schedule:
       interval: daily
 
   - package-ecosystem: gomod
     directory: /provider/pflag
+    labels:
+      - Skip-Changelog
     schedule:
       interval: daily
 
   - package-ecosystem: github-actions
     directory: /
+    labels:
+      - Skip-Changelog
     schedule:
       interval: daily

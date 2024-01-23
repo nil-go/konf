@@ -2,28 +2,16 @@ codecov:
   require_ci_to_pass: true
 
 coverage:
+  precision: 1
+  round: down
+  range: "70...100"
   status:
     project:
-      default: false
+      default:
+        target: auto
+        threshold: 0.5%
 
 comment:
-  layout: "header, diff, components, files"
-
-component_management:
-  default_rules:
-    statuses:
-      - type: project
-        target: auto
-        branches:
-          - "!main"
-  individual_components:
-    - component_id: konf
-      paths:
-        - "!provider/pflag/"
-        - "!provider/file/"
-    - component_id: file
-      paths:
-        - "provider/file/"
-    - component_id: pflag
-      paths:
-        - "provider/pflag/"
+  layout: "reach,diff,flags,tree"
+  behavior: default
+  require_changes: true
