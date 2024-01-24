@@ -8,8 +8,8 @@ import (
 
 	"github.com/spf13/pflag"
 
-	kflag "github.com/ktong/konf/provider/pflag"
-	"github.com/ktong/konf/provider/pflag/internal/assert"
+	kflag "github.com/nil-go/konf/provider/pflag"
+	"github.com/nil-go/konf/provider/pflag/internal/assert"
 )
 
 func BenchmarkNew(b *testing.B) {

@@ -10,8 +10,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ktong/konf/provider/file"
-	"github.com/ktong/konf/provider/file/internal/assert"
+	"github.com/nil-go/konf/provider/file"
+	"github.com/nil-go/konf/provider/file/internal/assert"
 )
 
 func TestFile_Load(t *testing.T) {

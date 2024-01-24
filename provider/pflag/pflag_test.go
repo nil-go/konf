@@ -10,8 +10,8 @@ import (
 
 	"github.com/spf13/pflag"
 
-	kflag "github.com/ktong/konf/provider/pflag"
-	"github.com/ktong/konf/provider/pflag/internal/assert"
+	kflag "github.com/nil-go/konf/provider/pflag"
+	"github.com/nil-go/konf/provider/pflag/internal/assert"
 )
 
 func TestFlag_Load(t *testing.T) {

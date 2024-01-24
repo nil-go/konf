@@ -1,4 +1,4 @@
-module github.com/ktong/konf/provider/pflag
+module github.com/nil-go/konf/provider/pflag
 
 go 1.19
 

@@ -17,7 +17,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/ktong/konf/internal/maps"
+	"github.com/nil-go/konf/internal/maps"
 )
 
 // Flag is a Provider that loads configuration from flags.

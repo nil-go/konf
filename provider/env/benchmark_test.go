@@ -6,8 +6,8 @@ package env_test
 import (
 	"testing"
 
-	"github.com/ktong/konf/internal/assert"
-	"github.com/ktong/konf/provider/env"
+	"github.com/nil-go/konf/internal/assert"
+	"github.com/nil-go/konf/provider/env"
 )
 
 func BenchmarkNew(b *testing.B) {

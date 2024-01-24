@@ -8,7 +8,7 @@ import (
 	"reflect"
 	"sync/atomic"
 
-	"github.com/ktong/konf/provider/env"
+	"github.com/nil-go/konf/provider/env"
 )
 
 // Get retrieves the value under the given path from the default Config.

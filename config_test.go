@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ktong/konf"
-	"github.com/ktong/konf/internal/assert"
+	"github.com/nil-go/konf"
+	"github.com/nil-go/konf/internal/assert"
 )
 
 func TestConfig_Unmarshal(t *testing.T) {

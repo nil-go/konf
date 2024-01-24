@@ -1,4 +1,4 @@
-module github.com/ktong/konf/provider/file
+module github.com/nil-go/konf/provider/file
 
 go 1.21
 
