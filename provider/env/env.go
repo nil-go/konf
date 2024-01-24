@@ -15,7 +15,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/ktong/konf/internal/maps"
+	"github.com/nil-go/konf/internal/maps"
 )
 
 // Env is a Provider that loads configuration from environment variables.

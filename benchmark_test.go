@@ -6,8 +6,8 @@ package konf_test
 import (
 	"testing"
 
-	"github.com/ktong/konf"
-	"github.com/ktong/konf/internal/assert"
+	"github.com/nil-go/konf"
+	"github.com/nil-go/konf/internal/assert"
 )
 
 func BenchmarkNew(b *testing.B) {

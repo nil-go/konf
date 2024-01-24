@@ -6,8 +6,8 @@ package maps_test
 import (
 	"testing"
 
-	"github.com/ktong/konf/internal/assert"
-	"github.com/ktong/konf/internal/maps"
+	"github.com/nil-go/konf/internal/assert"
+	"github.com/nil-go/konf/internal/maps"
 )
 
 func TestMerge(t *testing.T) {

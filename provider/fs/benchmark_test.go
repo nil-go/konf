@@ -7,8 +7,8 @@ import (
 	"testing"
 	"testing/fstest"
 
-	"github.com/ktong/konf/internal/assert"
-	kfs "github.com/ktong/konf/provider/fs"
+	"github.com/nil-go/konf/internal/assert"
+	kfs "github.com/nil-go/konf/provider/fs"
 )
 
 func BenchmarkNew(b *testing.B) {

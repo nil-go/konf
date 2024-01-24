@@ -6,8 +6,8 @@ package maps_test
 import (
 	"testing"
 
-	"github.com/ktong/konf/provider/pflag/internal/assert"
-	"github.com/ktong/konf/provider/pflag/internal/maps"
+	"github.com/nil-go/konf/provider/pflag/internal/assert"
+	"github.com/nil-go/konf/provider/pflag/internal/maps"
 )
 
 func TestInsert(t *testing.T) {

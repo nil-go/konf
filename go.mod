@@ -1,4 +1,4 @@
-module github.com/ktong/konf
+module github.com/nil-go/konf
 
 go 1.21
 

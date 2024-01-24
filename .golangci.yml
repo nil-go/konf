@@ -7,13 +7,13 @@ linters-settings:
     sections:
       - standard
       - default
-      - prefix(github.com/ktong/konf)
+      - prefix(github.com/nil-go/konf)
   goheader:
     template: |-
       Copyright (c) {{ YEAR }} The konf authors
       Use of this source code is governed by a MIT license found in the LICENSE file.
   goimports:
-    local-prefixes: github.com/ktong/konf
+    local-prefixes: github.com/nil-go/konf
   govet:
     check-shadowing: true
   makezero:

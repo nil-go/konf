@@ -13,7 +13,7 @@ import (
 
 	"github.com/go-viper/mapstructure/v2"
 
-	"github.com/ktong/konf/internal/maps"
+	"github.com/nil-go/konf/internal/maps"
 )
 
 // Config reads configuration from appropriate sources.

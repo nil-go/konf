@@ -6,8 +6,8 @@ package file_test
 import (
 	"testing"
 
-	"github.com/ktong/konf/provider/file"
-	"github.com/ktong/konf/provider/file/internal/assert"
+	"github.com/nil-go/konf/provider/file"
+	"github.com/nil-go/konf/provider/file/internal/assert"
 )
 
 func BenchmarkNew(b *testing.B) {

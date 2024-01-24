@@ -19,7 +19,7 @@ import (
 
 	"github.com/spf13/pflag"
 
-	"github.com/ktong/konf/provider/pflag/internal/maps"
+	"github.com/nil-go/konf/provider/pflag/internal/maps"
 )
 
 // PFlag is a Provider that loads configuration from flags defined by [spf13/pflag].

@@ -13,8 +13,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ktong/konf/provider/file"
-	"github.com/ktong/konf/provider/file/internal/assert"
+	"github.com/nil-go/konf/provider/file"
+	"github.com/nil-go/konf/provider/file/internal/assert"
 )
 
 func TestFile_Watch(t *testing.T) {

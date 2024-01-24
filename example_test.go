@@ -7,9 +7,9 @@ import (
 	"embed"
 	"fmt"
 
-	"github.com/ktong/konf"
-	"github.com/ktong/konf/provider/env"
-	kfs "github.com/ktong/konf/provider/fs"
+	"github.com/nil-go/konf"
+	"github.com/nil-go/konf/provider/env"
+	kfs "github.com/nil-go/konf/provider/fs"
 )
 
 func ExampleGet() {

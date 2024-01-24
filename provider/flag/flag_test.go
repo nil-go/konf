@@ -9,9 +9,9 @@ import (
 	"flag"
 	"testing"
 
-	"github.com/ktong/konf"
-	"github.com/ktong/konf/internal/assert"
-	kflag "github.com/ktong/konf/provider/flag"
+	"github.com/nil-go/konf"
+	"github.com/nil-go/konf/internal/assert"
+	kflag "github.com/nil-go/konf/provider/flag"
 )
 
 var _ konf.Loader = (*kflag.Flag)(nil)
