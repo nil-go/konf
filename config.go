@@ -33,8 +33,8 @@ type Config struct {
 }
 
 type provider struct {
-	values  map[string]any
-	watcher Watcher
+	loader Loader
+	values map[string]any
 }
 
 // New creates a new Config with the given Option(s).
@@ -75,12 +75,10 @@ func (c *Config) Load(loaders ...Loader) error {
 
 		// Merged to empty map to convert to lower case.
 		provider := &provider{
+			loader: loader,
 			values: make(map[string]any),
 		}
 		maps.Merge(provider.values, values)
-		if w, ok := loader.(Watcher); ok {
-			provider.watcher = w
-		}
 		c.providers = append(c.providers, provider)
 
 		slog.Info(
@@ -137,7 +135,7 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 
 	errChan := make(chan error, len(c.providers))
 	for _, provider := range c.providers {
-		if provider.watcher != nil {
+		if _, ok := provider.loader.(Watcher); ok {
 			provider := provider
 
 			waitGroup.Add(1)
@@ -170,12 +168,14 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 
 					slog.Info(
 						"Configuration has been changed.",
-						"provider", provider.watcher,
+						"provider", provider.loader,
 					)
 				}
-				if err := provider.watcher.Watch(ctx, onChange); err != nil {
-					errChan <- fmt.Errorf("watch configuration change: %w", err)
-					cancel()
+				if watcher, ok := provider.loader.(Watcher); ok {
+					if err := watcher.Watch(ctx, onChange); err != nil {
+						errChan <- fmt.Errorf("watch configuration change: %w", err)
+						cancel()
+					}
 				}
 			}()
 		}
