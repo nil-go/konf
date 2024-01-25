@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"slices"
 	"strings"
 	"sync"
 
@@ -254,4 +255,44 @@ func (c *Config) Unmarshal(path string, target any) error {
 	}
 
 	return nil
+}
+
+// Explain provides information about how Config resolve each value  from loaders for the given path.
+// The path is case-insensitive.
+func (c *Config) Explain(path string) string {
+	explanation := &strings.Builder{}
+	c.explain(explanation, path, sub(c.values, strings.ToLower(path), c.delimiter))
+
+	return explanation.String()
+}
+
+func (c *Config) explain(explanation *strings.Builder, path string, value any) {
+	if values, ok := value.(map[string]any); ok {
+		for k, v := range values {
+			c.explain(explanation, path+c.delimiter+k, v)
+		}
+	}
+
+	var (
+		loader  string
+		loaders []string
+	)
+	for _, provider := range c.providers {
+		if v := sub(provider.values, path, c.delimiter); v != nil {
+			loaders = append(loaders, fmt.Sprintf("%v[%v]", v, provider.loader))
+			loader = fmt.Sprintf("%v", provider.loader)
+		}
+	}
+	slices.Reverse(loaders)
+
+	if loader == "" {
+		_, _ = fmt.Fprintf(explanation, "%s has no configuration", path)
+
+		return
+	}
+	_, _ = fmt.Fprintf(explanation, "%s has value [%v] is loaded by %v.\n", path, value, loader)
+	if len(loaders) > 1 {
+		_, _ = fmt.Fprintf(explanation, "Here are other value[loader]s: %v\n", loaders[1:])
+	}
+	explanation.WriteString("\n")
 }

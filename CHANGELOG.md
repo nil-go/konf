@@ -7,8 +7,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-### Changed
+### Added
+- add Config.Inspect to retrieves configuration from each loader for inspection (#75).
 
+### Changed
 - Switch from mitchellh/mapstructure to go-viper/mapstructure (#69).
 
 ## [v0.3.0] - 11/17/2023

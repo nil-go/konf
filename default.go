@@ -35,6 +35,12 @@ func Unmarshal(path string, target any) error {
 	return defaultConfig.Load().Unmarshal(path, target)
 }
 
+// Explain provides information about how Config resolve each value  from loaders for the given path.
+// The path is case-insensitive.
+func Explain(path string) string {
+	return defaultConfig.Load().Explain(path)
+}
+
 // OnChange registers a callback function that is executed
 // when the value of any given path in the default Config changes.
 // The paths are case-insensitive.
