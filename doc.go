@@ -18,6 +18,7 @@ Configuration is hierarchical, and the path is a sequence of keys that separated
 The default delimiter is `.`, which makes configuration path like `parent.child.key`.
 
 # Load Configuration
+
 After creating a [Config], you can load configuration from multiple [Loader](s) using [Config.Load].
 Each loader takes precedence over the loaders before it. As long as the configuration has been loaded,
 it can be used in following code to get or unmarshal configuration, even for loading configuration
@@ -28,7 +29,6 @@ and then use the file path to load configuration from file system.
 
 [Config.Watch] watches and updates configuration when it changes, which leads [Config.Unmarshal]
 always returns latest configuration.
-
 You may use [Config.OnChange] to register a callback if the value of any path have been changed.
 It could push the change into application objects instead pulling the configuration periodically.
 */
