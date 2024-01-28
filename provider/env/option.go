@@ -24,7 +24,8 @@ func WithDelimiter(delimiter string) Option {
 	}
 }
 
-// Option configures an Env with specific options.
-type Option func(*options)
-
-type options Env
+type (
+	// Option configures an Env with specific options.
+	Option  func(*options)
+	options Env
+)

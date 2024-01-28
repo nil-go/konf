@@ -36,7 +36,8 @@ func WithDecodeHook(decodeHook mapstructure.DecodeHookFunc) Option {
 	}
 }
 
-// Option configures a Config with specific options.
-type Option func(*options)
-
-type options Config
+type (
+	// Option configures a Config with specific options.
+	Option  func(*options)
+	options Config
+)
