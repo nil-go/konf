@@ -35,7 +35,8 @@ func WithDelimiter(delimiter string) Option {
 	}
 }
 
-// Option configures the a Flag with specific options.
-type Option func(*options)
-
-type options Flag
+type (
+	// Option configures the a Flag with specific options.
+	Option  func(*options)
+	options Flag
+)

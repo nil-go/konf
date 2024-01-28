@@ -35,7 +35,8 @@ func WithDelimiter(delimiter string) Option {
 	}
 }
 
-// Option configures the a PFlag with specific options.
-type Option func(*options)
-
-type options PFlag
+type (
+	// Option configures the a PFlag with specific options.
+	Option  func(*options)
+	options PFlag
+)

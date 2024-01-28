@@ -20,7 +20,8 @@ func IgnoreFileNotExit() Option {
 	}
 }
 
-// Option configures the a FS with specific options.
-type Option func(file *options)
-
-type options FS
+type (
+	// Option configures the a FS with specific options.
+	Option  func(file *options)
+	options FS
+)
