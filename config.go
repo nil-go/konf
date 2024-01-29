@@ -40,31 +40,39 @@ type provider struct {
 // New creates a new Config with the given Option(s).
 func New(opts ...Option) *Config {
 	option := &options{
-		delimiter: ".",
-		tagName:   "konf",
-		decodeHook: mapstructure.ComposeDecodeHookFunc(
-			mapstructure.StringToTimeDurationHookFunc(),
-			mapstructure.StringToSliceHookFunc(","),
-			mapstructure.TextUnmarshallerHookFunc(),
-		),
 		values:    make(map[string]any),
 		onChanges: make(map[string][]func(*Config)),
 	}
 	for _, opt := range opts {
 		opt(option)
 	}
+	if option.delimiter == "" {
+		option.delimiter = "."
+	}
+	if option.tagName == "" {
+		option.tagName = "konf"
+	}
+	if option.decodeHook == nil {
+		option.decodeHook = mapstructure.ComposeDecodeHookFunc(
+			mapstructure.StringToTimeDurationHookFunc(),
+			mapstructure.StringToSliceHookFunc(","),
+			mapstructure.TextUnmarshallerHookFunc(),
+		)
+	}
 
 	return (*Config)(option)
 }
+
+var errNilLoader = errors.New("nil loader at loaders")
 
 // Load loads configuration from the given loaders.
 // Each loader takes precedence over the loaders before it.
 //
 // This method can be called multiple times but it is not concurrency-safe.
 func (c *Config) Load(loaders ...Loader) error {
-	for _, loader := range loaders {
+	for i, loader := range loaders {
 		if loader == nil {
-			continue
+			return fmt.Errorf("%w[%d]", errNilLoader, i)
 		}
 
 		values, err := loader.Load()
@@ -92,17 +100,25 @@ func (c *Config) Load(loaders ...Loader) error {
 	return nil
 }
 
+var errNilContext = errors.New("nil context")
+
 // Watch watches and updates configuration when it changes.
 // It blocks until ctx is done, or the service returns an error.
 // WARNING: All loaders passed in Load after calling Watch do not get watched.
 //
 // It only can be called once. Call after first has no effects.
 func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocognit
-	initialized := true
+	if ctx == nil {
+		return errNilContext
+	}
+
+	watched := true
 	c.watchOnce.Do(func() {
-		initialized = false
+		watched = false
 	})
-	if initialized {
+	if watched {
+		slog.Warn("Config has been watched, call Watch again has no effects.")
+
 		return nil
 	}
 
@@ -124,9 +140,14 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 					maps.Merge(values, w.values)
 				}
 				c.values = values
+				slog.Info("Configuration has been updated with change.")
 
+				// TODO: detect blocking onChange and return error.
 				for _, onChange := range onChanges {
 					onChange(c)
+				}
+				if len(onChanges) > 0 {
+					slog.Info("Configuration has been applied to onChanges.")
 				}
 
 			case <-ctx.Done():
@@ -170,9 +191,11 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 
 					slog.Info(
 						"Configuration has been changed.",
-						"provider", provider.watcher,
+						"loader", provider.watcher,
 					)
 				}
+
+				slog.Info("Watching configuration change.", "loader", provider.watcher)
 				if err := provider.watcher.Watch(ctx, onChange); err != nil {
 					errChan <- fmt.Errorf("watch configuration change: %w", err)
 					cancel()
@@ -218,8 +241,14 @@ func sub(values map[string]any, path string, delimiter string) any {
 // It requires Config.Watch has been called first.
 // The paths are case-insensitive.
 //
+// TODO: add requirement for onchange function, like non-blocking,
+//
 // This method is concurrency-safe.
-func (c *Config) OnChange(onchange func(*Config), paths ...string) {
+func (c *Config) OnChange(onChange func(*Config), paths ...string) {
+	if onChange == nil {
+		panic("nil onChange")
+	}
+
 	c.onChangesMutex.Lock()
 	defer c.onChangesMutex.Unlock()
 
@@ -229,7 +258,7 @@ func (c *Config) OnChange(onchange func(*Config), paths ...string) {
 
 	for _, path := range paths {
 		path = strings.ToLower(path)
-		c.onChanges[path] = append(c.onChanges[path], onchange)
+		c.onChanges[path] = append(c.onChanges[path], onChange)
 	}
 }
 

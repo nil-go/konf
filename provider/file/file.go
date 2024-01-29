@@ -31,12 +31,18 @@ type File struct {
 
 // New creates a File with the given path and Option(s).
 func New(path string, opts ...Option) File {
+	if path == "" {
+		panic("empty path")
+	}
+
 	option := &options{
-		path:      path,
-		unmarshal: json.Unmarshal,
+		path: path,
 	}
 	for _, opt := range opts {
 		opt(option)
+	}
+	if option.unmarshal == nil {
+		option.unmarshal = json.Unmarshal
 	}
 
 	return File(*option)

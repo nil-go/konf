@@ -32,16 +32,6 @@ func TestConfig_Unmarshal(t *testing.T) {
 			},
 		},
 		{
-			description: "nil loader",
-			opts:        []konf.Option{},
-			loaders:     []konf.Loader{nil},
-			assert: func(config *konf.Config) {
-				var value string
-				assert.NoError(t, config.Unmarshal("config", &value))
-				assert.Equal(t, "", value)
-			},
-		},
-		{
 			description: "for primary type",
 			loaders:     []konf.Loader{mapLoader{"config": "string"}},
 			assert: func(config *konf.Config) {

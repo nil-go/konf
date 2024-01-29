@@ -38,7 +38,7 @@ func Unmarshal(path string, target any) error {
 // OnChange registers a callback function that is executed
 // when the value of any given path in the default Config changes.
 // The paths are case-insensitive.
-//
+// TODO: add requirement for onchange function, like non-blocking,
 // This method is concurrency-safe.
 func OnChange(onChange func(), paths ...string) {
 	defaultConfig.Load().OnChange(func(*Config) { onChange() }, paths...)
@@ -47,8 +47,12 @@ func OnChange(onChange func(), paths ...string) {
 // SetDefault sets the given Config as the default Config.
 // After this call, the konf package's top functions (e.g. konf.Get)
 // will interact with the given Config.
-func SetDefault(c *Config) {
-	defaultConfig.Store(c)
+func SetDefault(config *Config) {
+	if config == nil {
+		panic("nil config")
+	}
+
+	defaultConfig.Store(config)
 }
 
 var defaultConfig atomic.Pointer[Config] //nolint:gochecknoglobals

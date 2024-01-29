@@ -34,11 +34,12 @@ type PFlag struct {
 
 // New creates a PFlag with the given Option(s).
 func New(opts ...Option) PFlag {
-	option := &options{
-		delimiter: ".",
-	}
+	option := &options{}
 	for _, opt := range opts {
 		opt(option)
+	}
+	if option.delimiter == "" {
+		option.delimiter = "."
 	}
 	if option.set == nil {
 		pflag.CommandLine.AddGoFlagSet(flag.CommandLine)

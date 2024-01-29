@@ -32,14 +32,23 @@ type FS struct {
 }
 
 // New creates a FS with the given fs.FS, path and Option(s).
-func New(fs fs.FS, path string, opts ...Option) FS {
+func New(fs fs.FS, path string, opts ...Option) FS { //nolint:varnamelen
+	if fs == nil {
+		panic("nil fs")
+	}
+	if path == "" {
+		panic("empty path")
+	}
+
 	option := &options{
-		fs:        fs,
-		path:      path,
-		unmarshal: json.Unmarshal,
+		fs:   fs,
+		path: path,
 	}
 	for _, opt := range opts {
 		opt(option)
+	}
+	if option.unmarshal == nil {
+		option.unmarshal = json.Unmarshal
 	}
 
 	return FS(*option)
