@@ -63,8 +63,6 @@ func New(opts ...Option) *Config {
 	return (*Config)(option)
 }
 
-var errNilLoader = errors.New("nil loader at loaders")
-
 // Load loads configuration from the given loaders.
 // Each loader takes precedence over the loaders before it.
 //
@@ -72,7 +70,7 @@ var errNilLoader = errors.New("nil loader at loaders")
 func (c *Config) Load(loaders ...Loader) error {
 	for i, loader := range loaders {
 		if loader == nil {
-			return fmt.Errorf("%w[%d]", errNilLoader, i)
+			panic(fmt.Sprintf("nil loader at loaders[%d]", i))
 		}
 
 		values, err := loader.Load()
@@ -98,8 +96,6 @@ func (c *Config) Load(loaders ...Loader) error {
 	return nil
 }
 
-var errNilContext = errors.New("nil context")
-
 // Watch watches and updates configuration when it changes.
 // It blocks until ctx is done, or the service returns an error.
 // WARNING: All loaders passed in Load after calling Watch do not get watched.
@@ -107,7 +103,7 @@ var errNilContext = errors.New("nil context")
 // It only can be called once. Call after first has no effects.
 func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocognit
 	if ctx == nil {
-		return errNilContext
+		panic("nil context")
 	}
 
 	watched := true
