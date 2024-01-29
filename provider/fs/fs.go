@@ -32,12 +32,14 @@ type FS struct {
 }
 
 // New creates a FS with the given fs.FS, path and Option(s).
+//
+// It panics if the fs is nil or the path is empty.
 func New(fs fs.FS, path string, opts ...Option) FS { //nolint:varnamelen
 	if fs == nil {
-		panic("nil fs")
+		panic("cannot create FS with nil fs")
 	}
 	if path == "" {
-		panic("empty path")
+		panic("cannot create FS with empty path")
 	}
 
 	option := &options{

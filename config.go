@@ -10,6 +10,7 @@ import (
 	"log/slog"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/go-viper/mapstructure/v2"
 
@@ -67,10 +68,11 @@ func New(opts ...Option) *Config {
 // Each loader takes precedence over the loaders before it.
 //
 // This method can be called multiple times but it is not concurrency-safe.
+// It panics if any loader is nil.
 func (c *Config) Load(loaders ...Loader) error {
 	for i, loader := range loaders {
 		if loader == nil {
-			panic(fmt.Sprintf("nil loader at loaders[%d]", i))
+			panic(fmt.Sprintf("cannot load config from nil loader at loaders[%d]", i))
 		}
 
 		values, err := loader.Load()
@@ -101,9 +103,10 @@ func (c *Config) Load(loaders ...Loader) error {
 // WARNING: All loaders passed in Load after calling Watch do not get watched.
 //
 // It only can be called once. Call after first has no effects.
+// It panics if ctx is nil.
 func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocognit
 	if ctx == nil {
-		panic("nil context")
+		panic("cannot watch change with nil context")
 	}
 
 	watched := true
@@ -136,12 +139,30 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 				c.values = values
 				slog.Info("Configuration has been updated with change.")
 
-				// TODO: detect blocking onChange and return error.
-				for _, onChange := range onChanges {
-					onChange(c)
-				}
 				if len(onChanges) > 0 {
-					slog.Info("Configuration has been applied to onChanges.")
+					func() {
+						ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
+						defer cancel()
+
+						done := make(chan struct{})
+						go func() {
+							defer close(done)
+
+							for _, onChange := range onChanges {
+								onChange(c)
+							}
+						}()
+
+						select {
+						case <-done:
+							slog.InfoContext(ctx, "Configuration has been applied to onChanges.")
+						case <-ctx.Done():
+							if errors.Is(ctx.Err(), context.DeadlineExceeded) {
+								slog.WarnContext(ctx, "Configuration has not been fully applied to onChanges due to timeout."+
+									" Please check if the onChanges is blocking or takes too long to complete.")
+							}
+						}
+					}()
 				}
 
 			case <-ctx.Done():
@@ -235,12 +256,14 @@ func sub(values map[string]any, path string, delimiter string) any {
 // It requires Config.Watch has been called first.
 // The paths are case-insensitive.
 //
-// TODO: add requirement for onchange function, like non-blocking,
+// The onChange function must be non-blocking and usually completes instantly.
+// If it requires a long time to complete, it should be executed in a separate goroutine.
 //
 // This method is concurrency-safe.
+// It panics if onChange is nil.
 func (c *Config) OnChange(onChange func(*Config), paths ...string) {
 	if onChange == nil {
-		panic("nil onChange")
+		panic("cannot register nil onChange")
 	}
 
 	c.onChangesMutex.Lock()
