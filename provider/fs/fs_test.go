@@ -8,7 +8,6 @@ package fs_test
 import (
 	"errors"
 	"io/fs"
-	"strings"
 	"testing"
 	"testing/fstest"
 
@@ -80,8 +79,8 @@ func TestFile_Load(t *testing.T) {
 			t.Parallel()
 
 			values, err := kfs.New(testcase.fs, testcase.path, testcase.opts...).Load()
-			if err != nil {
-				assert.True(t, strings.HasPrefix(err.Error(), testcase.err))
+			if testcase.err != "" {
+				assert.EqualError(t, err, testcase.err)
 			} else {
 				assert.NoError(t, err)
 				assert.Equal(t, testcase.expected, values)

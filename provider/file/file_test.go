@@ -61,7 +61,7 @@ func TestFile_Load(t *testing.T) {
 			t.Parallel()
 
 			values, err := file.New(testcase.path, testcase.opts...).Load()
-			if err != nil {
+			if testcase.err != "" {
 				assert.True(t, strings.HasPrefix(err.Error(), testcase.err))
 			} else {
 				assert.NoError(t, err)
