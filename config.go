@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -300,4 +301,67 @@ func (c *Config) Unmarshal(path string, target any) error {
 	}
 
 	return nil
+}
+
+// Explain provides information about how Config resolve each value
+// from loaders for the given path.
+// The path is case-insensitive.
+//
+// If there are sensitive information (e.g. password, secret) which should not be exposed,
+// you can use [WithValueFormatter] to pass a value formatter to blur the information.
+func (c *Config) Explain(path string, opts ...ExplainOption) string {
+	option := &explainOptions{
+		valueFormatter: func(path string, loader Loader, value any) string {
+			return fmt.Sprint(value)
+		},
+	}
+	for _, opt := range opts {
+		opt(option)
+	}
+
+	explanation := &strings.Builder{}
+	c.explain(explanation, path, sub(c.values, strings.ToLower(path), c.delimiter), *option)
+
+	return explanation.String()
+}
+
+func (c *Config) explain(explanation *strings.Builder, path string, value any, option explainOptions) {
+	if values, ok := value.(map[string]any); ok {
+		for k, v := range values {
+			c.explain(explanation, path+c.delimiter+k, v, option)
+		}
+
+		return
+	}
+
+	var loaders []loaderValue
+	for _, provider := range c.providers {
+		if v := sub(provider.values, path, c.delimiter); v != nil {
+			loaders = append(loaders, loaderValue{provider.loader, v})
+		}
+	}
+	slices.Reverse(loaders)
+
+	if len(loaders) == 0 {
+		_, _ = fmt.Fprintf(explanation, "%s has no configuration.\n\n", path)
+
+		return
+	}
+	_, _ = fmt.Fprintf(explanation, "%s has value[%s] that is loaded by loader[%v].\n",
+		path, option.valueFormatter(path, loaders[0].loader, loaders[0].value), loaders[0].loader,
+	)
+	if len(loaders) > 1 {
+		_, _ = fmt.Fprintf(explanation, "Here are other value(loader)s:\n")
+		for _, loader := range loaders[1:] {
+			_, _ = fmt.Fprintf(explanation, "  - %s(%v)\n",
+				option.valueFormatter(path, loader.loader, loader.value), loader.loader,
+			)
+		}
+	}
+	explanation.WriteString("\n")
+}
+
+type loaderValue struct {
+	loader Loader
+	value  any
 }

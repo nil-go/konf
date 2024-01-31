@@ -74,6 +74,17 @@ configuration source(s). They read configuration in terms of functions in packag
     }
 ```
 
+## Understand the configuration
+
+While the configuration is loaded from multiple sources, static like environments or dynamic like AWS AppConfig,
+it's hard to understand where a final value comes from. The `Config.Explain` method provides information
+about how Config resolve each value from loaders for the given path. One example explanation is like:
+```
+config.nest has value [map] is loaded by map.
+Here are other value(loader)s:
+  - env(env)
+```
+
 ## Configuration Providers
 
 There are providers for the following configuration sources:
