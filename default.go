@@ -39,7 +39,11 @@ func Unmarshal(path string, target any) error {
 // when the value of any given path in the default Config changes.
 // The paths are case-insensitive.
 //
+// The onChange function must be non-blocking and usually completes instantly.
+// If it requires a long time to complete, it should be executed in a separate goroutine.
+//
 // This method is concurrency-safe.
+// It panics if onChange is nil.
 func OnChange(onChange func(), paths ...string) {
 	defaultConfig.Load().OnChange(func(*Config) { onChange() }, paths...)
 }
@@ -47,8 +51,14 @@ func OnChange(onChange func(), paths ...string) {
 // SetDefault sets the given Config as the default Config.
 // After this call, the konf package's top functions (e.g. konf.Get)
 // will interact with the given Config.
-func SetDefault(c *Config) {
-	defaultConfig.Store(c)
+//
+// It panics if config is nil.
+func SetDefault(config *Config) {
+	if config == nil {
+		panic("cannot set default with nil config")
+	}
+
+	defaultConfig.Store(config)
 }
 
 var defaultConfig atomic.Pointer[Config] //nolint:gochecknoglobals

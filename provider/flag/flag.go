@@ -32,11 +32,12 @@ type Flag struct {
 
 // New creates a Flag with the given Option(s).
 func New(opts ...Option) Flag {
-	option := &options{
-		delimiter: ".",
-	}
+	option := &options{}
 	for _, opt := range opts {
 		opt(option)
+	}
+	if option.delimiter == "" {
+		option.delimiter = "."
 	}
 	if option.set == nil {
 		flag.Parse()

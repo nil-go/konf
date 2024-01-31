@@ -29,11 +29,12 @@ type Env struct {
 
 // New creates an Env with the given Option(s).
 func New(opts ...Option) Env {
-	option := &options{
-		delimiter: "_",
-	}
+	option := &options{}
 	for _, opt := range opts {
 		opt(option)
+	}
+	if option.delimiter == "" {
+		option.delimiter = "_"
 	}
 
 	return Env(*option)

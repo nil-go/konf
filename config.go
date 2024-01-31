@@ -10,6 +10,7 @@ import (
 	"log/slog"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/go-viper/mapstructure/v2"
 
@@ -33,25 +34,31 @@ type Config struct {
 }
 
 type provider struct {
-	values  map[string]any
-	watcher Watcher
+	loader Loader
+	values map[string]any
 }
 
 // New creates a new Config with the given Option(s).
 func New(opts ...Option) *Config {
 	option := &options{
-		delimiter: ".",
-		tagName:   "konf",
-		decodeHook: mapstructure.ComposeDecodeHookFunc(
-			mapstructure.StringToTimeDurationHookFunc(),
-			mapstructure.StringToSliceHookFunc(","),
-			mapstructure.TextUnmarshallerHookFunc(),
-		),
 		values:    make(map[string]any),
 		onChanges: make(map[string][]func(*Config)),
 	}
 	for _, opt := range opts {
 		opt(option)
+	}
+	if option.delimiter == "" {
+		option.delimiter = "."
+	}
+	if option.tagName == "" {
+		option.tagName = "konf"
+	}
+	if option.decodeHook == nil {
+		option.decodeHook = mapstructure.ComposeDecodeHookFunc(
+			mapstructure.StringToTimeDurationHookFunc(),
+			mapstructure.StringToSliceHookFunc(","),
+			mapstructure.TextUnmarshallerHookFunc(),
+		)
 	}
 
 	return (*Config)(option)
@@ -61,10 +68,11 @@ func New(opts ...Option) *Config {
 // Each loader takes precedence over the loaders before it.
 //
 // This method can be called multiple times but it is not concurrency-safe.
+// It panics if any loader is nil.
 func (c *Config) Load(loaders ...Loader) error {
-	for _, loader := range loaders {
+	for i, loader := range loaders {
 		if loader == nil {
-			continue
+			panic(fmt.Sprintf("cannot load config from nil loader at loaders[%d]", i))
 		}
 
 		values, err := loader.Load()
@@ -73,14 +81,12 @@ func (c *Config) Load(loaders ...Loader) error {
 		}
 		maps.Merge(c.values, values)
 
-		// Merged to empty map to convert to lower case.
 		provider := &provider{
+			loader: loader,
 			values: make(map[string]any),
 		}
+		// Merged to empty map to convert to lower case.
 		maps.Merge(provider.values, values)
-		if w, ok := loader.(Watcher); ok {
-			provider.watcher = w
-		}
 		c.providers = append(c.providers, provider)
 
 		slog.Info(
@@ -97,12 +103,19 @@ func (c *Config) Load(loaders ...Loader) error {
 // WARNING: All loaders passed in Load after calling Watch do not get watched.
 //
 // It only can be called once. Call after first has no effects.
+// It panics if ctx is nil.
 func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocognit
-	initialized := true
+	if ctx == nil {
+		panic("cannot watch change with nil context")
+	}
+
+	watched := true
 	c.watchOnce.Do(func() {
-		initialized = false
+		watched = false
 	})
-	if initialized {
+	if watched {
+		slog.Warn("Config has been watched, call Watch again has no effects.")
+
 		return nil
 	}
 
@@ -124,9 +137,32 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 					maps.Merge(values, w.values)
 				}
 				c.values = values
+				slog.Info("Configuration has been updated with change.")
 
-				for _, onChange := range onChanges {
-					onChange(c)
+				if len(onChanges) > 0 {
+					func() {
+						ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
+						defer cancel()
+
+						done := make(chan struct{})
+						go func() {
+							defer close(done)
+
+							for _, onChange := range onChanges {
+								onChange(c)
+							}
+						}()
+
+						select {
+						case <-done:
+							slog.InfoContext(ctx, "Configuration has been applied to onChanges.")
+						case <-ctx.Done():
+							if errors.Is(ctx.Err(), context.DeadlineExceeded) {
+								slog.WarnContext(ctx, "Configuration has not been fully applied to onChanges due to timeout."+
+									" Please check if the onChanges is blocking or takes too long to complete.")
+							}
+						}
+					}()
 				}
 
 			case <-ctx.Done():
@@ -137,9 +173,9 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 
 	errChan := make(chan error, len(c.providers))
 	for _, provider := range c.providers {
-		if provider.watcher != nil {
-			provider := provider
+		provider := provider
 
+		if watcher, ok := provider.loader.(Watcher); ok {
 			waitGroup.Add(1)
 			go func() {
 				defer waitGroup.Done()
@@ -170,10 +206,12 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 
 					slog.Info(
 						"Configuration has been changed.",
-						"provider", provider.watcher,
+						"loader", watcher,
 					)
 				}
-				if err := provider.watcher.Watch(ctx, onChange); err != nil {
+
+				slog.Info("Watching configuration change.", "loader", watcher)
+				if err := watcher.Watch(ctx, onChange); err != nil {
 					errChan <- fmt.Errorf("watch configuration change: %w", err)
 					cancel()
 				}
@@ -218,8 +256,16 @@ func sub(values map[string]any, path string, delimiter string) any {
 // It requires Config.Watch has been called first.
 // The paths are case-insensitive.
 //
+// The onChange function must be non-blocking and usually completes instantly.
+// If it requires a long time to complete, it should be executed in a separate goroutine.
+//
 // This method is concurrency-safe.
-func (c *Config) OnChange(onchange func(*Config), paths ...string) {
+// It panics if onChange is nil.
+func (c *Config) OnChange(onChange func(*Config), paths ...string) {
+	if onChange == nil {
+		panic("cannot register nil onChange")
+	}
+
 	c.onChangesMutex.Lock()
 	defer c.onChangesMutex.Unlock()
 
@@ -229,7 +275,7 @@ func (c *Config) OnChange(onchange func(*Config), paths ...string) {
 
 	for _, path := range paths {
 		path = strings.ToLower(path)
-		c.onChanges[path] = append(c.onChanges[path], onchange)
+		c.onChanges[path] = append(c.onChanges[path], onChange)
 	}
 }
 
