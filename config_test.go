@@ -12,6 +12,7 @@ import (
 
 	"github.com/nil-go/konf"
 	"github.com/nil-go/konf/internal/assert"
+	"github.com/nil-go/konf/provider/env"
 )
 
 func TestConfig_Unmarshal(t *testing.T) {
@@ -121,6 +122,10 @@ func (m mapLoader) Load() (map[string]any, error) {
 	return m, nil
 }
 
+func (m mapLoader) String() string {
+	return "map"
+}
+
 func TestConfig_Watch(t *testing.T) {
 	t.Parallel()
 
@@ -207,4 +212,20 @@ type errorLoader struct{}
 
 func (errorLoader) Load() (map[string]any, error) {
 	return nil, errors.New("load error")
+}
+
+func TestConfig_Explain(t *testing.T) {
+	t.Setenv("CONFIG_NEST", "env")
+	config := konf.New()
+	err := config.Load(env.New(), mapLoader{"owner": "map", "config": map[string]any{"nest": "map"}})
+	assert.NoError(t, err)
+
+	assert.Equal(t, "non-exist has no configuration.\n\n", config.Explain("non-exist"))
+	assert.Equal(t, "owner has value[map] that is loaded by loader[map].\n\n", config.Explain("owner"))
+	expected := `config.nest has value[map] that is loaded by loader[map].
+Here are other value(loader)s:
+  - env(env)
+
+`
+	assert.Equal(t, expected, config.Explain("config"))
 }

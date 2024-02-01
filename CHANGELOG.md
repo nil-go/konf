@@ -7,6 +7,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- add Config.Explain to provide information about how Config resolve each value from loaders (#78).
+
 ### Changed
 
 - Switch from mitchellh/mapstructure to go-viper/mapstructure (#69).
