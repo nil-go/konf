@@ -18,7 +18,7 @@ func BenchmarkNew(b *testing.B) {
 
 	var loader kflag.Flag
 	for i := 0; i < b.N; i++ {
-		loader = kflag.New(kflag.WithFlagSet(set))
+		loader = kflag.New(konf{}, kflag.WithFlagSet(set))
 	}
 	b.StopTimer()
 
@@ -30,7 +30,7 @@ func BenchmarkNew(b *testing.B) {
 func BenchmarkLoad(b *testing.B) {
 	set := &flag.FlagSet{}
 	set.String("k", "v", "")
-	loader := kflag.New(kflag.WithFlagSet(set))
+	loader := kflag.New(konf{}, kflag.WithFlagSet(set))
 	b.ResetTimer()
 
 	var (
@@ -44,4 +44,12 @@ func BenchmarkLoad(b *testing.B) {
 
 	assert.NoError(b, err)
 	assert.Equal(b, "v", values["k"])
+}
+
+type konf struct {
+	exists bool
+}
+
+func (k konf) Exists([]string) bool {
+	return k.exists
 }

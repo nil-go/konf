@@ -25,6 +25,7 @@ func TestFlag_Load(t *testing.T) {
 
 	testcases := []struct {
 		description string
+		exists      bool
 		opts        []kflag.Option
 		expected    map[string]any
 	}{
@@ -47,13 +48,23 @@ func TestFlag_Load(t *testing.T) {
 				},
 			},
 		},
+		{
+			description: "with exists",
+			exists:      true,
+			opts:        []kflag.Option{kflag.WithPrefix("p.")},
+			expected: map[string]any{
+				"p": map[string]any{
+					"k": "v",
+				},
+			},
+		},
 	}
 
 	for i := range testcases {
 		testcase := testcases[i]
 
 		t.Run(testcase.description, func(t *testing.T) {
-			values, err := kflag.New(testcase.opts...).Load()
+			values, err := kflag.New(konf{exists: testcase.exists}, testcase.opts...).Load()
 			assert.NoError(t, err)
 			assert.Equal(t, testcase.expected, values)
 		})
@@ -89,6 +100,7 @@ func TestFlag_String(t *testing.T) {
 				t,
 				testcase.expected,
 				kflag.New(
+					konf{},
 					kflag.WithPrefix(testcase.prefix),
 					kflag.WithFlagSet(&pflag.FlagSet{}),
 				).String(),
