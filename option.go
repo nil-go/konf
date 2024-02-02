@@ -3,7 +3,11 @@
 
 package konf
 
-import "github.com/go-viper/mapstructure/v2"
+import (
+	"log/slog"
+
+	"github.com/go-viper/mapstructure/v2"
+)
 
 // WithDelimiter provides the delimiter used when specifying config paths.
 // The delimiter is used to separate keys in the path.
@@ -33,6 +37,15 @@ func WithTagName(tagName string) Option {
 func WithDecodeHook(decodeHook mapstructure.DecodeHookFunc) Option {
 	return func(options *options) {
 		options.decodeHook = decodeHook
+	}
+}
+
+// WithLogger provides the slog.Logger for Config.
+//
+// By default, it uses slog.Default().
+func WithLogger(logger *slog.Logger) Option {
+	return func(options *options) {
+		options.logger = logger
 	}
 }
 
