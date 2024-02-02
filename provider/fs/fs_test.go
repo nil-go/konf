@@ -47,15 +47,6 @@ func TestFile_Load(t *testing.T) {
 			err:         "read file: open not_found.json: file does not exist",
 		},
 		{
-			description: "fs file (ignore not exist)",
-			fs:          fstest.MapFS{},
-			path:        "not_found.json",
-			opts: []kfs.Option{
-				kfs.IgnoreFileNotExit(),
-			},
-			expected: map[string]any{},
-		},
-		{
 			description: "unmarshal error",
 			fs: fstest.MapFS{
 				"config.json": {

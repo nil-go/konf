@@ -8,9 +8,6 @@
 //
 // The unmarshal function must be able to unmarshal the file content into a map[string]any.
 // For example, with the default json.Unmarshal, the file is parsed as JSON.
-//
-// By default, it returns error while loading if the file is not found.
-// IgnoreFileNotExit can override the behavior to return an empty map[string]any.
 package file
 
 import (
@@ -24,10 +21,9 @@ import (
 //
 // To create a new File, call [New].
 type File struct {
-	logger         *slog.Logger
-	path           string
-	unmarshal      func([]byte, any) error
-	ignoreNotExist bool
+	logger    *slog.Logger
+	path      string
+	unmarshal func([]byte, any) error
 }
 
 // New creates a File with the given path and Option(s).
@@ -47,7 +43,6 @@ func New(path string, opts ...Option) File {
 	if option.logger == nil {
 		option.logger = slog.Default()
 	}
-	option.logger = option.logger.WithGroup("konf.file")
 	if option.unmarshal == nil {
 		option.unmarshal = json.Unmarshal
 	}
@@ -58,12 +53,6 @@ func New(path string, opts ...Option) File {
 func (f File) Load() (map[string]any, error) {
 	bytes, err := os.ReadFile(f.path)
 	if err != nil {
-		if f.ignoreNotExist && os.IsNotExist(err) {
-			f.logger.Warn("Config file does not exist.", "file", f.path)
-
-			return make(map[string]any), nil
-		}
-
 		return nil, fmt.Errorf("read file: %w", err)
 	}
 

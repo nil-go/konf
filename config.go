@@ -52,7 +52,6 @@ func New(opts ...Option) *Config {
 	if option.logger == nil {
 		option.logger = slog.Default()
 	}
-	option.logger = option.logger.WithGroup("konf")
 	if option.delimiter == "" {
 		option.delimiter = "."
 	}

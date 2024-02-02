@@ -37,12 +37,6 @@ func TestFile_Load(t *testing.T) {
 			err:         "read file: open not_found.json: ",
 		},
 		{
-			description: "file (ignore not exist)",
-			path:        "not_found.json",
-			opts:        []file.Option{file.IgnoreFileNotExit()},
-			expected:    map[string]any{},
-		},
-		{
 			description: "unmarshal error",
 			path:        "testdata/config.json",
 			opts: []file.Option{
