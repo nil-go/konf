@@ -21,7 +21,7 @@ func (f File) Watch(ctx context.Context, onChange func(map[string]any)) error {
 	}
 	defer func() {
 		if err := watcher.Close(); err != nil {
-			slog.Error("Error when closing file watcher.", "file", f.path, "error", err)
+			slog.WarnContext(ctx, "Error when closing file watcher.", "file", f.path, "error", err)
 		}
 	}()
 
@@ -73,7 +73,7 @@ func (f File) Watch(ctx context.Context, onChange func(map[string]any)) error {
 			case event.Has(fsnotify.Create) || event.Has(fsnotify.Write):
 				values, err := f.Load()
 				if err != nil {
-					slog.Error("Error when reloading config file", "file", f.path, "error", err)
+					slog.WarnContext(ctx, "Error when reloading config file", "file", f.path, "error", err)
 
 					continue
 				}
@@ -85,7 +85,7 @@ func (f File) Watch(ctx context.Context, onChange func(map[string]any)) error {
 				return nil
 			}
 
-			slog.Error("Error when watching file", "file", f.path, "error", err)
+			slog.WarnContext(ctx, "Error when watching file", "file", f.path, "error", err)
 
 		case <-ctx.Done():
 			return nil
