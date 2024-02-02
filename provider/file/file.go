@@ -24,6 +24,7 @@ import (
 //
 // To create a new File, call [New].
 type File struct {
+	logger         *slog.Logger
 	path           string
 	unmarshal      func([]byte, any) error
 	ignoreNotExist bool
@@ -43,6 +44,10 @@ func New(path string, opts ...Option) File {
 	for _, opt := range opts {
 		opt(option)
 	}
+	if option.logger == nil {
+		option.logger = slog.Default()
+	}
+	option.logger = option.logger.WithGroup("konf.file")
 	if option.unmarshal == nil {
 		option.unmarshal = json.Unmarshal
 	}
@@ -54,7 +59,7 @@ func (f File) Load() (map[string]any, error) {
 	bytes, err := os.ReadFile(f.path)
 	if err != nil {
 		if f.ignoreNotExist && os.IsNotExist(err) {
-			slog.Warn("Config file does not exist.", "file", f.path)
+			f.logger.Warn("Config file does not exist.", "file", f.path)
 
 			return make(map[string]any), nil
 		}

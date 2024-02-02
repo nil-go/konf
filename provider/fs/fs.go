@@ -25,6 +25,7 @@ import (
 //
 // To create a new FS, call [New].
 type FS struct {
+	logger         *slog.Logger
 	unmarshal      func([]byte, any) error
 	fs             fs.FS
 	path           string
@@ -49,6 +50,10 @@ func New(fs fs.FS, path string, opts ...Option) FS { //nolint:varnamelen
 	for _, opt := range opts {
 		opt(option)
 	}
+	if option.logger == nil {
+		option.logger = slog.Default()
+	}
+	option.logger = option.logger.WithGroup("konf.fs")
 	if option.unmarshal == nil {
 		option.unmarshal = json.Unmarshal
 	}
@@ -60,7 +65,7 @@ func (f FS) Load() (map[string]any, error) {
 	bytes, err := fs.ReadFile(f.fs, f.path)
 	if err != nil {
 		if f.ignoreNotExist && os.IsNotExist(err) {
-			slog.Warn("Config file does not exist.", "file", f.path)
+			f.logger.Warn("Config file does not exist.", "file", f.path)
 
 			return make(map[string]any), nil
 		}

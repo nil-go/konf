@@ -4,7 +4,6 @@
 package konf
 
 import (
-	"log/slog"
 	"reflect"
 	"sync/atomic"
 
@@ -17,7 +16,7 @@ import (
 func Get[T any](path string) T { //nolint:ireturn
 	var value T
 	if err := Unmarshal(path, &value); err != nil {
-		slog.Warn(
+		Default().logger.Warn(
 			"Could not read config, return empty value instead.",
 			"error", err,
 			"path", path,

@@ -3,6 +3,8 @@
 
 package file
 
+import "log/slog"
+
 // WithUnmarshal provides the function used to parses the configuration file.
 // The unmarshal function must be able to unmarshal the file content into a map[string]any.
 //
@@ -17,6 +19,15 @@ func WithUnmarshal(unmarshal func([]byte, any) error) Option {
 func IgnoreFileNotExit() Option {
 	return func(options *options) {
 		options.ignoreNotExist = true
+	}
+}
+
+// WithLogger provides the slog.Logger for File loader.
+//
+// By default, it uses slog.Default().
+func WithLogger(logger *slog.Logger) Option {
+	return func(options *options) {
+		options.logger = logger
 	}
 }
 

@@ -22,9 +22,10 @@ import (
 //
 // To create a new Config, call [New].
 type Config struct {
+	logger     *slog.Logger
 	decodeHook mapstructure.DecodeHookFunc
-	delimiter  string
 	tagName    string
+	delimiter  string
 
 	values    map[string]any
 	providers []*provider
@@ -48,6 +49,10 @@ func New(opts ...Option) *Config {
 	for _, opt := range opts {
 		opt(option)
 	}
+	if option.logger == nil {
+		option.logger = slog.Default()
+	}
+	option.logger = option.logger.WithGroup("konf")
 	if option.delimiter == "" {
 		option.delimiter = "."
 	}
@@ -110,7 +115,7 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 		watched = false
 	})
 	if watched {
-		slog.Warn("Config has been watched, call Watch again has no effects.")
+		c.logger.Warn("Config has been watched, call Watch again has no effects.")
 
 		return nil
 	}
@@ -133,7 +138,7 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 					maps.Merge(values, w.values)
 				}
 				c.values = values
-				slog.DebugContext(ctx, "Configuration has been updated with change.")
+				c.logger.DebugContext(ctx, "Configuration has been updated with change.")
 
 				if len(onChanges) > 0 {
 					func() {
@@ -151,10 +156,10 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 
 						select {
 						case <-done:
-							slog.DebugContext(ctx, "Configuration has been applied to onChanges.")
+							c.logger.DebugContext(ctx, "Configuration has been applied to onChanges.")
 						case <-ctx.Done():
 							if errors.Is(ctx.Err(), context.DeadlineExceeded) {
-								slog.WarnContext(ctx, "Configuration has not been fully applied to onChanges due to timeout."+
+								c.logger.WarnContext(ctx, "Configuration has not been fully applied to onChanges due to timeout."+
 									" Please check if the onChanges is blocking or takes too long to complete.")
 							}
 						}
@@ -201,13 +206,13 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 					}
 					onChangesChannel <- onChanges()
 
-					slog.Info(
+					c.logger.Info(
 						"Configuration has been changed.",
 						"loader", watcher,
 					)
 				}
 
-				slog.DebugContext(ctx, "Watching configuration change.", "loader", watcher)
+				c.logger.DebugContext(ctx, "Watching configuration change.", "loader", watcher)
 				if err := watcher.Watch(ctx, onChange); err != nil {
 					errChan <- fmt.Errorf("watch configuration change: %w", err)
 					cancel()
