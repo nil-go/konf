@@ -32,7 +32,7 @@ func Get[T any](path string) T { //nolint:ireturn
 // and decodes it into the given object pointed to by target.
 // The path is case-insensitive.
 func Unmarshal(path string, target any) error {
-	return defaultConfig.Load().Unmarshal(path, target)
+	return Default().Unmarshal(path, target)
 }
 
 // Explain provides information about how Config resolve each value
@@ -42,7 +42,7 @@ func Unmarshal(path string, target any) error {
 // If there are sensitive information (e.g. password, secret) which should not be exposed,
 // you can use [WithValueFormatter] to pass a value formatter to blur the information.
 func Explain(path string, opts ...ExplainOption) string {
-	return defaultConfig.Load().Explain(path, opts...)
+	return Default().Explain(path, opts...)
 }
 
 // OnChange registers a callback function that is executed
@@ -55,23 +55,22 @@ func Explain(path string, opts ...ExplainOption) string {
 // This method is concurrency-safe.
 // It panics if onChange is nil.
 func OnChange(onChange func(), paths ...string) {
-	defaultConfig.Load().OnChange(func(*Config) { onChange() }, paths...)
+	Default().OnChange(func(*Config) { onChange() }, paths...)
 }
 
 // SetDefault sets the given Config as the default Config.
 // After this call, the konf package's top functions (e.g. konf.Get)
 // will interact with the given Config.
-//
-// It panics if config is nil.
 func SetDefault(config *Config) {
-	if config == nil {
-		panic("cannot set default with nil config")
-	}
-
 	defaultConfig.Store(config)
 }
 
-var defaultConfig atomic.Pointer[Config] //nolint:gochecknoglobals
+// Default returns the default Config.
+func Default() *Config {
+	return defaultConfig.Load().(*Config) //nolint:forcetypeassert
+}
+
+var defaultConfig atomic.Value //nolint:gochecknoglobals
 
 func init() { //nolint:gochecknoinits
 	config := New()
