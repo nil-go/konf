@@ -133,11 +133,11 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 					maps.Merge(values, w.values)
 				}
 				c.values = values
-				slog.Info("Configuration has been updated with change.")
+				slog.DebugContext(ctx, "Configuration has been updated with change.")
 
 				if len(onChanges) > 0 {
 					func() {
-						ctx, cancel = context.WithTimeout(context.Background(), time.Minute)
+						ctx, cancel = context.WithTimeout(ctx, time.Minute)
 						defer cancel()
 
 						done := make(chan struct{})
@@ -151,7 +151,7 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 
 						select {
 						case <-done:
-							slog.InfoContext(ctx, "Configuration has been applied to onChanges.")
+							slog.DebugContext(ctx, "Configuration has been applied to onChanges.")
 						case <-ctx.Done():
 							if errors.Is(ctx.Err(), context.DeadlineExceeded) {
 								slog.WarnContext(ctx, "Configuration has not been fully applied to onChanges due to timeout."+
@@ -207,7 +207,7 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 					)
 				}
 
-				slog.Info("Watching configuration change.", "loader", watcher)
+				slog.DebugContext(ctx, "Watching configuration change.", "loader", watcher)
 				if err := watcher.Watch(ctx, onChange); err != nil {
 					errChan <- fmt.Errorf("watch configuration change: %w", err)
 					cancel()
