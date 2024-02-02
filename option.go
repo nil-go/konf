@@ -40,12 +40,14 @@ func WithDecodeHook(decodeHook mapstructure.DecodeHookFunc) Option {
 	}
 }
 
-// WithLogger provides the slog.Logger for Config.
+// WithLogHandler provides the slog.Handler for logs from watch.
 //
-// By default, it uses slog.Default().
-func WithLogger(logger *slog.Logger) Option {
+// By default, it uses handler from slog.Default().
+func WithLogHandler(handler slog.Handler) Option {
 	return func(options *options) {
-		options.logger = logger
+		if handler != nil {
+			options.logger = slog.New(handler)
+		}
 	}
 }
 

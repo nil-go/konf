@@ -15,19 +15,14 @@ func WithUnmarshal(unmarshal func([]byte, any) error) Option {
 	}
 }
 
-// IgnoreFileNotExit ignores the error and return an empty map instead if the configuration file is not found.
-func IgnoreFileNotExit() Option {
-	return func(options *options) {
-		options.ignoreNotExist = true
-	}
-}
-
-// WithLogger provides the slog.Logger for File loader.
+// WithLogHandler provides the slog.Handler for logs from watch.
 //
-// By default, it uses slog.Default().
-func WithLogger(logger *slog.Logger) Option {
+// By default, it uses handler from slog.Default().
+func WithLogHandler(handler slog.Handler) Option {
 	return func(options *options) {
-		options.logger = logger
+		if handler != nil {
+			options.logger = slog.New(handler)
+		}
 	}
 }
 

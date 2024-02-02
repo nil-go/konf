@@ -43,11 +43,11 @@ var testdata embed.FS
 
 func ExampleSetDefault() {
 	config := konf.New()
-	err := config.Load(
-		kfs.New(testdata, "testdata/config.json"),
-		env.New(env.WithPrefix("server")),
-	)
-	if err != nil {
+	if err := config.Load(kfs.New(testdata, "testdata/config.json")); err != nil {
+		// Handle error here.
+		panic(err)
+	}
+	if err := config.Load(env.New(env.WithPrefix("server"))); err != nil {
 		// Handle error here.
 		panic(err)
 	}
