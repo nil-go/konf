@@ -66,31 +66,29 @@ func New(opts ...Option) *Config {
 	return (*Config)(option)
 }
 
-// Load loads configuration from the given loaders.
+// Load loads configuration from the given loader.
 // Each loader takes precedence over the loaders before it.
 //
 // This method can be called multiple times but it is not concurrency-safe.
-// It panics if any loader is nil.
-func (c *Config) Load(loaders ...Loader) error {
-	for i, loader := range loaders {
-		if loader == nil {
-			panic(fmt.Sprintf("cannot load config from nil loader at loaders[%d]", i))
-		}
-
-		values, err := loader.Load()
-		if err != nil {
-			return fmt.Errorf("load configuration: %w", err)
-		}
-		maps.Merge(c.values, values)
-
-		provider := &provider{
-			loader: loader,
-			values: make(map[string]any),
-		}
-		// Merged to empty map to convert to lower case.
-		maps.Merge(provider.values, values)
-		c.providers = append(c.providers, provider)
+// It panics if loader is nil.
+func (c *Config) Load(loader Loader) error {
+	if loader == nil {
+		panic("cannot load config from nil loader")
 	}
+
+	values, err := loader.Load()
+	if err != nil {
+		return fmt.Errorf("load configuration: %w", err)
+	}
+	maps.Merge(c.values, values)
+
+	provider := &provider{
+		loader: loader,
+		values: make(map[string]any),
+	}
+	// Merged to empty map to convert to lower case.
+	maps.Merge(provider.values, values)
+	c.providers = append(c.providers, provider)
 
 	return nil
 }

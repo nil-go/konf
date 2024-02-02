@@ -105,8 +105,9 @@ func TestConfig_Unmarshal(t *testing.T) {
 			t.Parallel()
 
 			config := konf.New(testcase.opts...)
-			err := config.Load(testcase.loaders...)
-			assert.NoError(t, err)
+			for _, loader := range testcase.loaders {
+				assert.NoError(t, config.Load(loader))
+			}
 			testcase.assert(config)
 		})
 	}
@@ -125,7 +126,9 @@ func (m mapLoader) String() string {
 func TestConfig_Explain(t *testing.T) {
 	t.Setenv("CONFIG_NEST", "env")
 	config := konf.New()
-	err := config.Load(env.New(), mapLoader{"owner": "map", "config": map[string]any{"nest": "map"}})
+	err := config.Load(env.New())
+	assert.NoError(t, err)
+	err = config.Load(mapLoader{"owner": "map", "config": map[string]any{"nest": "map"}})
 	assert.NoError(t, err)
 
 	assert.Equal(t, "non-exist has no configuration.\n\n", config.Explain("non-exist"))
