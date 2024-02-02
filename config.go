@@ -110,6 +110,14 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 		panic("cannot watch change with nil context")
 	}
 
+	if hasWatcher := slices.ContainsFunc(c.providers, func(provider *provider) bool {
+		_, ok := provider.loader.(Watcher)
+
+		return ok
+	}); !hasWatcher {
+		return nil
+	}
+
 	watched := true
 	c.watchOnce.Do(func() {
 		watched = false
