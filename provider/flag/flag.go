@@ -24,15 +24,31 @@ import (
 //
 // To create a new Flag, call [New].
 type Flag struct {
-	_         [0]func() // Ensure it's incomparable.
+	konf      konf
 	set       *flag.FlagSet
 	delimiter string
 	prefix    string
 }
 
+type konf interface {
+	Exists(path []string) bool
+}
+
 // New creates a Flag with the given Option(s).
-func New(opts ...Option) Flag {
-	option := &options{}
+//
+// The first parameter is the konf Config instance that checks if the defined flags
+// have been set by other providers. If not, default flag values are merged.
+// If they exist, flag values are merged only if explicitly set in the command line.
+//
+// It panics if the konf is nil.
+func New(konf konf, opts ...Option) Flag {
+	if konf == nil {
+		panic("cannot create Flag with nil konf")
+	}
+
+	option := &options{
+		konf: konf,
+	}
 	for _, opt := range opts {
 		opt(option)
 	}
@@ -54,13 +70,14 @@ func (f Flag) Load() (map[string]any, error) {
 			return
 		}
 
+		keys := strings.Split(flag.Name, f.delimiter)
 		val := flag.Value.String()
 		// Skip zero default value to avoid overriding values set by other loader.
-		if val == flag.DefValue && isZeroDefValue(flag) {
+		if val == flag.DefValue && (f.konf.Exists(keys) || isZeroDefValue(flag)) {
 			return
 		}
 
-		maps.Insert(values, strings.Split(flag.Name, f.delimiter), val)
+		maps.Insert(values, keys, val)
 	})
 
 	return values, nil

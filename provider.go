@@ -22,3 +22,10 @@ type Loader interface {
 type Watcher interface {
 	Watch(ctx context.Context, onChange func(map[string]any)) error
 }
+
+// Exists tests if the given path exist in the configuration.
+//
+// It's used by the loader to check if the configuration has been set by other loaders.
+func (c *Config) Exists(path []string) bool {
+	return sub(c.values, path) != nil
+}

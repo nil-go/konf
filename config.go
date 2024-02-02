@@ -196,7 +196,8 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 
 						var callbacks []func(*Config)
 						for path, onChanges := range c.onChanges {
-							if sub(oldValues, path, c.delimiter) != nil || sub(newValues, path, c.delimiter) != nil {
+							keys := strings.Split(path, c.delimiter)
+							if sub(oldValues, keys) != nil || sub(newValues, keys) != nil {
 								callbacks = append(callbacks, onChanges...)
 							}
 						}
@@ -230,13 +231,13 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 	return err
 }
 
-func sub(values map[string]any, path string, delimiter string) any {
-	if path == "" {
+func sub(values map[string]any, keys []string) any {
+	if len(keys) == 0 || len(keys) == 1 && keys[0] == "" {
 		return values
 	}
 
 	var next any = values
-	for _, key := range strings.Split(path, delimiter) {
+	for _, key := range keys {
 		mp, ok := next.(map[string]any)
 		if !ok {
 			return nil
@@ -296,7 +297,7 @@ func (c *Config) Unmarshal(path string, target any) error {
 		return fmt.Errorf("new decoder: %w", err)
 	}
 
-	if err := decoder.Decode(sub(c.values, strings.ToLower(path), c.delimiter)); err != nil {
+	if err := decoder.Decode(sub(c.values, strings.Split(strings.ToLower(path), c.delimiter))); err != nil {
 		return fmt.Errorf("decode: %w", err)
 	}
 
@@ -320,7 +321,7 @@ func (c *Config) Explain(path string, opts ...ExplainOption) string {
 	}
 
 	explanation := &strings.Builder{}
-	c.explain(explanation, path, sub(c.values, strings.ToLower(path), c.delimiter), *option)
+	c.explain(explanation, path, sub(c.values, strings.Split(strings.ToLower(path), c.delimiter)), *option)
 
 	return explanation.String()
 }
@@ -336,7 +337,7 @@ func (c *Config) explain(explanation *strings.Builder, path string, value any, o
 
 	var loaders []loaderValue
 	for _, provider := range c.providers {
-		if v := sub(provider.values, path, c.delimiter); v != nil {
+		if v := sub(provider.values, strings.Split(path, c.delimiter)); v != nil {
 			loaders = append(loaders, loaderValue{provider.loader, v})
 		}
 	}
