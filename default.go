@@ -35,16 +35,6 @@ func Unmarshal(path string, target any) error {
 	return Default().Unmarshal(path, target)
 }
 
-// Explain provides information about how Config resolve each value
-// from loaders for the given path.
-// The path is case-insensitive.
-//
-// If there are sensitive information (e.g. password, secret) which should not be exposed,
-// you can use [WithValueFormatter] to pass a value formatter to blur the information.
-func Explain(path string, opts ...ExplainOption) string {
-	return Default().Explain(path, opts...)
-}
-
 // OnChange registers a callback function that is executed
 // when the value of any given path in the default Config changes.
 // The paths are case-insensitive.
