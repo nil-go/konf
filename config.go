@@ -89,11 +89,6 @@ func (c *Config) Load(loaders ...Loader) error {
 		// Merged to empty map to convert to lower case.
 		maps.Merge(provider.values, values)
 		c.providers = append(c.providers, provider)
-
-		slog.Info(
-			"Configuration has been loaded.",
-			"loader", loader,
-		)
 	}
 
 	return nil

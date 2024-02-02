@@ -17,7 +17,7 @@ import (
 func Get[T any](path string) T { //nolint:ireturn
 	var value T
 	if err := Unmarshal(path, &value); err != nil {
-		slog.Error(
+		slog.Warn(
 			"Could not read config, return empty value instead.",
 			"error", err,
 			"path", path,
