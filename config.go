@@ -109,7 +109,7 @@ func (c *Config) Unmarshal(path string, target any) error {
 		return fmt.Errorf("new decoder: %w", err)
 	}
 
-	if err := decoder.Decode(sub(c.values, strings.Split(strings.ToLower(path), c.delimiter))); err != nil {
+	if err := decoder.Decode(sub(c.values, strings.Split(path, c.delimiter))); err != nil {
 		return fmt.Errorf("decode: %w", err)
 	}
 
@@ -123,6 +123,7 @@ func sub(values map[string]any, keys []string) any {
 
 	var next any = values
 	for _, key := range keys {
+		key = strings.ToLower(key)
 		mp, ok := next.(map[string]any)
 		if !ok {
 			return nil
@@ -155,7 +156,7 @@ func (c *Config) Explain(path string, opts ...ExplainOption) string {
 	}
 
 	explanation := &strings.Builder{}
-	c.explain(explanation, path, sub(c.values, strings.Split(strings.ToLower(path), c.delimiter)), *option)
+	c.explain(explanation, path, sub(c.values, strings.Split(path, c.delimiter)), *option)
 
 	return explanation.String()
 }
