@@ -39,7 +39,7 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 		watched = false
 	})
 	if watched {
-		c.logger.Warn("Config has been watched, call Watch again has no effects.")
+		c.logger.WarnContext(ctx, "Config has been watched, call Watch again has no effects.")
 
 		return nil
 	}

@@ -67,7 +67,7 @@ func (f File) Watch(ctx context.Context, onChange func(map[string]any)) error {
 
 			switch {
 			case event.Has(fsnotify.Remove):
-				f.logger.Warn("Config file has been removed.", "file", f.path)
+				f.logger.WarnContext(ctx, "Config file has been removed.", "file", f.path)
 				onChange(nil)
 			case event.Has(fsnotify.Create) || event.Has(fsnotify.Write):
 				values, err := f.Load()
