@@ -1,0 +1,27 @@
+name: Tag
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  tag:
+    strategy:
+      matrix:
+        module: [ 'provider/file', 'provider/pflag' ]
+    name: Submodules
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create tag
+        uses: actions/github-script@v7
+        with:
+          script: |
+            ref = "refs/tags/${{ matrix.module }}/" + context.ref.split('/')[2]
+            github.rest.git.createRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: ref,
+              sha: context.sha
+            })
