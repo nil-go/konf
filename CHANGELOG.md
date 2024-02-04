@@ -16,18 +16,18 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - Switch from mitchellh/mapstructure to go-viper/mapstructure (#69).
 
-## [v0.3.0] - 11/17/2023
+## [0.3.0] - 2023-11-17
 
 ### Changed
 
 - [BREAKING] Redesign API.
 
-## [v0.2.0] - 3/18/2023
+## [0.2.0] - 2023-03-18
 
 ### Removed
 
 - Remove file.WithLog to favor standard log.Printf (#32).
 
-## [v0.1.0] - 3/12/2023
+## [0.1.0] - 2023-03-12
 
 Initial alpha release.
