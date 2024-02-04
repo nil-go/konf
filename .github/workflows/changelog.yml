@@ -1,6 +1,8 @@
 name: Changelog
 on:
   pull_request:
+    branches:
+      - main
     types:
       - opened
       - synchronize
@@ -8,8 +10,6 @@ on:
       - ready_for_review
       - labeled
       - unlabeled
-    branches:
-      - main
 
 jobs:
   # Enforces the update of a changelog file on every pull request
