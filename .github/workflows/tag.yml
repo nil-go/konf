@@ -10,7 +10,7 @@ jobs:
   tag:
     strategy:
       matrix:
-        module: [ 'provider/file', 'provider/pflag' ]
+        module: [ 'provider/file', 'provider/pflag', 'provider/appconfig' ]
     name: Submodules
     runs-on: ubuntu-latest
     steps:

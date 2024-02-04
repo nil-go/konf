@@ -11,6 +11,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - add Config.Explain to provide information about how Config resolve each value from loaders (#78).
 - add Default to get the default Config (#81).
+- add AWS AppConfig Loader (#92).
 
 ### Changed
 

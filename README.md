@@ -95,6 +95,7 @@ There are providers for the following configuration sources:
 - [`file`](provider/file) loads configuration from a file.
 - [`flag`](provider/flag) loads configuration from flags.
 - [`pflag`](provider/pflag) loads configuration from [spf13/pflag](https://github.com/spf13/pflag).
+- [`appconfig`](provider/appconfig) loads configuration from [AWS AppConfig](https://aws.amazon.com/systems-manager/features/appconfig/).
 
 ## Inspiration
 
