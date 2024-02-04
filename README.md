@@ -1,5 +1,6 @@
 # A minimalist configuration API for Go
 
+![Go Version](https://img.shields.io/github/go-mod/go-version/nil-go/konf)
 [![Go Reference](https://pkg.go.dev/badge/github.com/nil-go/konf.svg)](https://pkg.go.dev/github.com/nil-go/konf)
 [![Build](https://github.com/nil-go/konf/actions/workflows/test.yml/badge.svg)](https://github.com/nil-go/konf/actions/workflows/test.yml)
 [![Coverage](https://codecov.io/gh/nil-go/konf/branch/main/graph/badge.svg)](https://codecov.io/gh/nil-go/konf)
