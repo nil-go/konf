@@ -21,7 +21,7 @@ jobs:
           go-version: 'stable'
           cache-dependency-path: "**/go.sum"
       - name: Benchmark
-        run: go test -v -bench=. ./...
+        run: go test -v -bench=. -run=^$ ./...
         working-directory: ${{ matrix.module }}
   all:
     if: ${{ always() }}
