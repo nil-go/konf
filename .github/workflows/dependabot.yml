@@ -1,7 +1,10 @@
 name: Dependabot
 on:
   pull_request:
-    types: [opened]
+    branches:
+      - main
+    types:
+      - opened
 
 permissions:
   contents: write
