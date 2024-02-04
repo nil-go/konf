@@ -21,21 +21,21 @@ func TestFile_Watch(t *testing.T) {
 	testcases := []struct {
 		description string
 		action      func(string) error
-		expacted    map[string]any
+		expected    map[string]any
 	}{
 		{
 			description: "create",
 			action: func(path string) error {
 				return os.WriteFile(path, []byte(`{"p": {"k": "v"}}`), 0o600)
 			},
-			expacted: map[string]any{"p": map[string]any{"k": "v"}},
+			expected: map[string]any{"p": map[string]any{"k": "v"}},
 		},
 		{
 			description: "write",
 			action: func(path string) error {
 				return os.WriteFile(path, []byte(`{"p": {"k": "c"}}`), 0o600)
 			},
-			expacted: map[string]any{"p": map[string]any{"k": "c"}},
+			expected: map[string]any{"p": map[string]any{"k": "c"}},
 		},
 		{
 			description: "remove",
@@ -68,7 +68,7 @@ func TestFile_Watch(t *testing.T) {
 			time.Sleep(time.Second)
 			assert.NoError(t, testcase.action(tmpFile))
 			waitGroup.Wait()
-			assert.Equal(t, testcase.expacted, values)
+			assert.Equal(t, testcase.expected, values)
 		})
 	}
 }
