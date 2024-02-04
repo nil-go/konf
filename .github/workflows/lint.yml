@@ -9,6 +9,9 @@ on:
 
 jobs:
   lint:
+    strategy:
+      matrix:
+        module: [ '', 'provider/file', 'provider/pflag' ]
     name: Lint
     runs-on: ubuntu-latest
     steps:
@@ -19,11 +22,14 @@ jobs:
           cache-dependency-path: "**/go.sum"
       - name: Lint
         uses: golangci/golangci-lint-action@v3
-      - name: Lint (file)
-        uses: golangci/golangci-lint-action@v3
         with:
-          working-directory: provider/file
-      - name: Lint (pflag)
-        uses: golangci/golangci-lint-action@v3
-        with:
-          working-directory: provider/pflag
+          working-directory: ${{ matrix.module }}
+  all:
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    name: All Lints
+    needs: lint
+    steps:
+      - name: Check lint matrix status
+        if: ${{ needs.lint.result != 'success' }}
+        run: exit 1

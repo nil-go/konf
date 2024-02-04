@@ -9,6 +9,9 @@ on:
 
 jobs:
   benchmark:
+    strategy:
+      matrix:
+        module: [ '', 'provider/file', 'provider/pflag' ]
     name: Benchmark
     runs-on: ubuntu-latest
     steps:
@@ -18,10 +21,14 @@ jobs:
           go-version: 'stable'
           cache-dependency-path: "**/go.sum"
       - name: Benchmark
-        run: go test -v -shuffle=on -bench=. ./...
-      - name: Benchmark (file)
         run: go test -v -bench=. ./...
-        working-directory: provider/file
-      - name: Benchmark (pflag)
-        run: go test -v -shuffle=on -bench=. ./...
-        working-directory: provider/pflag
+        working-directory: ${{ matrix.module }}
+  all:
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    name: All Benchmarks
+    needs: benchmark
+    steps:
+      - name: Check benchmark matrix status
+        if: ${{ needs.benchmark.result != 'success' }}
+        run: exit 1
