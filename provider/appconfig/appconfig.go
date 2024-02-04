@@ -176,3 +176,7 @@ func (a *AppConfig) Watch(ctx context.Context, onChange func(map[string]any)) er
 		}
 	}
 }
+
+func (a *AppConfig) String() string {
+	return "appConfig:" + a.application + "-" + a.environment + "-" + a.profile
+}
