@@ -9,6 +9,9 @@ on:
 
 jobs:
   coverage:
+    strategy:
+      matrix:
+        module: [ '', 'provider/file', 'provider/pflag' ]
     name: Coverage
     runs-on: ubuntu-latest
     steps:
@@ -19,11 +22,4 @@ jobs:
           cache-dependency-path: "**/go.sum"
       - name: Coverage
         run: go test -v -covermode=count -coverprofile=coverage.txt ./...
-      - name: Coverage (file)
-        run: go test -v -covermode=count -coverprofile=coverage.txt ./...
-        working-directory: provider/file
-      - name: Coverage (pflag)
-        run: go test -v -covermode=count -coverprofile=coverage.txt ./...
-        working-directory: provider/pflag
-      - name: Codecov
-        uses: codecov/codecov-action@v4
+        working-directory: ${{ matrix.module }}
