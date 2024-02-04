@@ -28,8 +28,8 @@ func WithPollInterval(pollInterval time.Duration) Option {
 	}
 }
 
-// WithUnmarshal provides the function used to parses the configuration file.
-// The unmarshal function must be able to unmarshal the file content into a map[string]any.
+// WithUnmarshal provides the function used to parses the configuration.
+// The unmarshal function must be able to unmarshal the configuration into a map[string]any.
 //
 // The default function is json.Unmarshal.
 func WithUnmarshal(unmarshal func([]byte, any) error) Option {
@@ -50,7 +50,7 @@ func WithLogHandler(handler slog.Handler) Option {
 }
 
 type (
-	// Option configures the a File with specific options.
+	// Option configures the a AppConfig with specific options.
 	Option  func(options *options)
 	options struct {
 		AppConfig

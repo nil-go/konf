@@ -6,8 +6,8 @@
 // AppConfig loads configuration from AWS AppConfig with the given application, environment, profile
 // and returns a nested map[string]any that is parsed with the given unmarshal function.
 //
-// The unmarshal function must be able to unmarshal the file content into a map[string]any.
-// For example, with the default json.Unmarshal, the file is parsed as JSON.
+// The unmarshal function must be able to unmarshal the configuration into a map[string]any.
+// For example, with the default json.Unmarshal, the configuration is parsed as JSON.
 package appconfig
 
 import (
