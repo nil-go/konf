@@ -11,7 +11,7 @@ jobs:
   test:
     strategy:
       matrix:
-        module: [ '', 'provider/file', 'provider/pflag' ]
+        module: [ '', 'provider/file', 'provider/pflag', 'provider/appconfig' ]
         run-on: [ 'ubuntu', 'macOS', 'windows' ]
         go-version: [ 'stable' ]
     name: Test
