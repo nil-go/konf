@@ -4,8 +4,6 @@
 package konf_test
 
 import (
-	"bytes"
-	"log"
 	"testing"
 
 	"github.com/nil-go/konf"
@@ -37,18 +35,15 @@ func TestGet(t *testing.T) {
 }
 
 func TestGet_error(t *testing.T) {
-	config := konf.New()
+	buf := new(buffer)
+	config := konf.New(konf.WithLogHandler(logHandler(buf)))
 	err := config.Load(mapLoader{"config": "string"})
 	assert.NoError(t, err)
 	konf.SetDefault(config)
 
-	buf := new(bytes.Buffer)
-	log.SetOutput(buf)
-	log.SetFlags(0)
-
 	assert.True(t, !konf.Get[bool]("config"))
-	expected := "WARN Could not read config, return empty value instead." +
-		" error=\"decode: cannot parse '' as bool: strconv.ParseBool: parsing \\\"string\\\": invalid syntax\"" +
-		" path=config type=bool\n"
+	expected := `level=WARN msg="Could not read config, return empty value instead."` +
+		` error="decode: cannot parse '' as bool: strconv.ParseBool: parsing \"string\": invalid syntax"` +
+		` path=config type=bool` + "\n"
 	assert.Equal(t, expected, buf.String())
 }

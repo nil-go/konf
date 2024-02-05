@@ -30,26 +30,13 @@ type AppConfig struct {
 	logger    *slog.Logger
 	unmarshal func([]byte, any) error
 
-	client       appConfigClient
+	client       *appconfigdata.Client
 	application  string
 	environment  string
 	profile      string
 	pollInterval time.Duration
 
 	token atomic.Pointer[string]
-}
-
-type appConfigClient interface {
-	StartConfigurationSession(
-		ctx context.Context,
-		params *appconfigdata.StartConfigurationSessionInput,
-		optFns ...func(*appconfigdata.Options),
-	) (*appconfigdata.StartConfigurationSessionOutput, error)
-	GetLatestConfiguration(
-		ctx context.Context,
-		params *appconfigdata.GetLatestConfigurationInput,
-		optFns ...func(*appconfigdata.Options),
-	) (*appconfigdata.GetLatestConfigurationOutput, error)
 }
 
 // New creates an AppConfig with the given application, environment, profile and Option(s).

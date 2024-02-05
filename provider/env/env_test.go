@@ -43,6 +43,7 @@ func TestEnv_Load(t *testing.T) {
 	t.Setenv("P_K", "v")
 	t.Setenv("P_D", "-")
 	t.Setenv("P.D", ".")
+	t.Setenv("P.N", "")
 
 	for i := range testcases {
 		testcase := testcases[i]

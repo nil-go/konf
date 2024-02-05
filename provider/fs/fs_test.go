@@ -15,7 +15,47 @@ import (
 	kfs "github.com/nil-go/konf/provider/fs"
 )
 
-func TestFile_Load(t *testing.T) {
+func TestFS_New_panic(t *testing.T) {
+	t.Parallel()
+
+	testcases := []struct {
+		description string
+		call        func()
+		err         string
+	}{
+		{
+			description: "fs",
+			call: func() {
+				kfs.New(nil, "config.json")
+			},
+			err: "cannot create FS with nil fs",
+		},
+		{
+			description: "path",
+			call: func() {
+				kfs.New(fstest.MapFS{}, "")
+			},
+			err: "cannot create FS with empty path",
+		},
+	}
+
+	for i := range testcases {
+		testcase := testcases[i]
+
+		t.Run(testcase.description, func(t *testing.T) {
+			t.Parallel()
+
+			defer func() {
+				if r := recover(); r != nil {
+					assert.Equal(t, r.(string), testcase.err)
+				}
+			}()
+			testcase.call()
+		})
+	}
+}
+
+func TestFS_Load(t *testing.T) {
 	t.Parallel()
 
 	testcases := []struct {
@@ -80,7 +120,7 @@ func TestFile_Load(t *testing.T) {
 	}
 }
 
-func TestFile_String(t *testing.T) {
+func TestFS_String(t *testing.T) {
 	t.Parallel()
 
 	assert.Equal(t, "fs:config.json", kfs.New(fstest.MapFS{}, "config.json").String())

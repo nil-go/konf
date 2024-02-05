@@ -146,13 +146,14 @@ func sub(values map[string]any, keys []string) any {
 // If there are sensitive information (e.g. password, secret) which should not be exposed,
 // you can use [WithValueFormatter] to pass a value formatter to blur the information.
 func (c *Config) Explain(path string, opts ...ExplainOption) string {
-	option := &explainOptions{
-		valueFormatter: func(path string, loader Loader, value any) string {
-			return fmt.Sprint(value)
-		},
-	}
+	option := &explainOptions{}
 	for _, opt := range opts {
 		opt(option)
+	}
+	if option.valueFormatter == nil {
+		option.valueFormatter = func(path string, loader Loader, value any) string {
+			return fmt.Sprint(value)
+		}
 	}
 
 	explanation := &strings.Builder{}

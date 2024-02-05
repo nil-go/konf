@@ -1,22 +1,26 @@
 // Copyright (c) 2024 The konf authors
 // Use of this source code is governed by a MIT license found in the LICENSE file.
 
-package appconfig //nolint:testpackage
+package appconfig_test
+
 import (
 	"context"
-	"encoding/json"
 	"testing"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
+	awsMiddleware "github.com/aws/aws-sdk-go-v2/aws/middleware"
+	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/appconfigdata"
+	"github.com/aws/smithy-go/middleware"
 
+	"github.com/nil-go/konf/provider/appconfig"
 	"github.com/nil-go/konf/provider/appconfig/internal/assert"
 )
 
 func BenchmarkNew(b *testing.B) {
-	var loader *AppConfig
+	var loader *appconfig.AppConfig
 	for i := 0; i < b.N; i++ {
-		loader = New("app", "env", "profile")
+		loader = appconfig.New("app", "env", "profile")
 	}
 	b.StopTimer()
 
@@ -24,27 +28,47 @@ func BenchmarkNew(b *testing.B) {
 }
 
 func BenchmarkLoad(b *testing.B) {
-	loader := &AppConfig{
-		client: fakeAppConfigClient{
-			getLatestConfiguration: func(
-				context.Context,
-				*appconfigdata.GetLatestConfigurationInput,
-				...func(*appconfigdata.Options),
-			) (*appconfigdata.GetLatestConfigurationOutput, error) {
-				return &appconfigdata.GetLatestConfigurationOutput{
-					Configuration:              []byte(`{"k":"v"}`),
-					NextPollConfigurationToken: aws.String("next-token"),
-				}, nil
+	cfg, err := config.LoadDefaultConfig(
+		context.Background(),
+		config.WithAPIOptions([]func(*middleware.Stack) error{
+			func(stack *middleware.Stack) error {
+				return stack.Finalize.Add(
+					middleware.FinalizeMiddlewareFunc(
+						"mock", func(
+							ctx context.Context,
+							input middleware.FinalizeInput,
+							handler middleware.FinalizeHandler,
+						) (middleware.FinalizeOutput, middleware.Metadata, error) {
+							switch awsMiddleware.GetOperationName(ctx) {
+							case "StartConfigurationSession":
+								return middleware.FinalizeOutput{
+									Result: &appconfigdata.StartConfigurationSessionOutput{
+										InitialConfigurationToken: aws.String("initial-token"),
+									},
+								}, middleware.Metadata{}, nil
+							case "GetLatestConfiguration":
+								return middleware.FinalizeOutput{
+									Result: &appconfigdata.GetLatestConfigurationOutput{
+										Configuration:              []byte(`{"k":"v"}`),
+										NextPollConfigurationToken: aws.String("next-token"),
+									},
+								}, middleware.Metadata{}, nil
+							default:
+								return middleware.FinalizeOutput{}, middleware.Metadata{}, nil
+							}
+						},
+					),
+					middleware.Before,
+				)
 			},
-		},
-		unmarshal: json.Unmarshal,
-	}
+		}),
+	)
+	assert.NoError(b, err)
+
+	loader := appconfig.New("app", "env", "profiler", appconfig.WithAWSConfig(&cfg))
 	b.ResetTimer()
 
-	var (
-		values map[string]any
-		err    error
-	)
+	var values map[string]any
 	for i := 0; i < b.N; i++ {
 		values, err = loader.Load()
 	}

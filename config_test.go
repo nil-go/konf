@@ -5,11 +5,25 @@ package konf_test
 
 import (
 	"testing"
+	"time"
+
+	"github.com/go-viper/mapstructure/v2"
 
 	"github.com/nil-go/konf"
 	"github.com/nil-go/konf/internal/assert"
 	"github.com/nil-go/konf/provider/env"
 )
+
+func TestConfig_Load_panic(t *testing.T) {
+	t.Parallel()
+
+	defer func() {
+		if r := recover(); r != nil {
+			assert.Equal(t, r.(string), "cannot load config from nil loader")
+		}
+	}()
+	_ = konf.New().Load(nil)
+}
 
 func TestConfig_Unmarshal(t *testing.T) {
 	t.Parallel()
@@ -82,6 +96,44 @@ func TestConfig_Unmarshal(t *testing.T) {
 			},
 		},
 		{
+			description: "customized decode hook",
+			opts: []konf.Option{
+				konf.WithDecodeHook(mapstructure.StringToTimeDurationHookFunc()),
+			},
+			loaders: []konf.Loader{
+				mapLoader{
+					"config": map[string]any{
+						"nest": "1s",
+					},
+				},
+			},
+			assert: func(config *konf.Config) {
+				var value time.Duration
+				assert.NoError(t, config.Unmarshal("config.nest", &value))
+				assert.Equal(t, time.Second, value)
+			},
+		},
+		{
+			description: "customized tag name",
+			opts: []konf.Option{
+				konf.WithTagName("test"),
+			},
+			loaders: []konf.Loader{
+				mapLoader{
+					"config": map[string]any{
+						"nest": "string",
+					},
+				},
+			},
+			assert: func(config *konf.Config) {
+				var value struct {
+					N string `test:"nest"`
+				}
+				assert.NoError(t, config.Unmarshal("config", &value))
+				assert.Equal(t, "string", value.N)
+			},
+		},
+		{
 			description: "non string key",
 			loaders: []konf.Loader{
 				mapLoader{
@@ -132,7 +184,14 @@ func TestConfig_Explain(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.Equal(t, "non-exist has no configuration.\n\n", config.Explain("non-exist"))
-	assert.Equal(t, "owner has value[map] that is loaded by loader[map].\n\n", config.Explain("owner"))
+	assert.Equal(t,
+		"owner has value[map] that is loaded by loader[map].\n\n",
+		config.Explain("owner", konf.WithValueFormatter(
+			func(_ string, _ konf.Loader, value any) string {
+				return value.(string)
+			},
+		)),
+	)
 	expected := `config.nest has value[map] that is loaded by loader[map].
 Here are other value(loader)s:
   - env(env)
