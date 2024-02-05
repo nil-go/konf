@@ -367,7 +367,7 @@ func TestAppConfig_Watch(t *testing.T) {
 			loader := appconfig.New(
 				"app", "env", "profiler",
 				appconfig.WithAWSConfig(&cfg),
-				appconfig.WithPollInterval(time.Second),
+				appconfig.WithPollInterval(100*time.Millisecond),
 				appconfig.WithLogHandler(logHandler(buf)),
 				appconfig.WithUnmarshal(testcase.unmarshal),
 			)
@@ -387,7 +387,7 @@ func TestAppConfig_Watch(t *testing.T) {
 			}()
 			waitGroup.Wait()
 
-			time.Sleep(2 * time.Second)
+			time.Sleep(150 * time.Millisecond)
 			if val, ok := values.Load().(map[string]any); ok {
 				assert.Equal(t, testcase.expected, val)
 			} else {
