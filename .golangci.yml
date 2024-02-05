@@ -139,6 +139,9 @@ issues:
         - govet
     - path: _test\.go
       linters:
+        - cyclop
+        - forcetypeassert
         - funlen
+        - goconst
         - goerr113
         - wrapcheck

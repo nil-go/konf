@@ -13,6 +13,17 @@ import (
 	kflag "github.com/nil-go/konf/provider/flag"
 )
 
+func TestFlag_New_panic(t *testing.T) {
+	t.Parallel()
+
+	defer func() {
+		if r := recover(); r != nil {
+			assert.Equal(t, r.(string), "cannot create Flag with nil konf")
+		}
+	}()
+	kflag.New(nil)
+}
+
 func TestFlag_Load(t *testing.T) {
 	flag.String("p.k", "", "")
 	_ = flag.Set("p.k", "v")

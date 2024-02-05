@@ -45,11 +45,7 @@ func (f File) Watch(ctx context.Context, onChange func(map[string]any)) error {
 	)
 	for {
 		select {
-		case event, ok := <-watcher.Events:
-			if !ok {
-				return nil
-			}
-
+		case event := <-watcher.Events:
 			// Use a simple timer to buffer events as certain events fire
 			// multiple times on some platforms.
 			if event.String() == lastEvent && time.Since(lastEventTime) < 5*time.Millisecond {
@@ -79,11 +75,7 @@ func (f File) Watch(ctx context.Context, onChange func(map[string]any)) error {
 				onChange(values)
 			}
 
-		case err, ok := <-watcher.Errors:
-			if !ok {
-				return nil
-			}
-
+		case err := <-watcher.Errors:
 			f.logger.WarnContext(ctx, "Error when watching file", "file", f.path, "error", err)
 
 		case <-ctx.Done():

@@ -14,7 +14,18 @@ import (
 	"github.com/nil-go/konf/provider/pflag/internal/assert"
 )
 
-func TestFlag_Load(t *testing.T) {
+func TestPFlag_New_panic(t *testing.T) {
+	t.Parallel()
+
+	defer func() {
+		if r := recover(); r != nil {
+			assert.Equal(t, r.(string), "cannot create Flag with nil konf")
+		}
+	}()
+	kflag.New(nil)
+}
+
+func TestPFlag_Load(t *testing.T) {
 	pflag.String("p.k", "", "")
 	_ = pflag.Set("p.k", "v")
 	pflag.String("p.d", ".", "")
@@ -71,7 +82,7 @@ func TestFlag_Load(t *testing.T) {
 	}
 }
 
-func TestFlag_String(t *testing.T) {
+func TestPFlag_String(t *testing.T) {
 	t.Parallel()
 
 	testcases := []struct {
