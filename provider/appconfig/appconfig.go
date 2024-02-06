@@ -15,6 +15,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"reflect"
 	"sync/atomic"
 	"time"
 
@@ -70,14 +71,14 @@ func New(application, environment, profile string, opts ...Option) *AppConfig {
 	if option.pollInterval <= 0 {
 		option.pollInterval = time.Minute
 	}
-	if option.awsConfig == nil {
+	if reflect.ValueOf(option.awsConfig).IsZero() {
 		awsConfig, err := config.LoadDefaultConfig(context.Background())
 		if err != nil {
 			panic(fmt.Sprintf("cannot load AWS default config: %v", err))
 		}
-		option.awsConfig = &awsConfig
+		option.awsConfig = awsConfig
 	}
-	option.AppConfig.client = appconfigdata.NewFromConfig(*option.awsConfig)
+	option.AppConfig.client = appconfigdata.NewFromConfig(option.awsConfig)
 
 	return &option.AppConfig
 }

@@ -65,7 +65,7 @@ func BenchmarkLoad(b *testing.B) {
 	)
 	assert.NoError(b, err)
 
-	loader := appconfig.New("app", "env", "profiler", appconfig.WithAWSConfig(&cfg))
+	loader := appconfig.New("app", "env", "profiler", appconfig.WithAWSConfig(cfg))
 	b.ResetTimer()
 
 	var values map[string]any

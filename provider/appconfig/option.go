@@ -13,7 +13,7 @@ import (
 // WithAWSConfig provides the AWS Config for the AWS SDK.
 //
 // By default, it loads the default AWS Config.
-func WithAWSConfig(awsConfig *aws.Config) Option {
+func WithAWSConfig(awsConfig aws.Config) Option {
 	return func(options *options) {
 		options.awsConfig = awsConfig
 	}
@@ -55,6 +55,6 @@ type (
 	options struct {
 		AppConfig
 
-		awsConfig *aws.Config
+		awsConfig aws.Config
 	}
 )

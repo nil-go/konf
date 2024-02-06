@@ -211,7 +211,7 @@ func TestAppConfig_Load(t *testing.T) {
 
 			loader := appconfig.New(
 				"app", "env", "profiler",
-				appconfig.WithAWSConfig(&cfg),
+				appconfig.WithAWSConfig(cfg),
 				appconfig.WithUnmarshal(testcase.unmarshal),
 			)
 			values, err := loader.Load()
@@ -366,7 +366,7 @@ func TestAppConfig_Watch(t *testing.T) {
 			buf := new(buffer)
 			loader := appconfig.New(
 				"app", "env", "profiler",
-				appconfig.WithAWSConfig(&cfg),
+				appconfig.WithAWSConfig(cfg),
 				appconfig.WithPollInterval(100*time.Millisecond),
 				appconfig.WithLogHandler(logHandler(buf)),
 				appconfig.WithUnmarshal(testcase.unmarshal),
