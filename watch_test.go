@@ -197,7 +197,7 @@ func TestConfig_Watch_error(t *testing.T) {
 type errorWatcher struct{}
 
 func (errorWatcher) Load() (map[string]any, error) {
-	return make(map[string]any), nil
+	return nil, nil //nolint:nilnil
 }
 
 func (errorWatcher) Watch(context.Context, func(map[string]any)) error {
