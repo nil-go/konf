@@ -296,7 +296,8 @@ func TestAppConfig_Watch(t *testing.T) {
 			},
 			log: `level=WARN msg="Error when reloading from AWS AppConfig"` +
 				` application=app environment=env profile=profiler` +
-				` error="operation error AppConfigData: GetLatestConfiguration, get latest configuration error"` + "\n",
+				` error="get latest configuration: operation error AppConfigData: GetLatestConfiguration,` +
+				` get latest configuration error"` + "\n",
 		},
 		{
 			description: "unmarshal error",
@@ -320,8 +321,8 @@ func TestAppConfig_Watch(t *testing.T) {
 			unmarshal: func([]byte, any) error {
 				return errors.New("unmarshal error")
 			},
-			log: `level=WARN msg="Error when unmarshalling config from AWS AppConfig"` +
-				` application=app environment=env profile=profiler error="unmarshal error"` + "\n",
+			log: `level=WARN msg="Error when reloading from AWS AppConfig"` +
+				` application=app environment=env profile=profiler error="unmarshal: unmarshal error"` + "\n",
 		},
 	}
 

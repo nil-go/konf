@@ -98,21 +98,7 @@ func (a *AppConfig) Load() (map[string]any, error) {
 		a.token.Store(output.InitialConfigurationToken)
 	}
 
-	input := &appconfigdata.GetLatestConfigurationInput{
-		ConfigurationToken: a.token.Load(),
-	}
-	output, err := a.client.GetLatestConfiguration(context.Background(), input)
-	if err != nil {
-		return nil, fmt.Errorf("get latest configuration: %w", err)
-	}
-	a.token.Store(output.NextPollConfigurationToken)
-
-	var out map[string]any
-	if err := a.unmarshal(output.Configuration, &out); err != nil {
-		return nil, fmt.Errorf("unmarshal: %w", err)
-	}
-
-	return out, nil
+	return a.load(context.Background())
 }
 
 func (a *AppConfig) Watch(ctx context.Context, onChange func(map[string]any)) error {
@@ -122,10 +108,7 @@ func (a *AppConfig) Watch(ctx context.Context, onChange func(map[string]any)) er
 	for {
 		select {
 		case <-ticker.C:
-			input := &appconfigdata.GetLatestConfigurationInput{
-				ConfigurationToken: a.token.Load(),
-			}
-			output, err := a.client.GetLatestConfiguration(ctx, input)
+			out, err := a.load(ctx)
 			if err != nil {
 				a.logger.WarnContext(
 					ctx, "Error when reloading from AWS AppConfig",
@@ -137,32 +120,38 @@ func (a *AppConfig) Watch(ctx context.Context, onChange func(map[string]any)) er
 
 				continue
 			}
-			a.token.Store(output.NextPollConfigurationToken)
 
-			if len(output.Configuration) == 0 {
-				// It may return empty configuration data
-				// if the client already has the latest version.
-				continue
+			if out != nil {
+				onChange(out)
 			}
-
-			var out map[string]any
-			if err := a.unmarshal(output.Configuration, &out); err != nil {
-				a.logger.WarnContext(
-					ctx, "Error when unmarshalling config from AWS AppConfig",
-					"application", a.application,
-					"environment", a.environment,
-					"profile", a.profile,
-					"error", err,
-				)
-
-				continue
-			}
-
-			onChange(out)
 		case <-ctx.Done():
 			return nil
 		}
 	}
+}
+
+func (a *AppConfig) load(ctx context.Context) (map[string]any, error) {
+	input := &appconfigdata.GetLatestConfigurationInput{
+		ConfigurationToken: a.token.Load(),
+	}
+	output, err := a.client.GetLatestConfiguration(ctx, input)
+	if err != nil {
+		return nil, fmt.Errorf("get latest configuration: %w", err)
+	}
+	a.token.Store(output.NextPollConfigurationToken)
+
+	if len(output.Configuration) == 0 {
+		// It may return empty configuration data
+		// if the client already has the latest version.
+		return nil, nil //nolint:nilnil // Use nil to indicate no change
+	}
+
+	var out map[string]any
+	if e := a.unmarshal(output.Configuration, &out); e != nil {
+		return nil, fmt.Errorf("unmarshal: %w", e)
+	}
+
+	return out, nil
 }
 
 func (a *AppConfig) String() string {
