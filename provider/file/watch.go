@@ -19,16 +19,16 @@ func (f File) Watch(ctx context.Context, onChange func(map[string]any)) error {
 		return fmt.Errorf("create file watcher for %s: %w", f.path, err)
 	}
 	defer func() {
-		if err := watcher.Close(); err != nil {
-			f.logger.WarnContext(ctx, "Error when closing file watcher.", "file", f.path, "error", err)
+		if e := watcher.Close(); e != nil {
+			f.logger.WarnContext(ctx, "Error when closing file watcher.", "file", f.path, "error", e)
 		}
 	}()
 
 	// Although only a single file is being watched, fsnotify has to watch
 	// the whole parent directory to pick up all events such as symlink changes.
 	dir, _ := filepath.Split(f.path)
-	if err := watcher.Add(dir); err != nil {
-		return fmt.Errorf("watch dir %s: %w", dir, err)
+	if e := watcher.Add(dir); e != nil {
+		return fmt.Errorf("watch dir %s: %w", dir, e)
 	}
 
 	// Resolve symlinks and save the original path so that changes to symlinks

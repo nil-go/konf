@@ -134,9 +134,6 @@ linters:
 
 issues:
   exclude-rules:
-    - text: 'shadow: declaration of "(err|ctx)" shadows declaration at'
-      linters:
-        - govet
     - path: _test\.go
       linters:
         - cyclop
