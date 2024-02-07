@@ -137,8 +137,8 @@ func TestConfig_Watch_panic(t *testing.T) {
 		},
 	}
 
-	for i := range testcases {
-		testcase := testcases[i]
+	for _, testcase := range testcases {
+		testcase := testcase
 
 		t.Run(testcase.description, func(t *testing.T) {
 			t.Parallel()
@@ -197,7 +197,7 @@ func TestConfig_Watch_error(t *testing.T) {
 type errorWatcher struct{}
 
 func (errorWatcher) Load() (map[string]any, error) {
-	return make(map[string]any), nil
+	return nil, nil //nolint:nilnil
 }
 
 func (errorWatcher) Watch(context.Context, func(map[string]any)) error {

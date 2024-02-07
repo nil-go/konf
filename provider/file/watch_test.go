@@ -18,6 +18,8 @@ import (
 )
 
 func TestFile_Watch(t *testing.T) {
+	t.Parallel()
+
 	testcases := []struct {
 		description string
 		action      func(string) error
@@ -43,10 +45,12 @@ func TestFile_Watch(t *testing.T) {
 		},
 	}
 
-	for i := range testcases {
-		testcase := testcases[i]
+	for _, testcase := range testcases {
+		testcase := testcase
 
 		t.Run(testcase.description, func(t *testing.T) {
+			t.Parallel()
+
 			tmpFile := filepath.Join(t.TempDir(), "watch.json")
 			assert.NoError(t, os.WriteFile(tmpFile, []byte(`{"p": {"k": "v"}}`), 0o600))
 

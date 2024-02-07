@@ -55,8 +55,8 @@ func TestAppConfig_New_panic(t *testing.T) {
 		},
 	}
 
-	for i := range testcases {
-		testcase := testcases[i]
+	for _, testcase := range testcases {
+		testcase := testcase
 
 		t.Run(testcase.description, func(t *testing.T) {
 			t.Parallel()
@@ -187,8 +187,8 @@ func TestAppConfig_Load(t *testing.T) {
 		},
 	}
 
-	for i := range testcases {
-		testcase := testcases[i]
+	for _, testcase := range testcases {
+		testcase := testcase
 
 		t.Run(testcase.description, func(t *testing.T) {
 			t.Parallel()
@@ -211,7 +211,7 @@ func TestAppConfig_Load(t *testing.T) {
 
 			loader := appconfig.New(
 				"app", "env", "profiler",
-				appconfig.WithAWSConfig(&cfg),
+				appconfig.WithAWSConfig(cfg),
 				appconfig.WithUnmarshal(testcase.unmarshal),
 			)
 			values, err := loader.Load()
@@ -226,6 +226,8 @@ func TestAppConfig_Load(t *testing.T) {
 }
 
 func TestAppConfig_Watch(t *testing.T) {
+	t.Parallel()
+
 	testcases := []struct {
 		description string
 		middleware  func(
@@ -294,7 +296,8 @@ func TestAppConfig_Watch(t *testing.T) {
 			},
 			log: `level=WARN msg="Error when reloading from AWS AppConfig"` +
 				` application=app environment=env profile=profiler` +
-				` error="operation error AppConfigData: GetLatestConfiguration, get latest configuration error"` + "\n",
+				` error="get latest configuration: operation error AppConfigData: GetLatestConfiguration,` +
+				` get latest configuration error"` + "\n",
 		},
 		{
 			description: "unmarshal error",
@@ -318,15 +321,17 @@ func TestAppConfig_Watch(t *testing.T) {
 			unmarshal: func([]byte, any) error {
 				return errors.New("unmarshal error")
 			},
-			log: `level=WARN msg="Error when unmarshalling config from AWS AppConfig"` +
-				` application=app environment=env profile=profiler error="unmarshal error"` + "\n",
+			log: `level=WARN msg="Error when reloading from AWS AppConfig"` +
+				` application=app environment=env profile=profiler error="unmarshal: unmarshal error"` + "\n",
 		},
 	}
 
-	for i := range testcases {
-		testcase := testcases[i]
+	for _, testcase := range testcases {
+		testcase := testcase
 
 		t.Run(testcase.description, func(t *testing.T) {
+			t.Parallel()
+
 			cfg, err := config.LoadDefaultConfig(
 				context.Background(),
 				config.WithAPIOptions([]func(*middleware.Stack) error{
@@ -366,7 +371,7 @@ func TestAppConfig_Watch(t *testing.T) {
 			buf := new(buffer)
 			loader := appconfig.New(
 				"app", "env", "profiler",
-				appconfig.WithAWSConfig(&cfg),
+				appconfig.WithAWSConfig(cfg),
 				appconfig.WithPollInterval(100*time.Millisecond),
 				appconfig.WithLogHandler(logHandler(buf)),
 				appconfig.WithUnmarshal(testcase.unmarshal),

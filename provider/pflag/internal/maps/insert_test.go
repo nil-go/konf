@@ -24,7 +24,7 @@ func TestInsert(t *testing.T) {
 			description: "empty",
 			keys:        []string{"p", "k"},
 			val:         "v",
-			dst:         make(map[string]any),
+			dst:         map[string]any{},
 			expected: map[string]any{
 				"p": map[string]any{
 					"k": "v",

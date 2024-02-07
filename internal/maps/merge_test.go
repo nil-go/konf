@@ -22,14 +22,14 @@ func TestMerge(t *testing.T) {
 		{
 			description: "nil source",
 			src:         nil,
-			dst:         make(map[string]any),
-			expected:    make(map[string]any),
+			dst:         map[string]any{},
+			expected:    map[string]any{},
 		},
 		{
 			description: "empty",
-			src:         make(map[string]any),
-			dst:         make(map[string]any),
-			expected:    make(map[string]any),
+			src:         map[string]any{},
+			dst:         map[string]any{},
+			expected:    map[string]any{},
 		},
 		{
 			description: "no key conflict",

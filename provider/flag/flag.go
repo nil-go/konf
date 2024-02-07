@@ -56,7 +56,9 @@ func New(konf konf, opts ...Option) Flag {
 		option.delimiter = "."
 	}
 	if option.set == nil {
-		flag.Parse()
+		if !flag.Parsed() {
+			flag.Parse()
+		}
 		option.set = flag.CommandLine
 	}
 

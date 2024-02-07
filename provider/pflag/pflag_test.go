@@ -1,11 +1,10 @@
 // Copyright (c) 2024 The konf authors
 // Use of this source code is governed by a MIT license found in the LICENSE file.
 
-//go:build !race
-
 package pflag_test
 
 import (
+	"flag"
 	"testing"
 
 	"github.com/spf13/pflag"
@@ -26,13 +25,7 @@ func TestPFlag_New_panic(t *testing.T) {
 }
 
 func TestPFlag_Load(t *testing.T) {
-	pflag.String("p.k", "", "")
-	_ = pflag.Set("p.k", "v")
-	pflag.String("p.d", ".", "")
-	pflag.Int("p.i", 0, "")
-
-	set := &pflag.FlagSet{}
-	set.String("p_d", "_", "")
+	t.Parallel()
 
 	testcases := []struct {
 		description string
@@ -71,10 +64,14 @@ func TestPFlag_Load(t *testing.T) {
 		},
 	}
 
-	for i := range testcases {
-		testcase := testcases[i]
+	pflag.CommandLine.SortFlags = false
+	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
+	for _, testcase := range testcases {
+		testcase := testcase
 
 		t.Run(testcase.description, func(t *testing.T) {
+			t.Parallel()
+
 			values, err := kflag.New(konf{exists: testcase.exists}, testcase.opts...).Load()
 			assert.NoError(t, err)
 			assert.Equal(t, testcase.expected, values)
@@ -101,8 +98,8 @@ func TestPFlag_String(t *testing.T) {
 		},
 	}
 
-	for i := range testcases {
-		testcase := testcases[i]
+	for _, testcase := range testcases {
+		testcase := testcase
 
 		t.Run(testcase.description, func(t *testing.T) {
 			t.Parallel()
@@ -118,4 +115,16 @@ func TestPFlag_String(t *testing.T) {
 			)
 		})
 	}
+}
+
+var set = &pflag.FlagSet{}
+
+func init() {
+	pflag.String("p.k", "", "")
+	_ = pflag.Set("p.k", "v")
+	pflag.String("p.d", ".", "")
+	pflag.Int("p.i", 0, "")
+	pflag.Parse()
+
+	set.String("p_d", "_", "")
 }

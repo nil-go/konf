@@ -45,8 +45,8 @@ func TestEnv_Load(t *testing.T) {
 	t.Setenv("P.D", ".")
 	t.Setenv("P.N", "")
 
-	for i := range testcases {
-		testcase := testcases[i]
+	for _, testcase := range testcases {
+		testcase := testcase
 
 		t.Run(testcase.description, func(t *testing.T) {
 			values, err := env.New(testcase.opts...).Load()
@@ -75,8 +75,8 @@ func TestEnv_String(t *testing.T) {
 		},
 	}
 
-	for i := range testcases {
-		testcase := testcases[i]
+	for _, testcase := range testcases {
+		testcase := testcase
 
 		t.Run(testcase.description, func(t *testing.T) {
 			t.Parallel()

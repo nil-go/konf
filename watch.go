@@ -44,7 +44,7 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 		return nil
 	}
 
-	onChangesChannel := make(chan []func(*Config))
+	onChangesChannel := make(chan []func(*Config), 1)
 	defer close(onChangesChannel)
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()

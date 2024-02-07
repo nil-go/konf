@@ -13,7 +13,7 @@ import (
 // WithAWSConfig provides the AWS Config for the AWS SDK.
 //
 // By default, it loads the default AWS Config.
-func WithAWSConfig(awsConfig *aws.Config) Option {
+func WithAWSConfig(awsConfig aws.Config) Option {
 	return func(options *options) {
 		options.awsConfig = awsConfig
 	}
@@ -22,9 +22,9 @@ func WithAWSConfig(awsConfig *aws.Config) Option {
 // WithPollInterval provides the interval for polling the configuration.
 //
 // The default interval is 1 minute.
-func WithPollInterval(pollInterval time.Duration) Option {
+func WithPollInterval(interval time.Duration) Option {
 	return func(options *options) {
-		options.pollInterval = pollInterval
+		options.pollInterval = interval
 	}
 }
 
@@ -55,6 +55,6 @@ type (
 	options struct {
 		AppConfig
 
-		awsConfig *aws.Config
+		awsConfig aws.Config
 	}
 )
