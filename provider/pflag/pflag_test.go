@@ -66,8 +66,8 @@ func TestPFlag_Load(t *testing.T) {
 
 	pflag.CommandLine.SortFlags = false
 	pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
-	for i := range testcases {
-		testcase := testcases[i]
+	for _, testcase := range testcases {
+		testcase := testcase
 
 		t.Run(testcase.description, func(t *testing.T) {
 			t.Parallel()
@@ -98,8 +98,8 @@ func TestPFlag_String(t *testing.T) {
 		},
 	}
 
-	for i := range testcases {
-		testcase := testcases[i]
+	for _, testcase := range testcases {
+		testcase := testcase
 
 		t.Run(testcase.description, func(t *testing.T) {
 			t.Parallel()
