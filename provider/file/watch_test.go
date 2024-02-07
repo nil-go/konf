@@ -1,8 +1,6 @@
 // Copyright (c) 2024 The konf authors
 // Use of this source code is governed by a MIT license found in the LICENSE file.
 
-//go:build !race
-
 package file_test
 
 import (
@@ -18,6 +16,8 @@ import (
 )
 
 func TestFile_Watch(t *testing.T) {
+	t.Parallel()
+
 	testcases := []struct {
 		description string
 		action      func(string) error
@@ -47,6 +47,8 @@ func TestFile_Watch(t *testing.T) {
 		testcase := testcases[i]
 
 		t.Run(testcase.description, func(t *testing.T) {
+			t.Parallel()
+
 			tmpFile := filepath.Join(t.TempDir(), "watch.json")
 			assert.NoError(t, os.WriteFile(tmpFile, []byte(`{"p": {"k": "v"}}`), 0o600))
 

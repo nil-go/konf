@@ -58,8 +58,10 @@ func New(konf konf, opts ...Option) PFlag {
 		option.delimiter = "."
 	}
 	if option.set == nil {
-		pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
-		pflag.Parse()
+		if !pflag.Parsed() {
+			pflag.CommandLine.AddGoFlagSet(flag.CommandLine)
+			pflag.Parse()
+		}
 		option.set = pflag.CommandLine
 	}
 

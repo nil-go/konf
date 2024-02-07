@@ -1,8 +1,6 @@
 // Copyright (c) 2024 The konf authors
 // Use of this source code is governed by a MIT license found in the LICENSE file.
 
-//go:build !race
-
 package flag_test
 
 import (
@@ -25,13 +23,7 @@ func TestFlag_New_panic(t *testing.T) {
 }
 
 func TestFlag_Load(t *testing.T) {
-	flag.String("p.k", "", "")
-	_ = flag.Set("p.k", "v")
-	flag.String("p.d", ".", "")
-	flag.Int("p.i", 0, "")
-
-	set := &flag.FlagSet{}
-	set.String("p_d", "_", "")
+	t.Parallel()
 
 	testcases := []struct {
 		description string
@@ -74,6 +66,8 @@ func TestFlag_Load(t *testing.T) {
 		testcase := testcases[i]
 
 		t.Run(testcase.description, func(t *testing.T) {
+			t.Parallel()
+
 			values, err := kflag.New(konf{exists: testcase.exists}, testcase.opts...).Load()
 			assert.NoError(t, err)
 			assert.Equal(t, testcase.expected, values)
@@ -100,6 +94,7 @@ func TestFlag_String(t *testing.T) {
 		},
 	}
 
+	flag.Parse()
 	for i := range testcases {
 		testcase := testcases[i]
 
@@ -117,4 +112,15 @@ func TestFlag_String(t *testing.T) {
 			)
 		})
 	}
+}
+
+var set = &flag.FlagSet{}
+
+func init() {
+	flag.String("p.k", "", "")
+	_ = flag.Set("p.k", "v")
+	flag.String("p.d", ".", "")
+	flag.Int("p.i", 0, "")
+
+	set.String("p_d", "_", "")
 }

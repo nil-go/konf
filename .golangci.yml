@@ -142,6 +142,8 @@ issues:
         - cyclop
         - forcetypeassert
         - funlen
+        - gochecknoglobals
+        - gochecknoinits
         - goconst
         - goerr113
         - wrapcheck
