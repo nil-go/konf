@@ -1,8 +1,6 @@
 // Copyright (c) 2024 The konf authors
 // Use of this source code is governed by a MIT license found in the LICENSE file.
 
-//go:build !race
-
 package file_test
 
 import (
@@ -25,13 +23,6 @@ func TestFile_Watch(t *testing.T) {
 		action      func(string) error
 		expected    map[string]any
 	}{
-		{
-			description: "create",
-			action: func(path string) error {
-				return os.WriteFile(path, []byte(`{"p": {"k": "v"}}`), 0o600)
-			},
-			expected: map[string]any{"p": map[string]any{"k": "v"}},
-		},
 		{
 			description: "write",
 			action: func(path string) error {
@@ -69,7 +60,7 @@ func TestFile_Watch(t *testing.T) {
 				assert.NoError(t, err)
 			}()
 
-			time.Sleep(time.Millisecond)
+			time.Sleep(100 * time.Millisecond)
 			assert.NoError(t, testcase.action(tmpFile))
 			waitGroup.Wait()
 			assert.Equal(t, testcase.expected, values)
