@@ -7,6 +7,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.4.0] - 2024-02-07
+
 ### Added
 
 - add Config.Explain to provide information about how Config resolve each value from loaders (#78).
