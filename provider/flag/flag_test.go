@@ -5,6 +5,7 @@ package flag_test
 
 import (
 	"flag"
+	"sync"
 	"testing"
 
 	"github.com/nil-go/konf/internal/assert"
@@ -101,7 +102,7 @@ func TestFlag_String(t *testing.T) {
 		},
 	}
 
-	flag.Parse()
+	parseOnce.Do(flag.Parse)
 	for _, testcase := range testcases {
 		testcase := testcase
 
@@ -121,7 +122,10 @@ func TestFlag_String(t *testing.T) {
 	}
 }
 
-var set = &flag.FlagSet{}
+var (
+	parseOnce sync.Once
+	set       = &flag.FlagSet{}
+)
 
 func init() {
 	flag.String("p.k", "", "")
