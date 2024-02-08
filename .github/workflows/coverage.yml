@@ -23,3 +23,6 @@ jobs:
       - name: Coverage
         run: go test -v -covermode=count -coverprofile=coverage.txt ./...
         working-directory: ${{ matrix.module }}
+      - name: Codecov
+        uses: codecov/codecov-action@v4
+        working-directory: ${{ matrix.module }}
