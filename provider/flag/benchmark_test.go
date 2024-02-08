@@ -4,7 +4,6 @@
 package flag_test
 
 import (
-	"flag"
 	"testing"
 
 	"github.com/nil-go/konf/internal/assert"
@@ -12,8 +11,6 @@ import (
 )
 
 func BenchmarkNew(b *testing.B) {
-	set := &flag.FlagSet{}
-	set.String("k", "v", "")
 	b.ResetTimer()
 
 	var loader kflag.Flag
@@ -28,8 +25,6 @@ func BenchmarkNew(b *testing.B) {
 }
 
 func BenchmarkLoad(b *testing.B) {
-	set := &flag.FlagSet{}
-	set.String("k", "v", "")
 	loader := kflag.New(konf{}, kflag.WithFlagSet(set))
 	b.ResetTimer()
 

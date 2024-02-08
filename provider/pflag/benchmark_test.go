@@ -6,15 +6,11 @@ package pflag_test
 import (
 	"testing"
 
-	"github.com/spf13/pflag"
-
 	kflag "github.com/nil-go/konf/provider/pflag"
 	"github.com/nil-go/konf/provider/pflag/internal/assert"
 )
 
 func BenchmarkNew(b *testing.B) {
-	set := &pflag.FlagSet{}
-	set.String("k", "v", "")
 	b.ResetTimer()
 
 	var loader kflag.PFlag
@@ -29,8 +25,6 @@ func BenchmarkNew(b *testing.B) {
 }
 
 func BenchmarkLoad(b *testing.B) {
-	set := &pflag.FlagSet{}
-	set.String("k", "v", "")
 	loader := kflag.New(konf{}, kflag.WithFlagSet(set))
 	b.ResetTimer()
 

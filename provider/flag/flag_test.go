@@ -33,7 +33,14 @@ func TestFlag_Load(t *testing.T) {
 	}{
 		{
 			description: "with flag set",
-			opts:        []kflag.Option{kflag.WithFlagSet(set), kflag.WithDelimiter("_")},
+			opts:        []kflag.Option{kflag.WithFlagSet(set)},
+			expected: map[string]any{
+				"k": "v",
+			},
+		},
+		{
+			description: "with delimiter",
+			opts:        []kflag.Option{kflag.WithDelimiter("_"), kflag.WithPrefix("p_")},
 			expected: map[string]any{
 				"p": map[string]any{
 					"d": "_",
@@ -121,6 +128,7 @@ func init() {
 	_ = flag.Set("p.k", "v")
 	flag.String("p.d", ".", "")
 	flag.Int("p.i", 0, "")
+	flag.String("p_d", "_", "")
 
-	set.String("p_d", "_", "")
+	set.String("k", "v", "")
 }
