@@ -13,7 +13,7 @@ jobs:
       matrix:
         module: [ '', 'provider/file', 'provider/pflag', 'provider/appconfig' ]
         run-on: [ 'ubuntu', 'macOS', 'windows' ]
-        go-version: [ 'stable' ]
+        go-version: [ 'stable', 'oldstable' ]
     name: Test
     runs-on: ${{ matrix.run-on }}-latest
     steps:
