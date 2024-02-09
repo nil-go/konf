@@ -89,8 +89,8 @@ func TestAppConfig_Load(t *testing.T) {
 			description: "appconfig",
 			middleware: func(
 				ctx context.Context,
-				input middleware.FinalizeInput,
-				handler middleware.FinalizeHandler,
+				_ middleware.FinalizeInput,
+				_ middleware.FinalizeHandler,
 			) (middleware.FinalizeOutput, middleware.Metadata, error) {
 				switch awsMiddleware.GetOperationName(ctx) {
 				case "StartConfigurationSession":
@@ -119,8 +119,8 @@ func TestAppConfig_Load(t *testing.T) {
 			description: "start session error",
 			middleware: func(
 				ctx context.Context,
-				input middleware.FinalizeInput,
-				handler middleware.FinalizeHandler,
+				_ middleware.FinalizeInput,
+				_ middleware.FinalizeHandler,
 			) (middleware.FinalizeOutput, middleware.Metadata, error) {
 				switch awsMiddleware.GetOperationName(ctx) {
 				case "StartConfigurationSession":
@@ -137,8 +137,8 @@ func TestAppConfig_Load(t *testing.T) {
 			description: "get configuration error",
 			middleware: func(
 				ctx context.Context,
-				input middleware.FinalizeInput,
-				handler middleware.FinalizeHandler,
+				_ middleware.FinalizeInput,
+				_ middleware.FinalizeHandler,
 			) (middleware.FinalizeOutput, middleware.Metadata, error) {
 				switch awsMiddleware.GetOperationName(ctx) {
 				case "StartConfigurationSession":
@@ -159,8 +159,8 @@ func TestAppConfig_Load(t *testing.T) {
 			description: "unmarshal error",
 			middleware: func(
 				ctx context.Context,
-				input middleware.FinalizeInput,
-				handler middleware.FinalizeHandler,
+				_ middleware.FinalizeInput,
+				_ middleware.FinalizeHandler,
 			) (middleware.FinalizeOutput, middleware.Metadata, error) {
 				switch awsMiddleware.GetOperationName(ctx) {
 				case "StartConfigurationSession":
@@ -243,8 +243,8 @@ func TestAppConfig_Watch(t *testing.T) {
 			description: "latest configuration",
 			middleware: func(
 				ctx context.Context,
-				input middleware.FinalizeInput,
-				handler middleware.FinalizeHandler,
+				_ middleware.FinalizeInput,
+				_ middleware.FinalizeHandler,
 			) (middleware.FinalizeOutput, middleware.Metadata, error) {
 				switch awsMiddleware.GetOperationName(ctx) {
 				case "GetLatestConfiguration":
@@ -264,8 +264,8 @@ func TestAppConfig_Watch(t *testing.T) {
 			description: "empty configuration",
 			middleware: func(
 				ctx context.Context,
-				input middleware.FinalizeInput,
-				handler middleware.FinalizeHandler,
+				_ middleware.FinalizeInput,
+				_ middleware.FinalizeHandler,
 			) (middleware.FinalizeOutput, middleware.Metadata, error) {
 				switch awsMiddleware.GetOperationName(ctx) {
 				case "GetLatestConfiguration":
@@ -284,8 +284,8 @@ func TestAppConfig_Watch(t *testing.T) {
 			description: "get configuration error",
 			middleware: func(
 				ctx context.Context,
-				input middleware.FinalizeInput,
-				handler middleware.FinalizeHandler,
+				_ middleware.FinalizeInput,
+				_ middleware.FinalizeHandler,
 			) (middleware.FinalizeOutput, middleware.Metadata, error) {
 				switch awsMiddleware.GetOperationName(ctx) {
 				case "GetLatestConfiguration":
@@ -303,8 +303,8 @@ func TestAppConfig_Watch(t *testing.T) {
 			description: "unmarshal error",
 			middleware: func(
 				ctx context.Context,
-				input middleware.FinalizeInput,
-				handler middleware.FinalizeHandler,
+				_ middleware.FinalizeInput,
+				_ middleware.FinalizeHandler,
 			) (middleware.FinalizeOutput, middleware.Metadata, error) {
 				switch awsMiddleware.GetOperationName(ctx) {
 				case "GetLatestConfiguration":

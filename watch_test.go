@@ -70,13 +70,13 @@ func TestConfig_Watch_onchange_block(t *testing.T) {
 	}()
 	waitGroup.Wait()
 
-	config.OnChange(func(config *konf.Config) {
+	config.OnChange(func(*konf.Config) {
 		time.Sleep(time.Minute)
 	})
 	watcher.change(map[string]any{"Config": "changed"})
 
 	<-ctx.Done()
-	time.Sleep(time.Millisecond)
+	time.Sleep(time.Second)
 	expected := "level=INFO msg=\"Configuration has been changed.\" loader=mapWatcher\n" +
 		"level=WARN msg=\"Configuration has not been fully applied to onChanges due to timeout." +
 		" Please check if the onChanges is blocking or takes too long to complete.\"\n"
