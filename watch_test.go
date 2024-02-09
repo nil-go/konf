@@ -108,6 +108,8 @@ func TestConfig_Watch_twice(t *testing.T) {
 		assert.NoError(t, config.Watch(ctx))
 	}()
 	waitGroup.Wait()
+
+	time.Sleep(time.Second)
 	assert.NoError(t, config.Watch(ctx))
 	expected := "level=WARN msg=\"Config has been watched, call Watch again has no effects.\"\n"
 	assert.Equal(t, expected, buf.String())

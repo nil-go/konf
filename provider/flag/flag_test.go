@@ -70,6 +70,7 @@ func TestFlag_Load(t *testing.T) {
 		},
 	}
 
+	parseOnce.Do(flag.Parse)
 	for _, testcase := range testcases {
 		testcase := testcase
 
@@ -102,7 +103,6 @@ func TestFlag_String(t *testing.T) {
 		},
 	}
 
-	parseOnce.Do(flag.Parse)
 	for _, testcase := range testcases {
 		testcase := testcase
 
