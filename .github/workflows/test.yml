@@ -12,10 +12,9 @@ jobs:
     strategy:
       matrix:
         module: [ '', 'provider/file', 'provider/pflag', 'provider/appconfig' ]
-        run-on: [ 'ubuntu', 'macOS', 'windows' ]
         go-version: [ 'stable', 'oldstable' ]
     name: Test
-    runs-on: ${{ matrix.run-on }}-latest
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5

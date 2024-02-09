@@ -18,10 +18,11 @@ jobs:
         uses: release-flow/keep-a-changelog-action@v3
         with:
           command: query
-          version: latest
+          version: latest-or-unreleased
       - name: Get latest release
         id: latest-release
         uses: actions/github-script@v7
+        if: steps.query-release-info.outputs.version != '[unreleased]'
         continue-on-error: true
         with:
           script: |
@@ -32,7 +33,7 @@ jobs:
             })
       - name: Create release
         uses: actions/github-script@v7
-        if: steps.latest-release.outcome != 'success'
+        if: steps.latest-release.outcome == 'failure'
         with:
           script: |
             github.rest.repos.createRelease({

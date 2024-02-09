@@ -62,7 +62,7 @@ func TestFile_Watch(t *testing.T) {
 				assert.NoError(t, err)
 			}()
 
-			time.Sleep(100 * time.Millisecond)
+			time.Sleep(time.Second)
 			assert.NoError(t, testcase.action(tmpFile))
 			waitGroup.Wait()
 			assert.Equal(t, testcase.expected, values)

@@ -151,7 +151,7 @@ func (c *Config) Explain(path string, opts ...ExplainOption) string {
 		opt(option)
 	}
 	if option.valueFormatter == nil {
-		option.valueFormatter = func(path string, loader Loader, value any) string {
+		option.valueFormatter = func(_ string, _ Loader, value any) string {
 			return fmt.Sprint(value)
 		}
 	}

@@ -36,8 +36,8 @@ func BenchmarkLoad(b *testing.B) {
 					middleware.FinalizeMiddlewareFunc(
 						"mock", func(
 							ctx context.Context,
-							input middleware.FinalizeInput,
-							handler middleware.FinalizeHandler,
+							_ middleware.FinalizeInput,
+							_ middleware.FinalizeHandler,
 						) (middleware.FinalizeOutput, middleware.Metadata, error) {
 							switch awsMiddleware.GetOperationName(ctx) {
 							case "StartConfigurationSession":

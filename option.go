@@ -61,7 +61,7 @@ type (
 // It's for hiding sensitive information (e.g. password, secret) which should not be exposed.
 //
 // By default, it uses fmt.Sprint to format the value.
-func WithValueFormatter(valueFormatter func(path string, loader Loader, value any) string) ExplainOption {
+func WithValueFormatter(valueFormatter func(string, Loader, any) string) ExplainOption {
 	return func(options *explainOptions) {
 		options.valueFormatter = valueFormatter
 	}
@@ -71,6 +71,6 @@ type (
 	// ExplainOption configures Config.Explain with specific options.
 	ExplainOption  func(*explainOptions)
 	explainOptions struct {
-		valueFormatter func(path string, loader Loader, value any) string
+		valueFormatter func(string, Loader, any) string
 	}
 )
