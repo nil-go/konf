@@ -38,9 +38,7 @@ func TestPFlag_Load(t *testing.T) {
 			description: "with flag set",
 			opts: []kflag.Option{
 				kflag.WithFlagSet(set),
-				kflag.WithNameSplitter(func(s string) []string {
-					return strings.Split(s, "_")
-				}),
+				kflag.WithNameSplitter(func(s string) []string { return strings.Split(s, "_") }),
 			},
 			expected: map[string]any{
 				"k": "v",
@@ -50,9 +48,7 @@ func TestPFlag_Load(t *testing.T) {
 			description: "with delimiter",
 			opts: []kflag.Option{
 				kflag.WithPrefix("p_"),
-				kflag.WithNameSplitter(func(s string) []string {
-					return strings.Split(s, "_")
-				}),
+				kflag.WithNameSplitter(func(s string) []string { return strings.Split(s, "_") }),
 			},
 			expected: map[string]any{
 				"p": map[string]any{

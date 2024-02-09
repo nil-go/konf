@@ -22,7 +22,6 @@ import (
 //
 // To create a new Env, call New.
 type Env struct {
-	_        [0]func() // Ensure it's incomparable.
 	prefix   string
 	splitter func(string) []string
 }
