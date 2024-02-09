@@ -5,7 +5,6 @@ package file_test
 
 import (
 	"errors"
-	"strings"
 	"testing"
 
 	"github.com/nil-go/konf/provider/file"
@@ -43,7 +42,7 @@ func TestFile_Load(t *testing.T) {
 		{
 			description: "file (not exist)",
 			path:        "not_found.json",
-			err:         "read file: open not_found.json: ",
+			err:         "read file: open not_found.json: no such file or directory",
 		},
 		{
 			description: "unmarshal error",
@@ -65,7 +64,7 @@ func TestFile_Load(t *testing.T) {
 
 			values, err := file.New(testcase.path, testcase.opts...).Load()
 			if testcase.err != "" {
-				assert.True(t, strings.HasPrefix(err.Error(), testcase.err))
+				assert.EqualError(t, err, testcase.err)
 			} else {
 				assert.NoError(t, err)
 				assert.Equal(t, testcase.expected, values)

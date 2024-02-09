@@ -24,10 +24,13 @@ func NoError(tb testing.TB, err error) {
 	}
 }
 
-func True(tb testing.TB, value bool) {
+func EqualError(tb testing.TB, err error, message string) {
 	tb.Helper()
 
-	if !value {
-		tb.Errorf("expected True")
+	switch {
+	case err == nil:
+		tb.Errorf("expected: %v; actual: <nil>", message)
+	case err.Error() != message:
+		tb.Errorf("expected: %v; actual: %v", message, err.Error())
 	}
 }
