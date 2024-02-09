@@ -37,6 +37,8 @@ type provider struct {
 	values map[string]any
 }
 
+type DecodeHook any
+
 // New creates a new Config with the given Option(s).
 func New(opts ...Option) *Config {
 	option := &options{

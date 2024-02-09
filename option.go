@@ -3,11 +3,7 @@
 
 package konf
 
-import (
-	"log/slog"
-
-	"github.com/go-viper/mapstructure/v2"
-)
+import "log/slog"
 
 // WithDelimiter provides the delimiter used when specifying config paths.
 // The delimiter is used to separate keys in the path.
@@ -19,22 +15,21 @@ func WithDelimiter(delimiter string) Option {
 	}
 }
 
-// WithTagName provides the tag name that [mapstructure] reads for field names.
-// The tag name is used by mapstructure when decoding configuration into structs.
+// WithTagName provides the tag name that reads for field names.
+// The tag name is used when decoding configuration into structs.
 //
-// For example, with the default tag name `konf`, mapstructure would look for `konf` tags on struct fields.
+// For example, with the default tag name `konf`, it would look for `konf` tags on struct fields.
 func WithTagName(tagName string) Option {
 	return func(options *options) {
 		options.tagName = tagName
 	}
 }
 
-// WithDecodeHook provides the decode hook for [mapstructure] decoding.
+// WithDecodeHook provides the decode hook for decoding.
 // The decode hook is a function that can transform or customize how values are decoded.
 //
-// By default, it composes mapstructure.StringToTimeDurationHookFunc,
-// mapstructure.StringToSliceHookFunc(",") and mapstructure.TextUnmarshallerHookFunc.
-func WithDecodeHook(decodeHook mapstructure.DecodeHookFunc) Option {
+// By default, it composes StringToTimeDurationHookFunc, StringToSliceHookFunc(",") and TextUnmarshallerHookFunc.
+func WithDecodeHook(decodeHook DecodeHook) Option {
 	return func(options *options) {
 		options.decodeHook = decodeHook
 	}
