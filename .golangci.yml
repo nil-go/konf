@@ -16,6 +16,8 @@ linters-settings:
     local-prefixes: github.com/nil-go/konf
   govet:
     check-shadowing: true
+  inamedparam:
+    skip-single-param: true
   makezero:
     always: true
   misspell:

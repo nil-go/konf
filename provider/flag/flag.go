@@ -31,7 +31,7 @@ type Flag struct {
 }
 
 type konf interface {
-	Exists(path []string) bool
+	Exists([]string) bool
 }
 
 // New creates a Flag with the given Option(s).

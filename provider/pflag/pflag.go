@@ -33,7 +33,7 @@ type PFlag struct {
 }
 
 type konf interface {
-	Exists(path []string) bool
+	Exists([]string) bool
 }
 
 // New creates a PFlag with the given Option(s).
