@@ -5,6 +5,7 @@ package flag_test
 
 import (
 	"flag"
+	"strings"
 	"sync"
 	"testing"
 
@@ -41,7 +42,12 @@ func TestFlag_Load(t *testing.T) {
 		},
 		{
 			description: "with delimiter",
-			opts:        []kflag.Option{kflag.WithDelimiter("_"), kflag.WithPrefix("p_")},
+			opts: []kflag.Option{
+				kflag.WithPrefix("p_"),
+				kflag.WithNameSplitter(func(s string) []string {
+					return strings.Split(s, "_")
+				}),
+			},
 			expected: map[string]any{
 				"p": map[string]any{
 					"d": "_",

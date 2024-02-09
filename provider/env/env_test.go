@@ -4,6 +4,7 @@
 package env_test
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/nil-go/konf"
@@ -31,7 +32,12 @@ func TestEnv_Load(t *testing.T) {
 		},
 		{
 			description: "with delimiter",
-			opts:        []env.Option{env.WithPrefix("P."), env.WithDelimiter(".")},
+			opts: []env.Option{
+				env.WithPrefix("P."),
+				env.WithNameSplitter(func(s string) []string {
+					return strings.Split(s, ".")
+				}),
+			},
 			expected: map[string]any{
 				"P": map[string]any{
 					"D": ".",

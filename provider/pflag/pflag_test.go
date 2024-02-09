@@ -5,6 +5,7 @@ package pflag_test
 
 import (
 	"flag"
+	"strings"
 	"testing"
 
 	"github.com/spf13/pflag"
@@ -35,14 +36,24 @@ func TestPFlag_Load(t *testing.T) {
 	}{
 		{
 			description: "with flag set",
-			opts:        []kflag.Option{kflag.WithFlagSet(set), kflag.WithDelimiter("_")},
+			opts: []kflag.Option{
+				kflag.WithFlagSet(set),
+				kflag.WithNameSplitter(func(s string) []string {
+					return strings.Split(s, "_")
+				}),
+			},
 			expected: map[string]any{
 				"k": "v",
 			},
 		},
 		{
 			description: "with delimiter",
-			opts:        []kflag.Option{kflag.WithDelimiter("_"), kflag.WithPrefix("p_")},
+			opts: []kflag.Option{
+				kflag.WithPrefix("p_"),
+				kflag.WithNameSplitter(func(s string) []string {
+					return strings.Split(s, "_")
+				}),
+			},
 			expected: map[string]any{
 				"p": map[string]any{
 					"d": "_",

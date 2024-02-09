@@ -22,9 +22,9 @@ import (
 //
 // To create a new Env, call New.
 type Env struct {
-	_         [0]func() // Ensure it's incomparable.
-	prefix    string
-	delimiter string
+	_        [0]func() // Ensure it's incomparable.
+	prefix   string
+	splitter func(string) []string
 }
 
 // New creates an Env with the given Option(s).
@@ -33,8 +33,8 @@ func New(opts ...Option) Env {
 	for _, opt := range opts {
 		opt(option)
 	}
-	if option.delimiter == "" {
-		option.delimiter = "_"
+	if option.splitter == nil {
+		option.splitter = func(s string) []string { return strings.Split(s, "_") }
 	}
 
 	return Env(*option)
@@ -49,7 +49,7 @@ func (e Env) Load() (map[string]any, error) {
 				// The environment variable with empty value is treated as unset.
 				continue
 			}
-			maps.Insert(values, strings.Split(key, e.delimiter), value)
+			maps.Insert(values, e.splitter(key), value)
 		}
 	}
 
