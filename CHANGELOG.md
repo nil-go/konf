@@ -7,6 +7,14 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- Add env.WithNameSplitter/flag.WithNameSplitter/pflag.WithNameSplitter to split the name of the flag/env (#110).
+
+### Deprecated
+
+- Deprecate env.WithDelimiter/flag.WithDelimiter/pflag.WithDelimiter in favor of WithNameSplitter (#110).
+
 ## [0.4.0] - 2024-02-07
 
 ### Added
