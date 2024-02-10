@@ -16,6 +16,7 @@ import (
 	"fmt"
 	"log/slog"
 	"reflect"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -31,7 +32,7 @@ type AppConfig struct {
 	logger    *slog.Logger
 	unmarshal func([]byte, any) error
 
-	client       *appconfigdata.Client
+	client       *clientProxy
 	application  string
 	environment  string
 	profile      string
@@ -73,17 +74,7 @@ func New(application, environment, profile string, opts ...Option) *AppConfig {
 	if option.pollInterval <= 0 {
 		option.pollInterval = time.Minute
 	}
-	if reflect.ValueOf(option.awsConfig).IsZero() {
-		ctx, cancel := context.WithTimeout(context.Background(), option.timeout)
-		defer cancel()
-
-		awsConfig, err := config.LoadDefaultConfig(ctx)
-		if err != nil {
-			panic(fmt.Sprintf("cannot load AWS default config: %v", err))
-		}
-		option.awsConfig = awsConfig
-	}
-	option.AppConfig.client = appconfigdata.NewFromConfig(option.awsConfig)
+	option.client = &clientProxy{config: option.awsConfig}
 
 	return &option.AppConfig
 }
@@ -167,4 +158,52 @@ func (a *AppConfig) load(ctx context.Context) (map[string]any, error) {
 
 func (a *AppConfig) String() string {
 	return "appConfig:" + a.application + "-" + a.environment + "-" + a.profile
+}
+
+type clientProxy struct {
+	client     *appconfigdata.Client
+	clientOnce sync.Once
+	config     aws.Config
+}
+
+func (c *clientProxy) StartConfigurationSession(
+	ctx context.Context,
+	params *appconfigdata.StartConfigurationSessionInput,
+	optFns ...func(*appconfigdata.Options),
+) (*appconfigdata.StartConfigurationSessionOutput, error) {
+	client, err := c.loadClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return client.StartConfigurationSession(ctx, params, optFns...) //nolint:wrapcheck
+}
+
+func (c *clientProxy) GetLatestConfiguration(
+	ctx context.Context,
+	params *appconfigdata.GetLatestConfigurationInput,
+	optFns ...func(*appconfigdata.Options),
+) (*appconfigdata.GetLatestConfigurationOutput, error) {
+	client, err := c.loadClient(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return client.GetLatestConfiguration(ctx, params, optFns...) //nolint:wrapcheck
+}
+
+func (c *clientProxy) loadClient(ctx context.Context) (*appconfigdata.Client, error) {
+	var err error
+
+	c.clientOnce.Do(func() {
+		if reflect.ValueOf(c.config).IsZero() {
+			if c.config, err = config.LoadDefaultConfig(ctx); err != nil {
+				return
+			}
+		}
+
+		c.client = appconfigdata.NewFromConfig(c.config)
+	})
+
+	return c.client, err //nolint:wrapcheck
 }
