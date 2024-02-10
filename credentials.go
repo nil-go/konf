@@ -58,7 +58,12 @@ func CredentialFormatter() func(path string, loader Loader, value any) string {
 			return "******"
 		}
 
-		formatted := fmt.Sprint(value)
+		format := "%v"
+		if _, ok := value.([]byte); ok {
+			format = "%s"
+		}
+		formatted := fmt.Sprintf(format, value)
+
 		for name, pattern := range secretsPatterns {
 			if pattern.MatchString(formatted) {
 				return name
