@@ -37,7 +37,8 @@ type AppConfig struct {
 	profile      string
 	pollInterval time.Duration
 
-	token atomic.Pointer[string]
+	timeout time.Duration
+	token   atomic.Pointer[string]
 }
 
 // New creates an AppConfig with the given application, environment, profile and Option(s).
@@ -57,6 +58,7 @@ func New(application, environment, profile string, opts ...Option) *AppConfig {
 			application: application,
 			environment: environment,
 			profile:     profile,
+			timeout:     10 * time.Second, //nolint:gomnd
 		},
 	}
 	for _, opt := range opts {
@@ -84,6 +86,9 @@ func New(application, environment, profile string, opts ...Option) *AppConfig {
 }
 
 func (a *AppConfig) Load() (map[string]any, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), a.timeout)
+	defer cancel()
+
 	if a.token.Load() == nil {
 		input := &appconfigdata.StartConfigurationSessionInput{
 			ApplicationIdentifier:                aws.String(a.application),
@@ -91,14 +96,14 @@ func (a *AppConfig) Load() (map[string]any, error) {
 			EnvironmentIdentifier:                aws.String(a.environment),
 			RequiredMinimumPollIntervalInSeconds: aws.Int32(int32(max(a.pollInterval.Seconds()/2, 1))), //nolint:gomnd
 		}
-		output, err := a.client.StartConfigurationSession(context.Background(), input)
+		output, err := a.client.StartConfigurationSession(ctx, input)
 		if err != nil {
 			return nil, fmt.Errorf("start configuration session: %w", err)
 		}
 		a.token.Store(output.InitialConfigurationToken)
 	}
 
-	return a.load(context.Background())
+	return a.load(ctx)
 }
 
 func (a *AppConfig) Watch(ctx context.Context, onChange func(map[string]any)) error {
@@ -131,6 +136,9 @@ func (a *AppConfig) Watch(ctx context.Context, onChange func(map[string]any)) er
 }
 
 func (a *AppConfig) load(ctx context.Context) (map[string]any, error) {
+	ctx, cancel := context.WithTimeout(ctx, a.timeout)
+	defer cancel()
+
 	input := &appconfigdata.GetLatestConfigurationInput{
 		ConfigurationToken: a.token.Load(),
 	}
