@@ -74,7 +74,10 @@ func New(application, environment, profile string, opts ...Option) *AppConfig {
 		option.pollInterval = time.Minute
 	}
 	if reflect.ValueOf(option.awsConfig).IsZero() {
-		awsConfig, err := config.LoadDefaultConfig(context.Background())
+		ctx, cancel := context.WithTimeout(context.Background(), option.timeout)
+		defer cancel()
+
+		awsConfig, err := config.LoadDefaultConfig(ctx)
 		if err != nil {
 			panic(fmt.Sprintf("cannot load AWS default config: %v", err))
 		}
