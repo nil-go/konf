@@ -53,6 +53,22 @@ func TestFlag_Load(t *testing.T) {
 			},
 		},
 		{
+			description: "with nil splitter",
+			opts: []kflag.Option{
+				kflag.WithPrefix("p_"),
+				kflag.WithNameSplitter(func(string) []string { return nil }),
+			},
+			expected: map[string]any{},
+		},
+		{
+			description: "with empty splitter",
+			opts: []kflag.Option{
+				kflag.WithPrefix("p_"),
+				kflag.WithNameSplitter(func(string) []string { return []string{""} }),
+			},
+			expected: map[string]any{},
+		},
+		{
 			description: "with prefix",
 			opts:        []kflag.Option{kflag.WithPrefix("p.")},
 			expected: map[string]any{

@@ -77,6 +77,10 @@ func (f PFlag) Load() (map[string]any, error) {
 			}
 
 			keys := f.splitter(flag.Name)
+			if len(keys) == 0 || len(keys) == 1 && keys[0] == "" {
+				return
+			}
+
 			val := f.flagVal(flag)
 			// Skip zero default value to avoid overriding values set by other loader.
 			if !flag.Changed && (f.konf.Exists(keys) || reflect.ValueOf(val).IsZero()) {

@@ -73,6 +73,10 @@ func (f Flag) Load() (map[string]any, error) {
 		}
 
 		keys := f.splitter(flag.Name)
+		if len(keys) == 0 || len(keys) == 1 && keys[0] == "" {
+			return
+		}
+
 		val := flag.Value.String()
 		// Skip zero default value to avoid overriding values set by other loader.
 		if val == flag.DefValue && (f.konf.Exists(keys) || isZeroDefValue(flag)) {

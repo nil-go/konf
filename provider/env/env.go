@@ -48,7 +48,10 @@ func (e Env) Load() (map[string]any, error) {
 				// The environment variable with empty value is treated as unset.
 				continue
 			}
-			maps.Insert(values, e.splitter(key), value)
+
+			if keys := e.splitter(key); len(keys) > 1 || len(keys) == 1 && keys[0] != "" {
+				maps.Insert(values, keys, value)
+			}
 		}
 	}
 
