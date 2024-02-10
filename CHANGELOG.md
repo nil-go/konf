@@ -11,6 +11,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - Add env.WithNameSplitter/flag.WithNameSplitter/pflag.WithNameSplitter to split the name of the flag/env (#110).
 
+### Changed
+
+- Use CredentialFormatter to blur sensitive information in config.Explain (#113).
+
 ### Deprecated
 
 - Deprecate env.WithDelimiter/flag.WithDelimiter/pflag.WithDelimiter in favor of WithNameSplitter (#110).
