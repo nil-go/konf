@@ -42,6 +42,22 @@ func TestEnv_Load(t *testing.T) {
 				},
 			},
 		},
+		{
+			description: "with nil splitter",
+			opts: []env.Option{
+				env.WithPrefix("P."),
+				env.WithNameSplitter(func(string) []string { return nil }),
+			},
+			expected: map[string]any{},
+		},
+		{
+			description: "with empty splitter",
+			opts: []env.Option{
+				env.WithPrefix("P."),
+				env.WithNameSplitter(func(string) []string { return []string{""} }),
+			},
+			expected: map[string]any{},
+		},
 	}
 
 	t.Setenv("P_K", "v")

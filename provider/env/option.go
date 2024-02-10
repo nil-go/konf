@@ -31,6 +31,7 @@ func WithDelimiter(delimiter string) Option {
 }
 
 // WithNameSplitter provides the function used to split environment variable names into nested keys.
+// If it returns an nil/[]string{}/[]string{""}, the variable will be ignored.
 //
 // For example, with the default splitter, an environment variable name like "PARENT_CHILD_KEY"
 // would be split into "PARENT", "CHILD", and "KEY".
