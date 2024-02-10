@@ -1,8 +1,6 @@
 // Copyright (c) 2024 The konf authors
 // Use of this source code is governed by a MIT license found in the LICENSE file.
 
-//go:build !race
-
 package file_test
 
 import (
@@ -10,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -48,24 +47,25 @@ func TestFile_Watch(t *testing.T) {
 			assert.NoError(t, os.WriteFile(tmpFile, []byte(`{"p": {"k": "v"}}`), 0o600))
 
 			loader := file.New(tmpFile)
-			var values map[string]any
+			var values atomic.Pointer[map[string]any]
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 
 			var waitGroup sync.WaitGroup
 			waitGroup.Add(1)
 			go func() {
+				waitGroup.Done()
 				err := loader.Watch(ctx, func(changed map[string]any) {
-					defer waitGroup.Done()
-					values = changed
+					values.Store(&changed)
 				})
 				assert.NoError(t, err)
 			}()
-
-			time.Sleep(time.Second)
-			assert.NoError(t, testcase.action(tmpFile))
 			waitGroup.Wait()
-			assert.Equal(t, testcase.expected, values)
+
+			time.Sleep(100 * time.Millisecond)
+			assert.NoError(t, testcase.action(tmpFile))
+			time.Sleep(100 * time.Millisecond)
+			assert.Equal(t, testcase.expected, *values.Load())
 		})
 	}
 }
