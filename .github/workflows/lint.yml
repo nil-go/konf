@@ -11,7 +11,7 @@ jobs:
   lint:
     strategy:
       matrix:
-        module: [ '', 'provider/file', 'provider/pflag', 'provider/appconfig' ]
+        module: [ '', 'provider/file', 'provider/pflag', 'provider/appconfig', 'provider/azappconfig' ]
     name: Lint
     runs-on: ubuntu-latest
     steps:

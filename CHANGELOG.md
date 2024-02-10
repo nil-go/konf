@@ -10,6 +10,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Added
 
 - Add env.WithNameSplitter/flag.WithNameSplitter/pflag.WithNameSplitter to split the name of the flag/env (#110).
+- Add Azure App Configuration Loader (#121).
 
 ### Changed
 
