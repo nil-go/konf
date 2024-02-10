@@ -92,7 +92,7 @@ func (a *AppConfig) Load() (map[string]any, error) {
 		}
 		output, err := a.client.StartConfigurationSession(ctx, input)
 		if err != nil {
-			return nil, fmt.Errorf("start configuration session: %w", err)
+			return nil, err
 		}
 		a.token.Store(output.InitialConfigurationToken)
 	}
@@ -138,7 +138,7 @@ func (a *AppConfig) load(ctx context.Context) (map[string]any, error) {
 	}
 	output, err := a.client.GetLatestConfiguration(ctx, input)
 	if err != nil {
-		return nil, fmt.Errorf("get latest configuration: %w", err)
+		return nil, err
 	}
 	a.token.Store(output.NextPollConfigurationToken)
 
@@ -176,7 +176,12 @@ func (c *clientProxy) StartConfigurationSession(
 		return nil, err
 	}
 
-	return client.StartConfigurationSession(ctx, params, optFns...) //nolint:wrapcheck
+	session, err := client.StartConfigurationSession(ctx, params, optFns...)
+	if err != nil {
+		return nil, fmt.Errorf("start configuration session: %w", err)
+	}
+
+	return session, nil
 }
 
 func (c *clientProxy) GetLatestConfiguration(
@@ -189,7 +194,12 @@ func (c *clientProxy) GetLatestConfiguration(
 		return nil, err
 	}
 
-	return client.GetLatestConfiguration(ctx, params, optFns...) //nolint:wrapcheck
+	configuration, err := client.GetLatestConfiguration(ctx, params, optFns...)
+	if err != nil {
+		return nil, fmt.Errorf("get latest configuration: %w", err)
+	}
+
+	return configuration, nil
 }
 
 func (c *clientProxy) loadClient(ctx context.Context) (*appconfigdata.Client, error) {
@@ -205,5 +215,9 @@ func (c *clientProxy) loadClient(ctx context.Context) (*appconfigdata.Client, er
 		c.client = appconfigdata.NewFromConfig(c.config)
 	})
 
-	return c.client, err //nolint:wrapcheck
+	if err != nil {
+		return nil, fmt.Errorf("load client: %w", err)
+	}
+
+	return c.client, nil
 }
