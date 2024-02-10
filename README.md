@@ -87,6 +87,9 @@ Here are other value(loader)s:
   - env(env)
 ```
 
+Even more, the `Config.Explain` blurs sensitive information (e.g. password, secret, api keys) by default.
+It also can customize the blur behavior by providing a custom blur function using `config.WithValueFormatter`.
+
 ## Configuration Providers
 
 There are providers for the following configuration sources:
