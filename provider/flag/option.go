@@ -3,7 +3,10 @@
 
 package flag
 
-import "flag"
+import (
+	"flag"
+	"strings"
+)
 
 // WithPrefix provides the prefix used when loading flags.
 // Only flags with names that start with the prefix will be loaded.
@@ -29,9 +32,23 @@ func WithFlagSet(set *flag.FlagSet) Option {
 //
 // For example, with the default delimiter ".", an flag name like "parent.child.key"
 // would be split into "parent", "child", and "key".
+//
+// Deprecated: use WithNameSplitter instead.
 func WithDelimiter(delimiter string) Option {
 	return func(options *options) {
-		options.delimiter = delimiter
+		options.splitter = func(s string) []string {
+			return strings.Split(s, delimiter)
+		}
+	}
+}
+
+// WithNameSplitter provides the function used to split environment variable names into nested keys.
+//
+// For example, with the default splitter, an flag name like "parent.child.key"
+// would be split into "parent", "child", and "key".
+func WithNameSplitter(splitter func(string) []string) Option {
+	return func(options *options) {
+		options.splitter = splitter
 	}
 }
 

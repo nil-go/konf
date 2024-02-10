@@ -26,10 +26,10 @@ import (
 //
 // To create a new PFlag, call [New].
 type PFlag struct {
-	konf      konf
-	set       *pflag.FlagSet
-	delimiter string
-	prefix    string
+	konf     konf
+	set      *pflag.FlagSet
+	splitter func(string) []string
+	prefix   string
 }
 
 type konf interface {
@@ -54,8 +54,8 @@ func New(konf konf, opts ...Option) PFlag {
 	for _, opt := range opts {
 		opt(option)
 	}
-	if option.delimiter == "" {
-		option.delimiter = "."
+	if option.splitter == nil {
+		option.splitter = func(s string) []string { return strings.Split(s, ".") }
 	}
 	if option.set == nil {
 		if !pflag.Parsed() {
@@ -76,7 +76,7 @@ func (f PFlag) Load() (map[string]any, error) {
 				return
 			}
 
-			keys := strings.Split(flag.Name, f.delimiter)
+			keys := f.splitter(flag.Name)
 			val := f.flagVal(flag)
 			// Skip zero default value to avoid overriding values set by other loader.
 			if !flag.Changed && (f.konf.Exists(keys) || reflect.ValueOf(val).IsZero()) {

@@ -24,10 +24,10 @@ import (
 //
 // To create a new Flag, call [New].
 type Flag struct {
-	konf      konf
-	set       *flag.FlagSet
-	delimiter string
-	prefix    string
+	konf     konf
+	set      *flag.FlagSet
+	splitter func(string) []string
+	prefix   string
 }
 
 type konf interface {
@@ -52,8 +52,8 @@ func New(konf konf, opts ...Option) Flag {
 	for _, opt := range opts {
 		opt(option)
 	}
-	if option.delimiter == "" {
-		option.delimiter = "."
+	if option.splitter == nil {
+		option.splitter = func(s string) []string { return strings.Split(s, ".") }
 	}
 	if option.set == nil {
 		if !flag.Parsed() {
@@ -72,7 +72,7 @@ func (f Flag) Load() (map[string]any, error) {
 			return
 		}
 
-		keys := strings.Split(flag.Name, f.delimiter)
+		keys := f.splitter(flag.Name)
 		val := flag.Value.String()
 		// Skip zero default value to avoid overriding values set by other loader.
 		if val == flag.DefValue && (f.konf.Exists(keys) || isZeroDefValue(flag)) {
