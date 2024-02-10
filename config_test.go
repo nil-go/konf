@@ -4,6 +4,7 @@
 package konf_test
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -178,6 +179,21 @@ func (m mapLoader) String() string {
 func TestConfig_Explain(t *testing.T) {
 	t.Parallel()
 
+	config := konf.New()
+	err := config.Load(env.New())
+	assert.NoError(t, err)
+	err = config.Load(mapLoader{
+		"config": map[string]any{"nest": "env"},
+	})
+	assert.NoError(t, err)
+	err = config.Load(mapLoader{
+		"number":   123,
+		"password": "password",
+		"key":      []byte("AKIA9SKKLKSKKSKKSKK8"),
+		"config":   map[string]any{"nest": "map"},
+	})
+	assert.NoError(t, err)
+
 	testcases := []struct {
 		description string
 		path        string
@@ -189,9 +205,9 @@ func TestConfig_Explain(t *testing.T) {
 			expected:    "non-exist has no configuration.\n\n",
 		},
 		{
-			description: "owner",
-			path:        "owner",
-			expected:    "owner has value[map] that is loaded by loader[map].\n\n",
+			description: "number",
+			path:        "number",
+			expected:    "number has value[123] that is loaded by loader[map].\n\n",
 		},
 		{
 			description: "password",
@@ -214,21 +230,6 @@ Here are other value(loader)s:
 		},
 	}
 
-	config := konf.New()
-	err := config.Load(env.New())
-	assert.NoError(t, err)
-	err = config.Load(mapLoader{
-		"config": map[string]any{"nest": "env"},
-	})
-	assert.NoError(t, err)
-	err = config.Load(mapLoader{
-		"owner":    "map",
-		"password": "password",
-		"key":      "AKIA9SKKLKSKKSKKSKK8",
-		"config":   map[string]any{"nest": "map"},
-	})
-	assert.NoError(t, err)
-
 	for _, testcase := range testcases {
 		testcase := testcase
 
@@ -243,10 +244,10 @@ Here are other value(loader)s:
 		t.Parallel()
 
 		assert.Equal(t,
-			"owner has value[value:map] that is loaded by loader[map].\n\n",
-			config.Explain("owner", konf.WithValueFormatter(
+			"number has value[value:123] that is loaded by loader[map].\n\n",
+			config.Explain("number", konf.WithValueFormatter(
 				func(_ string, _ konf.Loader, value any) string {
-					return "value:" + value.(string)
+					return fmt.Sprintf("value:%v", value)
 				},
 			)),
 		)
