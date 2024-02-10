@@ -176,26 +176,79 @@ func (m mapLoader) String() string {
 }
 
 func TestConfig_Explain(t *testing.T) {
-	t.Setenv("CONFIG_NEST", "env")
+	t.Parallel()
+
+	testcases := []struct {
+		description string
+		path        string
+		expected    string
+	}{
+		{
+			description: "non-exist",
+			path:        "non-exist",
+			expected:    "non-exist has no configuration.\n\n",
+		},
+		{
+			description: "owner",
+			path:        "owner",
+			expected:    "owner has value[map] that is loaded by loader[map].\n\n",
+		},
+		{
+			description: "password",
+			path:        "password",
+			expected:    "password has value[******] that is loaded by loader[map].\n\n",
+		},
+		{
+			description: "API key",
+			path:        "key",
+			expected:    "key has value[AWS API Key] that is loaded by loader[map].\n\n",
+		},
+		{
+			description: "config",
+			path:        "config",
+			expected: `config.nest has value[map] that is loaded by loader[map].
+Here are other value(loader)s:
+  - env(map)
+
+`,
+		},
+	}
+
 	config := konf.New()
 	err := config.Load(env.New())
 	assert.NoError(t, err)
-	err = config.Load(mapLoader{"owner": "map", "config": map[string]any{"nest": "map"}})
+	err = config.Load(mapLoader{
+		"config": map[string]any{"nest": "env"},
+	})
+	assert.NoError(t, err)
+	err = config.Load(mapLoader{
+		"owner":    "map",
+		"password": "password",
+		"key":      "AKIA9SKKLKSKKSKKSKK8",
+		"config":   map[string]any{"nest": "map"},
+	})
 	assert.NoError(t, err)
 
-	assert.Equal(t, "non-exist has no configuration.\n\n", config.Explain("non-exist"))
-	assert.Equal(t,
-		"owner has value[map] that is loaded by loader[map].\n\n",
-		config.Explain("owner", konf.WithValueFormatter(
-			func(_ string, _ konf.Loader, value any) string {
-				return value.(string)
-			},
-		)),
-	)
-	expected := `config.nest has value[map] that is loaded by loader[map].
-Here are other value(loader)s:
-  - env(env)
+	for _, testcase := range testcases {
+		testcase := testcase
 
-`
-	assert.Equal(t, expected, config.Explain("config"))
+		t.Run(testcase.description, func(t *testing.T) {
+			t.Parallel()
+
+			assert.Equal(t, testcase.expected, config.Explain(testcase.path))
+		})
+	}
+
+	t.Run("with value formatter", func(t *testing.T) {
+		t.Parallel()
+
+		assert.Equal(t,
+			"owner has value[value:map] that is loaded by loader[map].\n\n",
+			config.Explain("owner", konf.WithValueFormatter(
+				func(_ string, _ konf.Loader, value any) string {
+					return "value:" + value.(string)
+				},
+			)),
+		)
+	})
 }
