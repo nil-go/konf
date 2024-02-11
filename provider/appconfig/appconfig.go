@@ -107,7 +107,7 @@ func (a *AppConfig) Watch(ctx context.Context, onChange func(map[string]any)) er
 	for {
 		select {
 		case <-ticker.C:
-			out, err := a.load(ctx)
+			values, err := a.load(ctx)
 			if err != nil {
 				a.logger.WarnContext(
 					ctx, "Error when reloading from AWS AppConfig",
@@ -120,8 +120,8 @@ func (a *AppConfig) Watch(ctx context.Context, onChange func(map[string]any)) er
 				continue
 			}
 
-			if out != nil {
-				onChange(out)
+			if values != nil {
+				onChange(values)
 			}
 		case <-ctx.Done():
 			return nil
@@ -208,6 +208,8 @@ func (c *clientProxy) loadClient(ctx context.Context) (*appconfigdata.Client, er
 	c.clientOnce.Do(func() {
 		if reflect.ValueOf(c.config).IsZero() {
 			if c.config, err = config.LoadDefaultConfig(ctx); err != nil {
+				err = fmt.Errorf("load default AWS config: %w", err)
+
 				return
 			}
 		}
@@ -215,9 +217,5 @@ func (c *clientProxy) loadClient(ctx context.Context) (*appconfigdata.Client, er
 		c.client = appconfigdata.NewFromConfig(c.config)
 	})
 
-	if err != nil {
-		return nil, fmt.Errorf("load client: %w", err)
-	}
-
-	return c.client, nil
+	return c.client, err
 }
