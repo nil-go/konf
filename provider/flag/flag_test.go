@@ -156,3 +156,11 @@ func init() {
 
 	set.String("k", "v", "")
 }
+
+type konf struct {
+	exists bool
+}
+
+func (k konf) Exists([]string) bool {
+	return k.exists
+}
