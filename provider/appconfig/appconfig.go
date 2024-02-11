@@ -96,8 +96,9 @@ func (a *AppConfig) Load() (map[string]any, error) {
 		}
 		a.token.Store(output.InitialConfigurationToken)
 	}
+	values, _, err := a.load(ctx)
 
-	return a.load(ctx)
+	return values, err
 }
 
 func (a *AppConfig) Watch(ctx context.Context, onChange func(map[string]any)) error {
@@ -107,7 +108,7 @@ func (a *AppConfig) Watch(ctx context.Context, onChange func(map[string]any)) er
 	for {
 		select {
 		case <-ticker.C:
-			values, err := a.load(ctx)
+			values, changed, err := a.load(ctx)
 			if err != nil {
 				a.logger.WarnContext(
 					ctx, "Error when reloading from AWS AppConfig",
@@ -120,7 +121,7 @@ func (a *AppConfig) Watch(ctx context.Context, onChange func(map[string]any)) er
 				continue
 			}
 
-			if values != nil {
+			if changed {
 				onChange(values)
 			}
 		case <-ctx.Done():
@@ -129,7 +130,7 @@ func (a *AppConfig) Watch(ctx context.Context, onChange func(map[string]any)) er
 	}
 }
 
-func (a *AppConfig) load(ctx context.Context) (map[string]any, error) {
+func (a *AppConfig) load(ctx context.Context) (map[string]any, bool, error) {
 	ctx, cancel := context.WithTimeout(ctx, a.timeout)
 	defer cancel()
 
@@ -138,22 +139,22 @@ func (a *AppConfig) load(ctx context.Context) (map[string]any, error) {
 	}
 	output, err := a.client.GetLatestConfiguration(ctx, input)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	a.token.Store(output.NextPollConfigurationToken)
 
 	if len(output.Configuration) == 0 {
 		// It may return empty configuration data
 		// if the client already has the latest version.
-		return nil, nil //nolint:nilnil // Use nil to indicate no change
+		return nil, false, nil
 	}
 
 	var out map[string]any
 	if e := a.unmarshal(output.Configuration, &out); e != nil {
-		return nil, fmt.Errorf("unmarshal: %w", e)
+		return nil, false, fmt.Errorf("unmarshal: %w", e)
 	}
 
-	return out, nil
+	return out, true, nil
 }
 
 func (a *AppConfig) String() string {
