@@ -9,9 +9,6 @@ on:
 
 jobs:
   benchmark:
-    strategy:
-      matrix:
-        module: [ '', 'provider/file', 'provider/pflag', 'provider/appconfig' ]
     name: Benchmark
     runs-on: ubuntu-latest
     steps:
@@ -22,13 +19,3 @@ jobs:
           cache-dependency-path: "**/go.sum"
       - name: Benchmark
         run: go test -v -bench=. -run=^$ ./...
-        working-directory: ${{ matrix.module }}
-  all:
-    if: ${{ always() }}
-    runs-on: ubuntu-latest
-    name: All Benchmarks
-    needs: benchmark
-    steps:
-      - name: Check benchmark matrix status
-        if: ${{ needs.benchmark.result != 'success' }}
-        run: exit 1
