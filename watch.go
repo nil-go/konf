@@ -26,7 +26,7 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 		panic("cannot watch change with nil context")
 	}
 
-	if hasWatcher := slices.ContainsFunc(c.providers, func(provider *provider) bool {
+	if hasWatcher := slices.ContainsFunc(c.providers, func(provider provider) bool {
 		_, ok := provider.loader.(Watcher)
 
 		return ok
@@ -97,8 +97,8 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 	}()
 
 	errChan := make(chan error, len(c.providers))
-	for _, provider := range c.providers {
-		provider := provider
+	for i := range c.providers {
+		provider := &c.providers[i] // Use pointer for later modification.
 
 		if watcher, ok := provider.loader.(Watcher); ok {
 			waitGroup.Add(1)

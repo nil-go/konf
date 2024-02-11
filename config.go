@@ -25,7 +25,7 @@ type Config struct {
 	delimiter  string
 
 	values    map[string]any
-	providers []*provider
+	providers []provider
 
 	onChanges      map[string][]func(*Config)
 	onChangesMutex sync.RWMutex
@@ -84,13 +84,13 @@ func (c *Config) Load(loader Loader) error {
 	}
 	maps.Merge(c.values, values)
 
-	provider := &provider{
-		loader: loader,
-		values: make(map[string]any),
-	}
 	// Merged to empty map to convert to lower case.
-	maps.Merge(provider.values, values)
-	c.providers = append(c.providers, provider)
+	providerValues := make(map[string]any)
+	maps.Merge(providerValues, values)
+	c.providers = append(c.providers, provider{
+		loader: loader,
+		values: providerValues,
+	})
 
 	return nil
 }

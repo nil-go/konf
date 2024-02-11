@@ -47,7 +47,7 @@ func WithDelimiter(delimiter string) Option {
 // If it returns an nil/[]string{}/[]string{""}, the variable will be ignored.
 //
 // For example, with the default splitter, an flag name like "parent.child.key"
-// // would be split into "parent", "child", and "key".
+// would be split into "parent", "child", and "key".
 func WithNameSplitter(splitter func(string) []string) Option {
 	return func(options *options) {
 		options.splitter = splitter
