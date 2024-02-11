@@ -6,11 +6,12 @@ package konf
 import (
 	"fmt"
 	"regexp"
+	"unsafe"
 )
 
 // CredentialFormatter provides the value formatter which blurs sensitive information.
 //
-//nolint:lll
+//nolint:funlen,lll
 func CredentialFormatter() func(path string, loader Loader, value any) string {
 	namePattern := regexp.MustCompile(`(?i)password|passwd|pass|pwd|pw|secret|token|apiKey|bearer|cred`)
 	secretsPatterns := map[string]*regexp.Regexp{
@@ -58,11 +59,15 @@ func CredentialFormatter() func(path string, loader Loader, value any) string {
 			return "******"
 		}
 
-		format := "%v"
-		if _, ok := value.([]byte); ok {
-			format = "%s"
+		var formatted string
+		switch v := value.(type) {
+		case string:
+			formatted = v
+		case []byte:
+			formatted = unsafe.String(unsafe.SliceData(v), len(v))
+		default:
+			formatted = fmt.Sprint(value)
 		}
-		formatted := fmt.Sprintf(format, value)
 
 		for name, pattern := range secretsPatterns {
 			if pattern.MatchString(formatted) {
