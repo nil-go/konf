@@ -38,8 +38,7 @@ type AppConfig struct {
 	profile      string
 	pollInterval time.Duration
 
-	timeout time.Duration
-	token   atomic.Pointer[string]
+	token atomic.Pointer[string]
 }
 
 // New creates an AppConfig with the given application, environment, profile and Option(s).
@@ -59,7 +58,6 @@ func New(application, environment, profile string, opts ...Option) *AppConfig {
 			application: application,
 			environment: environment,
 			profile:     profile,
-			timeout:     10 * time.Second, //nolint:gomnd
 		},
 	}
 	for _, opt := range opts {
@@ -80,8 +78,7 @@ func New(application, environment, profile string, opts ...Option) *AppConfig {
 }
 
 func (a *AppConfig) Load() (map[string]any, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), a.timeout)
-	defer cancel()
+	ctx := context.Background()
 
 	if a.token.Load() == nil {
 		input := &appconfigdata.StartConfigurationSessionInput{
@@ -131,9 +128,6 @@ func (a *AppConfig) Watch(ctx context.Context, onChange func(map[string]any)) er
 }
 
 func (a *AppConfig) load(ctx context.Context) (map[string]any, bool, error) {
-	ctx, cancel := context.WithTimeout(ctx, a.timeout)
-	defer cancel()
-
 	input := &appconfigdata.GetLatestConfigurationInput{
 		ConfigurationToken: a.token.Load(),
 	}
@@ -162,9 +156,12 @@ func (a *AppConfig) String() string {
 }
 
 type clientProxy struct {
+	config aws.Config
+
 	client     *appconfigdata.Client
 	clientOnce sync.Once
-	config     aws.Config
+
+	timeout time.Duration
 }
 
 func (c *clientProxy) StartConfigurationSession(
@@ -176,6 +173,9 @@ func (c *clientProxy) StartConfigurationSession(
 	if err != nil {
 		return nil, err
 	}
+
+	ctx, cancel := context.WithTimeout(ctx, c.timeout)
+	defer cancel()
 
 	session, err := client.StartConfigurationSession(ctx, params, optFns...)
 	if err != nil {
@@ -195,6 +195,9 @@ func (c *clientProxy) GetLatestConfiguration(
 		return nil, err
 	}
 
+	ctx, cancel := context.WithTimeout(ctx, c.timeout)
+	defer cancel()
+
 	configuration, err := client.GetLatestConfiguration(ctx, params, optFns...)
 	if err != nil {
 		return nil, fmt.Errorf("get latest configuration: %w", err)
@@ -207,6 +210,9 @@ func (c *clientProxy) loadClient(ctx context.Context) (*appconfigdata.Client, er
 	var err error
 
 	c.clientOnce.Do(func() {
+		if c.timeout == 0 {
+			c.timeout = 10 * time.Second //nolint:gomnd
+		}
 		if reflect.ValueOf(c.config).IsZero() {
 			if c.config, err = config.LoadDefaultConfig(ctx); err != nil {
 				err = fmt.Errorf("load default AWS config: %w", err)
