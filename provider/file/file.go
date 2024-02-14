@@ -21,9 +21,9 @@ import (
 //
 // To create a new File, call [New].
 type File struct {
-	logger    *slog.Logger
-	unmarshal func([]byte, any) error
 	path      string
+	unmarshal func([]byte, any) error
+	logger    *slog.Logger
 }
 
 // New creates a File with the given path and Option(s).

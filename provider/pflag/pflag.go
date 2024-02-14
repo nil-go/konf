@@ -27,9 +27,9 @@ import (
 // To create a new PFlag, call [New].
 type PFlag struct {
 	konf     konf
+	prefix   string
 	set      *pflag.FlagSet
 	splitter func(string) []string
-	prefix   string
 }
 
 type konf interface {
