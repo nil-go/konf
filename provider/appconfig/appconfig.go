@@ -118,7 +118,7 @@ func (a AppConfig) load(ctx context.Context) (map[string]any, bool, error) {
 		return nil, false, fmt.Errorf("unmarshal: %w", e)
 	}
 
-	return values, changed, nil
+	return values, true, nil
 }
 
 func (a AppConfig) String() string {

@@ -20,9 +20,9 @@ import (
 //
 // To create a new FS, call [New].
 type FS struct {
-	unmarshal func([]byte, any) error
 	fs        fs.FS
 	path      string
+	unmarshal func([]byte, any) error
 }
 
 // New creates a FS with the given fs.FS, path and Option(s).

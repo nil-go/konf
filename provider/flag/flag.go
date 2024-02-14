@@ -25,9 +25,9 @@ import (
 // To create a new Flag, call [New].
 type Flag struct {
 	konf     konf
+	prefix   string
 	set      *flag.FlagSet
 	splitter func(string) []string
-	prefix   string
 }
 
 type konf interface {
