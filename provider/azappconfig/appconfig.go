@@ -60,6 +60,7 @@ func New(endpoint string, opts ...Option) AppConfig {
 	if option.pollInterval <= 0 {
 		option.pollInterval = time.Minute
 	}
+	option.client.timeout = max(option.pollInterval/2, 10*time.Second) //nolint:gomnd
 
 	return AppConfig(*option)
 }
@@ -135,7 +136,7 @@ type clientProxy struct {
 	lastETags atomic.Pointer[map[string]azcore.ETag]
 }
 
-func (p *clientProxy) load(ctx context.Context) (map[string]string, bool, error) {
+func (p *clientProxy) load(ctx context.Context) (map[string]string, bool, error) { //nolint:cyclop
 	client, err := p.loadClient()
 	if err != nil {
 		return nil, false, err
@@ -161,8 +162,11 @@ func (p *clientProxy) load(ctx context.Context) (map[string]string, bool, error)
 		eTags  = make(map[string]azcore.ETag)
 
 		nextPage = func(ctx context.Context) error {
-			ctx, cancel := context.WithTimeout(ctx, p.timeout)
-			defer cancel()
+			if p.timeout > 0 {
+				var cancel context.CancelFunc
+				ctx, cancel = context.WithTimeout(ctx, p.timeout)
+				defer cancel()
+			}
 
 			page, err := pager.NextPage(ctx)
 			if err != nil {
@@ -196,9 +200,6 @@ func (p *clientProxy) loadClient() (*azappconfig.Client, error) {
 	var err error
 
 	p.clientOnce.Do(func() {
-		if p.timeout <= 0 {
-			p.timeout = 10 * time.Second //nolint:gomnd
-		}
 		if defaultToken, ok := p.credential.(*azidentity.DefaultAzureCredential); ok {
 			empty := azidentity.DefaultAzureCredential{}
 			if empty == *defaultToken {
