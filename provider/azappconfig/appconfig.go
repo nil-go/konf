@@ -10,7 +10,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"reflect"
+	"maps"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -21,7 +21,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/data/azappconfig"
 
-	"github.com/nil-go/konf/provider/azappconfig/internal/maps"
+	imaps "github.com/nil-go/konf/provider/azappconfig/internal/maps"
 )
 
 // AppConfig is a Provider that loads configuration from Azure App Configuration.
@@ -144,7 +144,7 @@ func (a *AppConfig) load(ctx context.Context) (map[string]any, bool, error) { //
 					continue
 				}
 
-				maps.Insert(values, keys, *setting.Value)
+				imaps.Insert(values, keys, *setting.Value)
 				eTags[*setting.Key] = *setting.ETag
 			}
 
@@ -158,7 +158,7 @@ func (a *AppConfig) load(ctx context.Context) (map[string]any, bool, error) { //
 	}
 
 	var changed bool
-	if last := a.lastETags.Load(); last == nil || !reflect.DeepEqual(last, eTags) {
+	if last := a.lastETags.Load(); last == nil || !maps.Equal(*last, eTags) {
 		changed = true
 		a.lastETags.Store(&eTags)
 	}
