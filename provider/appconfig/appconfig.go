@@ -168,17 +168,17 @@ func (c *clientProxy) loadClient(ctx context.Context) (*appconfigdata.Client, er
 			c.timeout = 10 * time.Second //nolint:gomnd
 		}
 
-		cctx, cancel := context.WithTimeout(ctx, c.timeout)
-		defer cancel()
-
 		if reflect.ValueOf(c.config).IsZero() {
-			if c.config, err = config.LoadDefaultConfig(cctx); err != nil {
+			if c.config, err = config.LoadDefaultConfig(ctx); err != nil {
 				err = fmt.Errorf("load default AWS config: %w", err)
 
 				return
 			}
 		}
 		c.client = appconfigdata.NewFromConfig(c.config)
+
+		cctx, cancel := context.WithTimeout(ctx, c.timeout)
+		defer cancel()
 
 		var session *appconfigdata.StartConfigurationSessionOutput
 		if session, err = c.client.StartConfigurationSession(cctx, &appconfigdata.StartConfigurationSessionInput{
