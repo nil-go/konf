@@ -247,6 +247,12 @@ func TestAppConfig_Watch(t *testing.T) {
 				_ middleware.FinalizeHandler,
 			) (middleware.FinalizeOutput, middleware.Metadata, error) {
 				switch awsMiddleware.GetOperationName(ctx) {
+				case "StartConfigurationSession":
+					return middleware.FinalizeOutput{
+						Result: &appconfigdata.StartConfigurationSessionOutput{
+							InitialConfigurationToken: aws.String("initial-token"),
+						},
+					}, middleware.Metadata{}, nil
 				case "GetLatestConfiguration":
 					return middleware.FinalizeOutput{
 						Result: &appconfigdata.GetLatestConfigurationOutput{
@@ -268,6 +274,12 @@ func TestAppConfig_Watch(t *testing.T) {
 				_ middleware.FinalizeHandler,
 			) (middleware.FinalizeOutput, middleware.Metadata, error) {
 				switch awsMiddleware.GetOperationName(ctx) {
+				case "StartConfigurationSession":
+					return middleware.FinalizeOutput{
+						Result: &appconfigdata.StartConfigurationSessionOutput{
+							InitialConfigurationToken: aws.String("initial-token"),
+						},
+					}, middleware.Metadata{}, nil
 				case "GetLatestConfiguration":
 					return middleware.FinalizeOutput{
 						Result: &appconfigdata.GetLatestConfigurationOutput{
@@ -288,6 +300,12 @@ func TestAppConfig_Watch(t *testing.T) {
 				_ middleware.FinalizeHandler,
 			) (middleware.FinalizeOutput, middleware.Metadata, error) {
 				switch awsMiddleware.GetOperationName(ctx) {
+				case "StartConfigurationSession":
+					return middleware.FinalizeOutput{
+						Result: &appconfigdata.StartConfigurationSessionOutput{
+							InitialConfigurationToken: aws.String("initial-token"),
+						},
+					}, middleware.Metadata{}, nil
 				case "GetLatestConfiguration":
 					return middleware.FinalizeOutput{}, middleware.Metadata{}, errors.New("get latest configuration error")
 				default:
@@ -307,6 +325,12 @@ func TestAppConfig_Watch(t *testing.T) {
 				_ middleware.FinalizeHandler,
 			) (middleware.FinalizeOutput, middleware.Metadata, error) {
 				switch awsMiddleware.GetOperationName(ctx) {
+				case "StartConfigurationSession":
+					return middleware.FinalizeOutput{
+						Result: &appconfigdata.StartConfigurationSessionOutput{
+							InitialConfigurationToken: aws.String("initial-token"),
+						},
+					}, middleware.Metadata{}, nil
 				case "GetLatestConfiguration":
 					return middleware.FinalizeOutput{
 						Result: &appconfigdata.GetLatestConfigurationOutput{
@@ -335,26 +359,6 @@ func TestAppConfig_Watch(t *testing.T) {
 			cfg, err := config.LoadDefaultConfig(
 				context.Background(),
 				config.WithAPIOptions([]func(*middleware.Stack) error{
-					func(stack *middleware.Stack) error {
-						return stack.Initialize.Add(
-							middleware.InitializeMiddlewareFunc(
-								"mock", func(
-									ctx context.Context,
-									input middleware.InitializeInput,
-									handler middleware.InitializeHandler,
-								) (middleware.InitializeOutput, middleware.Metadata, error) {
-									if v, ok := input.Parameters.(*appconfigdata.GetLatestConfigurationInput); ok {
-										if v.ConfigurationToken == nil {
-											v.ConfigurationToken = aws.String("initial-token")
-										}
-									}
-
-									return handler.HandleInitialize(ctx, input)
-								},
-							),
-							middleware.Before,
-						)
-					},
 					func(stack *middleware.Stack) error {
 						return stack.Finalize.Add(
 							middleware.FinalizeMiddlewareFunc(

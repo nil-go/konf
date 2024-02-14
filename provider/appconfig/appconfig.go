@@ -33,12 +33,7 @@ type AppConfig struct {
 	unmarshal func([]byte, any) error
 
 	client       *clientProxy
-	application  string
-	environment  string
-	profile      string
 	pollInterval time.Duration
-
-	token atomic.Pointer[string]
 }
 
 // New creates an AppConfig with the given application, environment, profile and Option(s).
@@ -53,13 +48,7 @@ func New(application, environment, profile string, opts ...Option) *AppConfig {
 		panic("cannot create AppConfig with empty profile")
 	}
 
-	option := &options{
-		AppConfig: AppConfig{
-			application: application,
-			environment: environment,
-			profile:     profile,
-		},
-	}
+	option := &options{}
 	for _, opt := range opts {
 		opt(option)
 	}
@@ -72,28 +61,19 @@ func New(application, environment, profile string, opts ...Option) *AppConfig {
 	if option.pollInterval <= 0 {
 		option.pollInterval = time.Minute
 	}
-	option.client = &clientProxy{config: option.awsConfig}
+	option.client = &clientProxy{
+		config:       option.awsConfig,
+		application:  application,
+		environment:  environment,
+		profile:      profile,
+		pollInterval: max(option.pollInterval/2, time.Second), //nolint:gomnd
+	}
 
 	return &option.AppConfig
 }
 
 func (a *AppConfig) Load() (map[string]any, error) {
-	ctx := context.Background()
-
-	if a.token.Load() == nil {
-		input := &appconfigdata.StartConfigurationSessionInput{
-			ApplicationIdentifier:                aws.String(a.application),
-			ConfigurationProfileIdentifier:       aws.String(a.profile),
-			EnvironmentIdentifier:                aws.String(a.environment),
-			RequiredMinimumPollIntervalInSeconds: aws.Int32(int32(max(a.pollInterval.Seconds()/2, 1))), //nolint:gomnd
-		}
-		output, err := a.client.StartConfigurationSession(ctx, input)
-		if err != nil {
-			return nil, err
-		}
-		a.token.Store(output.InitialConfigurationToken)
-	}
-	values, _, err := a.load(ctx)
+	values, _, err := a.load(context.Background())
 
 	return values, err
 }
@@ -109,9 +89,9 @@ func (a *AppConfig) Watch(ctx context.Context, onChange func(map[string]any)) er
 			if err != nil {
 				a.logger.WarnContext(
 					ctx, "Error when reloading from AWS AppConfig",
-					"application", a.application,
-					"environment", a.environment,
-					"profile", a.profile,
+					"application", a.client.application,
+					"environment", a.client.environment,
+					"profile", a.client.profile,
 					"error", err,
 				)
 
@@ -128,100 +108,89 @@ func (a *AppConfig) Watch(ctx context.Context, onChange func(map[string]any)) er
 }
 
 func (a *AppConfig) load(ctx context.Context) (map[string]any, bool, error) {
-	input := &appconfigdata.GetLatestConfigurationInput{
-		ConfigurationToken: a.token.Load(),
-	}
-	output, err := a.client.GetLatestConfiguration(ctx, input)
-	if err != nil {
+	resp, changed, err := a.client.load(ctx)
+	if !changed || err != nil {
 		return nil, false, err
 	}
-	a.token.Store(output.NextPollConfigurationToken)
 
-	if len(output.Configuration) == 0 {
-		// It may return empty configuration data
-		// if the client already has the latest version.
-		return nil, false, nil
-	}
-
-	var out map[string]any
-	if e := a.unmarshal(output.Configuration, &out); e != nil {
+	var values map[string]any
+	if e := a.unmarshal(resp, &values); e != nil {
 		return nil, false, fmt.Errorf("unmarshal: %w", e)
 	}
 
-	return out, true, nil
+	return values, true, nil
 }
 
 func (a *AppConfig) String() string {
-	return "appConfig:" + a.application + "-" + a.environment + "-" + a.profile
+	return "appConfig:" + a.client.application + "-" + a.client.environment + "-" + a.client.profile
 }
 
 type clientProxy struct {
-	config aws.Config
+	config       aws.Config
+	application  string
+	environment  string
+	profile      string
+	pollInterval time.Duration
 
 	client     *appconfigdata.Client
 	clientOnce sync.Once
 
 	timeout time.Duration
+	token   atomic.Pointer[string]
 }
 
-func (c *clientProxy) StartConfigurationSession(
-	ctx context.Context,
-	params *appconfigdata.StartConfigurationSessionInput,
-	optFns ...func(*appconfigdata.Options),
-) (*appconfigdata.StartConfigurationSessionOutput, error) {
+func (c *clientProxy) load(ctx context.Context) ([]byte, bool, error) {
 	client, err := c.loadClient(ctx)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	ctx, cancel := context.WithTimeout(ctx, c.timeout)
 	defer cancel()
 
-	session, err := client.StartConfigurationSession(ctx, params, optFns...)
+	resp, err := client.GetLatestConfiguration(ctx,
+		&appconfigdata.GetLatestConfigurationInput{ConfigurationToken: c.token.Load()},
+	)
 	if err != nil {
-		return nil, fmt.Errorf("start configuration session: %w", err)
+		return nil, false, fmt.Errorf("get latest configuration: %w", err)
 	}
+	c.token.Store(resp.NextPollConfigurationToken)
 
-	return session, nil
-}
-
-func (c *clientProxy) GetLatestConfiguration(
-	ctx context.Context,
-	params *appconfigdata.GetLatestConfigurationInput,
-	optFns ...func(*appconfigdata.Options),
-) (*appconfigdata.GetLatestConfigurationOutput, error) {
-	client, err := c.loadClient(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	ctx, cancel := context.WithTimeout(ctx, c.timeout)
-	defer cancel()
-
-	configuration, err := client.GetLatestConfiguration(ctx, params, optFns...)
-	if err != nil {
-		return nil, fmt.Errorf("get latest configuration: %w", err)
-	}
-
-	return configuration, nil
+	// It may return empty configuration data if the client already has the latest version.
+	return resp.Configuration, len(resp.Configuration) > 0, nil
 }
 
 func (c *clientProxy) loadClient(ctx context.Context) (*appconfigdata.Client, error) {
 	var err error
 
 	c.clientOnce.Do(func() {
+		cctx, cancel := context.WithTimeout(ctx, c.timeout)
+		defer cancel()
+
 		if c.timeout == 0 {
 			c.timeout = 10 * time.Second //nolint:gomnd
 		}
 		if reflect.ValueOf(c.config).IsZero() {
-			if c.config, err = config.LoadDefaultConfig(ctx); err != nil {
+			if c.config, err = config.LoadDefaultConfig(cctx); err != nil {
 				err = fmt.Errorf("load default AWS config: %w", err)
 
 				return
 			}
 		}
-
 		c.client = appconfigdata.NewFromConfig(c.config)
+
+		var session *appconfigdata.StartConfigurationSessionOutput
+		if session, err = c.client.StartConfigurationSession(cctx, &appconfigdata.StartConfigurationSessionInput{
+			ApplicationIdentifier:                aws.String(c.application),
+			ConfigurationProfileIdentifier:       aws.String(c.profile),
+			EnvironmentIdentifier:                aws.String(c.environment),
+			RequiredMinimumPollIntervalInSeconds: aws.Int32(int32(c.pollInterval.Seconds())),
+		}); err != nil {
+			err = fmt.Errorf("start configuration session: %w", err)
+
+			return
+		}
+		c.token.Store(session.InitialConfigurationToken)
 	})
 
 	return c.client, err
