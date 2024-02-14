@@ -193,7 +193,7 @@ func TestConfig_Watch_error(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	assert.EqualError(t, config.Watch(ctx), "watch configuration change: watch error")
+	assert.EqualError(t, config.Watch(ctx), "watch configuration change on error: watch error")
 }
 
 type errorWatcher struct{}
@@ -204,6 +204,10 @@ func (errorWatcher) Load() (map[string]any, error) {
 
 func (errorWatcher) Watch(context.Context, func(map[string]any)) error {
 	return errors.New("watch error")
+}
+
+func (errorWatcher) String() string {
+	return "error"
 }
 
 func logHandler(buf *buffer) *slog.TextHandler {

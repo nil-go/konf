@@ -138,7 +138,7 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 
 				c.logger.DebugContext(ctx, "Watching configuration change.", "loader", watcher)
 				if err := watcher.Watch(ctx, onChange); err != nil {
-					errChan <- fmt.Errorf("watch configuration change: %w", err)
+					errChan <- fmt.Errorf("watch configuration change on %v: %w", watcher, err)
 					cancel()
 				}
 			}()
@@ -149,7 +149,9 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 
 	var err error
 	for e := range errChan {
-		err = errors.Join(e)
+		if !errors.Is(e, ctx.Err()) {
+			err = errors.Join(e)
+		}
 	}
 
 	return err
