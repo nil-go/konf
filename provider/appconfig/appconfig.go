@@ -37,7 +37,7 @@ type AppConfig struct {
 }
 
 // New creates an AppConfig with the given application, environment, profile and Option(s).
-func New(application, environment, profile string, opts ...Option) *AppConfig {
+func New(application, environment, profile string, opts ...Option) AppConfig {
 	if application == "" {
 		panic("cannot create AppConfig with empty application")
 	}
@@ -69,16 +69,16 @@ func New(application, environment, profile string, opts ...Option) *AppConfig {
 		pollInterval: max(option.pollInterval/2, time.Second), //nolint:gomnd
 	}
 
-	return &option.AppConfig
+	return option.AppConfig
 }
 
-func (a *AppConfig) Load() (map[string]any, error) {
+func (a AppConfig) Load() (map[string]any, error) {
 	values, _, err := a.load(context.Background())
 
 	return values, err
 }
 
-func (a *AppConfig) Watch(ctx context.Context, onChange func(map[string]any)) error {
+func (a AppConfig) Watch(ctx context.Context, onChange func(map[string]any)) error {
 	ticker := time.NewTicker(a.pollInterval)
 	defer ticker.Stop()
 
@@ -107,7 +107,7 @@ func (a *AppConfig) Watch(ctx context.Context, onChange func(map[string]any)) er
 	}
 }
 
-func (a *AppConfig) load(ctx context.Context) (map[string]any, bool, error) {
+func (a AppConfig) load(ctx context.Context) (map[string]any, bool, error) {
 	resp, changed, err := a.client.load(ctx)
 	if !changed || err != nil {
 		return nil, false, err
@@ -121,7 +121,7 @@ func (a *AppConfig) load(ctx context.Context) (map[string]any, bool, error) {
 	return values, true, nil
 }
 
-func (a *AppConfig) String() string {
+func (a AppConfig) String() string {
 	return "appConfig:" + a.client.application + "-" + a.client.environment + "-" + a.client.profile
 }
 
