@@ -29,11 +29,11 @@ import (
 //
 // To create a new AppConfig, call [New].
 type AppConfig struct {
-	logger    *slog.Logger
-	unmarshal func([]byte, any) error
-
-	client       *clientProxy
+	unmarshal    func([]byte, any) error
 	pollInterval time.Duration
+	logger       *slog.Logger
+
+	client *clientProxy
 }
 
 // New creates an AppConfig with the given application, environment, profile and Option(s).
@@ -48,7 +48,13 @@ func New(application, environment, profile string, opts ...Option) AppConfig {
 		panic("cannot create AppConfig with empty profile")
 	}
 
-	option := &options{}
+	option := &options{
+		client: &clientProxy{
+			application: application,
+			environment: environment,
+			profile:     profile,
+		},
+	}
 	for _, opt := range opts {
 		opt(option)
 	}
@@ -61,15 +67,9 @@ func New(application, environment, profile string, opts ...Option) AppConfig {
 	if option.pollInterval <= 0 {
 		option.pollInterval = time.Minute
 	}
-	option.client = &clientProxy{
-		config:       option.awsConfig,
-		application:  application,
-		environment:  environment,
-		profile:      profile,
-		pollInterval: max(option.pollInterval/2, time.Second), //nolint:gomnd
-	}
+	option.client.pollInterval = max(option.pollInterval/2, time.Second) //nolint:gomnd
 
-	return option.AppConfig
+	return AppConfig(*option)
 }
 
 func (a AppConfig) Load() (map[string]any, error) {
@@ -118,7 +118,7 @@ func (a AppConfig) load(ctx context.Context) (map[string]any, bool, error) {
 		return nil, false, fmt.Errorf("unmarshal: %w", e)
 	}
 
-	return values, true, nil
+	return values, changed, nil
 }
 
 func (a AppConfig) String() string {
@@ -164,12 +164,13 @@ func (c *clientProxy) loadClient(ctx context.Context) (*appconfigdata.Client, er
 	var err error
 
 	c.clientOnce.Do(func() {
+		if c.timeout <= 0 {
+			c.timeout = 10 * time.Second //nolint:gomnd
+		}
+
 		cctx, cancel := context.WithTimeout(ctx, c.timeout)
 		defer cancel()
 
-		if c.timeout == 0 {
-			c.timeout = 10 * time.Second //nolint:gomnd
-		}
 		if reflect.ValueOf(c.config).IsZero() {
 			if c.config, err = config.LoadDefaultConfig(cctx); err != nil {
 				err = fmt.Errorf("load default AWS config: %w", err)

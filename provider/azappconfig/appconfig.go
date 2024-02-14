@@ -17,7 +17,6 @@ import (
 	"time"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
-	"github.com/Azure/azure-sdk-for-go/sdk/azcore/runtime"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/data/azappconfig"
 
@@ -28,57 +27,50 @@ import (
 //
 // To create a new AppConfig, call [New].
 type AppConfig struct {
-	logger   *slog.Logger
-	splitter func(string) []string
-
-	client       *clientProxy
-	lastETags    atomic.Pointer[map[string]azcore.ETag]
-	keyFilter    string
-	labelFilter  string
+	splitter     func(string) []string
 	pollInterval time.Duration
-	timeout      time.Duration
+	logger       *slog.Logger
+
+	client *clientProxy
 }
 
 // New creates an AppConfig with the given endpoint and Option(s).
-func New(endpoint string, opts ...Option) *AppConfig {
+func New(endpoint string, opts ...Option) AppConfig {
 	if endpoint == "" {
 		panic("cannot create Azure AppConfig with empty endpoint")
 	}
 
 	option := &options{
-		AppConfig: AppConfig{
-			client: &clientProxy{
-				endpoint: endpoint,
-				// Place holder for the default credential.
-				credential: &azidentity.DefaultAzureCredential{},
-			},
-			timeout: 30 * time.Second, //nolint:gomnd
+		client: &clientProxy{
+			// Place holder for the default credential.
+			credential: &azidentity.DefaultAzureCredential{},
+			endpoint:   endpoint,
 		},
 	}
 	for _, opt := range opts {
 		opt(option)
 	}
 
-	if option.splitter == nil {
-		option.splitter = func(s string) []string { return strings.Split(s, "/") }
-	}
 	if option.logger == nil {
 		option.logger = slog.Default()
+	}
+	if option.splitter == nil {
+		option.splitter = func(s string) []string { return strings.Split(s, "/") }
 	}
 	if option.pollInterval <= 0 {
 		option.pollInterval = time.Minute
 	}
 
-	return &option.AppConfig
+	return AppConfig(*option)
 }
 
-func (a *AppConfig) Load() (map[string]any, error) {
+func (a AppConfig) Load() (map[string]any, error) {
 	values, _, err := a.load(context.Background())
 
 	return values, err
 }
 
-func (a *AppConfig) Watch(ctx context.Context, onChange func(map[string]any)) error {
+func (a AppConfig) Watch(ctx context.Context, onChange func(map[string]any)) error {
 	ticker := time.NewTicker(a.pollInterval)
 	defer ticker.Stop()
 
@@ -89,8 +81,9 @@ func (a *AppConfig) Watch(ctx context.Context, onChange func(map[string]any)) er
 			if err != nil {
 				a.logger.WarnContext(
 					ctx, "Error when reloading from Azure App Configuration",
-					"keyFilter", a.keyFilter,
-					"labelFilter", a.labelFilter,
+					"endpoint", a.client.endpoint,
+					"keyFilter", a.client.keyFilter,
+					"labelFilter", a.client.labelFilter,
 					"error", err,
 				)
 
@@ -106,7 +99,48 @@ func (a *AppConfig) Watch(ctx context.Context, onChange func(map[string]any)) er
 	}
 }
 
-func (a *AppConfig) load(ctx context.Context) (map[string]any, bool, error) { //nolint:cyclop
+func (a AppConfig) load(ctx context.Context) (map[string]any, bool, error) {
+	resp, changed, err := a.client.load(ctx)
+	if !changed || err != nil {
+		return nil, false, err
+	}
+
+	values := make(map[string]any)
+	for key, value := range resp {
+		keys := a.splitter(key)
+		if len(keys) == 0 || len(keys) == 1 && keys[0] == "" {
+			continue
+		}
+
+		imaps.Insert(values, keys, value)
+	}
+
+	return values, true, nil
+}
+
+func (a AppConfig) String() string {
+	return "azAppConfig:" + a.client.endpoint
+}
+
+type clientProxy struct {
+	endpoint    string
+	keyFilter   string
+	labelFilter string
+	credential  azcore.TokenCredential
+
+	client     *azappconfig.Client
+	clientOnce sync.Once
+
+	timeout   time.Duration
+	lastETags atomic.Pointer[map[string]azcore.ETag]
+}
+
+func (p *clientProxy) load(ctx context.Context) (map[string]string, bool, error) {
+	client, err := p.loadClient()
+	if err != nil {
+		return nil, false, err
+	}
+
 	selector := azappconfig.SettingSelector{
 		Fields: []azappconfig.SettingFields{
 			azappconfig.SettingFieldsKey,
@@ -114,23 +148,20 @@ func (a *AppConfig) load(ctx context.Context) (map[string]any, bool, error) { //
 			azappconfig.SettingFieldsETag,
 		},
 	}
-	if a.keyFilter != "" {
-		selector.KeyFilter = &a.keyFilter
+	if p.keyFilter != "" {
+		selector.KeyFilter = &p.keyFilter
 	}
-	if a.labelFilter != "" {
-		selector.LabelFilter = &a.labelFilter
+	if p.labelFilter != "" {
+		selector.LabelFilter = &p.labelFilter
 	}
-	pager, err := a.client.NewListSettingsPager(selector, &azappconfig.ListSettingsOptions{})
-	if err != nil {
-		return nil, false, err
-	}
+	pager := client.NewListSettingsPager(selector, &azappconfig.ListSettingsOptions{})
 
 	var (
-		values = make(map[string]any)
+		values = make(map[string]string)
 		eTags  = make(map[string]azcore.ETag)
 
 		nextPage = func(ctx context.Context) error {
-			ctx, cancel := context.WithTimeout(ctx, a.timeout)
+			ctx, cancel := context.WithTimeout(ctx, p.timeout)
 			defer cancel()
 
 			page, err := pager.NextPage(ctx)
@@ -139,12 +170,7 @@ func (a *AppConfig) load(ctx context.Context) (map[string]any, bool, error) { //
 			}
 
 			for _, setting := range page.Settings {
-				keys := a.splitter(*setting.Key)
-				if len(keys) == 0 || len(keys) == 1 && keys[0] == "" {
-					continue
-				}
-
-				imaps.Insert(values, keys, *setting.Value)
+				values[*setting.Key] = *setting.Value
 				eTags[*setting.Key] = *setting.ETag
 			}
 
@@ -158,47 +184,26 @@ func (a *AppConfig) load(ctx context.Context) (map[string]any, bool, error) { //
 	}
 
 	var changed bool
-	if last := a.lastETags.Load(); last == nil || !maps.Equal(*last, eTags) {
+	if last := p.lastETags.Load(); last == nil || !maps.Equal(*last, eTags) {
 		changed = true
-		a.lastETags.Store(&eTags)
+		p.lastETags.Store(&eTags)
 	}
 
 	return values, changed, nil
 }
 
-func (a *AppConfig) String() string {
-	return "azAppConfig:" + a.client.endpoint
-}
-
-type clientProxy struct {
-	endpoint   string
-	credential azcore.TokenCredential
-
-	client     *azappconfig.Client
-	clientOnce sync.Once
-}
-
-func (c *clientProxy) NewListSettingsPager(
-	selector azappconfig.SettingSelector,
-	options *azappconfig.ListSettingsOptions,
-) (*runtime.Pager[azappconfig.ListSettingsPageResponse], error) {
-	client, err := c.loadClient()
-	if err != nil {
-		return nil, err
-	}
-
-	return client.NewListSettingsPager(selector, options), nil
-}
-
-func (c *clientProxy) loadClient() (*azappconfig.Client, error) {
+func (p *clientProxy) loadClient() (*azappconfig.Client, error) {
 	var err error
 
-	c.clientOnce.Do(func() {
-		if defaultToken, ok := c.credential.(*azidentity.DefaultAzureCredential); ok {
+	p.clientOnce.Do(func() {
+		if p.timeout <= 0 {
+			p.timeout = 10 * time.Second //nolint:gomnd
+		}
+		if defaultToken, ok := p.credential.(*azidentity.DefaultAzureCredential); ok {
 			empty := azidentity.DefaultAzureCredential{}
 			if empty == *defaultToken {
 				credentialOptions := &azidentity.DefaultAzureCredentialOptions{}
-				if c.credential, err = azidentity.NewDefaultAzureCredential(credentialOptions); err != nil {
+				if p.credential, err = azidentity.NewDefaultAzureCredential(credentialOptions); err != nil {
 					err = fmt.Errorf("load default Azure credential: %w", err)
 
 					return
@@ -207,12 +212,12 @@ func (c *clientProxy) loadClient() (*azappconfig.Client, error) {
 		}
 
 		clientOptions := &azappconfig.ClientOptions{}
-		if c.client, err = azappconfig.NewClient(c.endpoint, c.credential, clientOptions); err != nil {
+		if p.client, err = azappconfig.NewClient(p.endpoint, p.credential, clientOptions); err != nil {
 			err = fmt.Errorf("create Azure app configuration client: %w", err)
 
 			return
 		}
 	})
 
-	return c.client, err
+	return p.client, err
 }

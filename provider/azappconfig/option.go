@@ -15,7 +15,7 @@ import (
 // [key filter]: https://learn.microsoft.com/en-us/azure/azure-app-configuration/rest-api-key-value#supported-filters
 func WithKeyFilter(filter string) Option {
 	return func(options *options) {
-		options.keyFilter = filter
+		options.client.keyFilter = filter
 	}
 }
 
@@ -24,7 +24,16 @@ func WithKeyFilter(filter string) Option {
 // [label filter]: https://learn.microsoft.com/en-us/azure/azure-app-configuration/rest-api-key-value#supported-filters
 func WithLabelFilter(filter string) Option {
 	return func(options *options) {
-		options.labelFilter = filter
+		options.client.labelFilter = filter
+	}
+}
+
+// WithCredential provides the azcore.TokenCredential for Azure authentication.
+//
+// By default, it uses azidentity.DefaultAzureCredential.
+func WithCredential(credential azcore.TokenCredential) Option {
+	return func(options *options) {
+		options.client.credential = credential
 	}
 }
 
@@ -36,15 +45,6 @@ func WithLabelFilter(filter string) Option {
 func WithKeySplitter(splitter func(string) []string) Option {
 	return func(options *options) {
 		options.splitter = splitter
-	}
-}
-
-// WithCredential provides the azcore.TokenCredential for Azure authentication.
-//
-// By default, it uses azidentity.DefaultAzureCredential.
-func WithCredential(credential azcore.TokenCredential) Option {
-	return func(options *options) {
-		options.client.credential = credential
 	}
 }
 
@@ -71,7 +71,5 @@ func WithLogHandler(handler slog.Handler) Option {
 type (
 	// Option configures the AppConfig with specific options.
 	Option  func(options *options)
-	options struct {
-		AppConfig
-	}
+	options AppConfig
 )

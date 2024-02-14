@@ -147,8 +147,8 @@ func TestAppConfig_Watch(t *testing.T) {
 			opts: []azappconfig.Option{
 				azappconfig.WithLabelFilter("error"),
 			},
-			log: `level=WARN msg="Error when reloading from Azure App Configuration" keyFilter="" labelFilter=error` +
-				` error="next page of list settings: GET %s/kv\n` +
+			log: `level=WARN msg="Error when reloading from Azure App Configuration" endpoint=%s` +
+				` keyFilter="" labelFilter=error error="next page of list settings: GET %s/kv\n` +
 				`--------------------------------------------------------------------------------\n` +
 				`RESPONSE 400: 400 Bad Request\nERROR CODE UNAVAILABLE\n` +
 				`--------------------------------------------------------------------------------\n` +
@@ -196,7 +196,7 @@ func TestAppConfig_Watch(t *testing.T) {
 			if val, ok := values.Load().(map[string]any); ok {
 				assert.Equal(t, testcase.expected, val)
 			} else {
-				assert.Equal(t, fmt.Sprintf(testcase.log, server.URL), buf.String())
+				assert.Equal(t, fmt.Sprintf(testcase.log, server.URL, server.URL), buf.String())
 			}
 		})
 	}
