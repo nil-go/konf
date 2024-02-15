@@ -3,9 +3,6 @@ on:
   push:
     branches:
       - main
-  pull_request:
-    branches:
-      - main
 
 jobs:
   benchmark:
@@ -17,5 +14,17 @@ jobs:
         with:
           go-version: 'stable'
           cache-dependency-path: "**/go.sum"
-      - name: Benchmark
-        run: go test -v -bench=. -run=^$ ./...
+      - name: Run benchmark
+        run: go test -v -bench=. -run=^$ ./... | tee output.txt
+      - name: Download previous benchmark data
+        uses: actions/cache@v4
+        with:
+          path: ./cache
+          key: ${{ runner.os }}-benchmark
+      - name: Store benchmark result
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          tool: 'go'
+          output-file-path: output.txt
+          external-data-json-path: ./cache/benchmark-data.json
+          fail-on-alert: true
