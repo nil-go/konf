@@ -10,30 +10,29 @@ import (
 	"github.com/nil-go/konf/internal/assert"
 )
 
-func BenchmarkNew(b *testing.B) {
-	var (
-		config *konf.Config
-		err    error
-	)
+func BenchmarkLoad(b *testing.B) {
+	config := konf.New()
+
+	var err error
+	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		config = konf.New()
 		err = config.Load(mapLoader{"k": "v"})
 	}
 	b.StopTimer()
 
-	konf.SetDefault(config)
 	assert.NoError(b, err)
-	assert.Equal(b, "v", konf.Get[string]("k"))
+	var value string
+	assert.NoError(b, config.Unmarshal("k", &value))
+	assert.Equal(b, "v", value)
 }
 
 func BenchmarkGet(b *testing.B) {
 	config := konf.New()
-	err := config.Load(mapLoader{"k": "v"})
-	assert.NoError(b, err)
+	assert.NoError(b, config.Load(mapLoader{"k": "v"}))
 	konf.SetDefault(config)
-	b.ResetTimer()
 
 	var value string
+	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		value = konf.Get[string]("k")
 	}
@@ -44,16 +43,19 @@ func BenchmarkGet(b *testing.B) {
 
 func BenchmarkUnmarshal(b *testing.B) {
 	config := konf.New()
-	err := config.Load(mapLoader{"k": "v"})
-	assert.NoError(b, err)
+	assert.NoError(b, config.Load(mapLoader{"k": "v"}))
 	konf.SetDefault(config)
-	b.ResetTimer()
 
-	var value string
+	var (
+		value string
+		err   error
+	)
+	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_ = konf.Unmarshal("k", &value)
+		err = konf.Unmarshal("k", &value)
 	}
 	b.StopTimer()
 
+	assert.NoError(b, err)
 	assert.Equal(b, "v", value)
 }
