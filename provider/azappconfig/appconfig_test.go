@@ -173,7 +173,7 @@ func TestAppConfig_Watch(t *testing.T) {
 					testcase.opts,
 					azappconfig.WithLogHandler(logHandler(buf)),
 					azappconfig.WithCredential(nil),
-					azappconfig.WithPollInterval(100*time.Millisecond),
+					azappconfig.WithPollInterval(10*time.Millisecond),
 				)...,
 			)
 			var values atomic.Value
@@ -192,7 +192,7 @@ func TestAppConfig_Watch(t *testing.T) {
 			}()
 			waitGroup.Wait()
 
-			time.Sleep(150 * time.Millisecond)
+			time.Sleep(15 * time.Millisecond) // wait for the first tick, but not the second
 			if val, ok := values.Load().(map[string]any); ok {
 				assert.Equal(t, testcase.expected, val)
 			} else {

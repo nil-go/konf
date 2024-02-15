@@ -60,23 +60,19 @@ func TestConfig_Watch_onchange_block(t *testing.T) {
 	err := config.Load(watcher)
 	assert.NoError(t, err)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	config.OnChange(func(*konf.Config) {
+		time.Sleep(time.Second)
+	})
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
 	defer cancel()
-	var waitGroup sync.WaitGroup
-	waitGroup.Add(1)
 	go func() {
-		waitGroup.Done()
 		assert.NoError(t, config.Watch(ctx))
 	}()
-	waitGroup.Wait()
-
-	config.OnChange(func(*konf.Config) {
-		time.Sleep(time.Minute)
-	})
 	watcher.change("changed")
 
 	<-ctx.Done()
-	time.Sleep(time.Second)
+	time.Sleep(10 * time.Millisecond) // Wait for log to be written
 	expected := "level=INFO msg=\"Configuration has been changed.\" loader=stringWatcher\n" +
 		"level=WARN msg=\"Configuration has not been fully applied to onChanges due to timeout." +
 		" Please check if the onChanges is blocking or takes too long to complete.\"\n"
