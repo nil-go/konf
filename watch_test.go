@@ -22,13 +22,13 @@ func TestConfig_Watch(t *testing.T) {
 	t.Parallel()
 
 	config := konf.New()
-	watcher := mapWatcher(make(chan map[string]any))
+	watcher := stringWatcher{key: "Config", value: make(chan string)}
 	err := config.Load(watcher)
 	assert.NoError(t, err)
 
 	var value string
 	assert.NoError(t, config.Unmarshal("config", &value))
-	assert.Equal(t, "string", value)
+	assert.Equal(t, "", value)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -46,7 +46,7 @@ func TestConfig_Watch(t *testing.T) {
 		assert.NoError(t, config.Unmarshal("config", &value))
 		newValue.Store(value)
 	}, "config")
-	watcher.change(map[string]any{"Config": "changed"})
+	watcher.change("changed")
 	waitGroup.Wait()
 	assert.Equal(t, "changed", newValue.Load())
 }
@@ -56,7 +56,7 @@ func TestConfig_Watch_onchange_block(t *testing.T) {
 
 	buf := new(buffer)
 	config := konf.New(konf.WithLogHandler(logHandler(buf)))
-	watcher := mapWatcher(make(chan map[string]any))
+	watcher := stringWatcher{key: "Config", value: make(chan string)}
 	err := config.Load(watcher)
 	assert.NoError(t, err)
 
@@ -73,11 +73,11 @@ func TestConfig_Watch_onchange_block(t *testing.T) {
 	config.OnChange(func(*konf.Config) {
 		time.Sleep(time.Minute)
 	})
-	watcher.change(map[string]any{"Config": "changed"})
+	watcher.change("changed")
 
 	<-ctx.Done()
 	time.Sleep(time.Second)
-	expected := "level=INFO msg=\"Configuration has been changed.\" loader=mapWatcher\n" +
+	expected := "level=INFO msg=\"Configuration has been changed.\" loader=stringWatcher\n" +
 		"level=WARN msg=\"Configuration has not been fully applied to onChanges due to timeout." +
 		" Please check if the onChanges is blocking or takes too long to complete.\"\n"
 	assert.Equal(t, expected, buf.String())
@@ -96,7 +96,7 @@ func TestConfig_Watch_twice(t *testing.T) {
 
 	buf := new(buffer)
 	config := konf.New(konf.WithLogHandler(logHandler(buf)))
-	assert.NoError(t, config.Load(mapWatcher(make(chan map[string]any))))
+	assert.NoError(t, config.Load(stringWatcher{key: "Config", value: make(chan string)}))
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -151,36 +151,39 @@ func TestConfig_Watch_panic(t *testing.T) {
 				}
 			}()
 			config := konf.New()
-			assert.NoError(t, config.Load(mapWatcher(make(chan map[string]any))))
+			assert.NoError(t, config.Load(stringWatcher{key: "Config", value: make(chan string)}))
 			testcase.call(config)
 			t.Fail()
 		})
 	}
 }
 
-type mapWatcher chan map[string]any
-
-func (m mapWatcher) Load() (map[string]any, error) {
-	return map[string]any{"Config": "string"}, nil
+type stringWatcher struct {
+	key   string
+	value chan string
 }
 
-func (m mapWatcher) Watch(ctx context.Context, fn func(map[string]any)) error {
+func (m stringWatcher) Load() (map[string]any, error) {
+	return map[string]any{m.key: ""}, nil
+}
+
+func (m stringWatcher) Watch(ctx context.Context, fn func(map[string]any)) error {
 	for {
 		select {
-		case values := <-m:
-			fn(values)
+		case values := <-m.value:
+			fn(map[string]any{m.key: values})
 		case <-ctx.Done():
 			return nil
 		}
 	}
 }
 
-func (m mapWatcher) change(values map[string]any) {
-	m <- values
+func (m stringWatcher) change(values string) {
+	m.value <- values
 }
 
-func (m mapWatcher) String() string {
-	return "mapWatcher"
+func (m stringWatcher) String() string {
+	return "stringWatcher"
 }
 
 func TestConfig_Watch_error(t *testing.T) {
