@@ -36,6 +36,13 @@ updates:
     schedule:
       interval: daily
 
+  - package-ecosystem: gomod
+    directory: /provider/secretmanager
+    labels:
+      - Skip-Changelog
+    schedule:
+      interval: daily
+
   - package-ecosystem: github-actions
     directory: /
     labels:

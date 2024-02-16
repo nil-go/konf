@@ -11,7 +11,7 @@ jobs:
   coverage:
     strategy:
       matrix:
-        module: [ '', 'provider/file', 'provider/pflag', 'provider/appconfig', 'provider/azappconfig' ]
+        module: [ '', 'provider/file', 'provider/pflag', 'provider/appconfig', 'provider/azappconfig', 'provider/secretmanager' ]
     name: Coverage
     runs-on: ubuntu-latest
     steps:
