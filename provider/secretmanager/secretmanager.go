@@ -12,7 +12,6 @@ import (
 	"fmt"
 	"log/slog"
 	"maps"
-	"path"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -179,7 +178,7 @@ func (p *clientProxy) load(ctx context.Context) (map[string]string, bool, error)
 				Name: name + "/versions/latest",
 			})
 			if e != nil {
-				errChan <- fmt.Errorf("access secret %s: %w", path.Base(name), err)
+				errChan <- fmt.Errorf("access secret %s: %w", strings.Split(name, "/")[3], e)
 				cancel()
 
 				return
@@ -203,7 +202,7 @@ func (p *clientProxy) load(ctx context.Context) (map[string]string, bool, error)
 	values := make(map[string]string, len(eTags))
 	for resp := range secretsCh {
 		data := resp.GetPayload().GetData()
-		values[path.Base(resp.GetName())] = unsafe.String(unsafe.SliceData(data), len(data))
+		values[strings.Split(resp.GetName(), "/")[3]] = unsafe.String(unsafe.SliceData(data), len(data))
 	}
 
 	return values, true, nil
