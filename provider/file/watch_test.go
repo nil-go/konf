@@ -62,7 +62,7 @@ func TestFile_Watch(t *testing.T) {
 			time.Sleep(100 * time.Millisecond) // wait for the watcher to start
 
 			assert.NoError(t, testcase.action(tmpFile))
-			time.Sleep(time.Second) // wait for the watcher to pick up the change from action
+			time.Sleep(100 * time.Millisecond) // wait for the watcher to pick up the change from action
 			assert.Equal(t, testcase.expected, *values.Load())
 		})
 	}

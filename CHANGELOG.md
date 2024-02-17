@@ -7,6 +7,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Removed
+
+- Remove deprecated env.WithDelimiter/flag.WithDelimiter/pflag.WithDelimiter in favor of WithNameSplitter (#137).
+
 ## [0.5.0] - 2024-02-16
 
 ### Added
