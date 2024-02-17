@@ -5,7 +5,6 @@ package flag
 
 import (
 	"flag"
-	"strings"
 )
 
 // WithPrefix provides the prefix used when loading flags.
@@ -25,20 +24,6 @@ func WithPrefix(prefix string) Option {
 func WithFlagSet(set *flag.FlagSet) Option {
 	return func(options *options) {
 		options.set = set
-	}
-}
-
-// WithDelimiter provides the delimiter used when splitting flag names into nested keys.
-//
-// For example, with the default delimiter ".", an flag name like "parent.child.key"
-// would be split into "parent", "child", and "key".
-//
-// Deprecated: use WithNameSplitter instead.
-func WithDelimiter(delimiter string) Option {
-	return func(options *options) {
-		options.splitter = func(s string) []string {
-			return strings.Split(s, delimiter)
-		}
 	}
 }
 

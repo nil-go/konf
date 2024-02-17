@@ -3,8 +3,6 @@
 
 package env
 
-import "strings"
-
 // WithPrefix provides the prefix used when loading environment variables.
 // Only environment variables with names that start with the prefix will be loaded.
 //
@@ -13,20 +11,6 @@ import "strings"
 func WithPrefix(prefix string) Option {
 	return func(options *options) {
 		options.prefix = prefix
-	}
-}
-
-// WithDelimiter provides the delimiter used when splitting environment variable names into nested keys.
-//
-// For example, with the default delimiter "_", an environment variable name like "PARENT_CHILD_KEY"
-// would be split into "PARENT", "CHILD", and "KEY".
-//
-// Deprecated: use WithNameSplitter instead.
-func WithDelimiter(delimiter string) Option {
-	return func(options *options) {
-		options.splitter = func(s string) []string {
-			return strings.Split(s, delimiter)
-		}
 	}
 }
 
