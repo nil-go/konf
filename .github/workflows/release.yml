@@ -42,5 +42,6 @@ jobs:
               tag_name: "v${{ steps.query-release-info.outputs.version }}",
               target_commitish: context.sha,
               name: "v${{ steps.query-release-info.outputs.version }}",
-              body: "${{ steps.query-release-info.outputs.release-notes }}"
+              body: |
+                ${{ steps.query-release-info.outputs.release-notes }}
             })
