@@ -25,25 +25,33 @@ type Config struct {
 	delimiter  string
 
 	values    map[string]any
-	providers []provider
-
-	onChanges      map[string][]func(*Config)
-	onChangesMutex sync.RWMutex
-	watchOnce      sync.Once
+	providers *providers
 }
 
-type provider struct {
-	loader Loader
-	values map[string]any
-}
+type (
+	provider struct {
+		loader Loader
+		values map[string]any
+	}
+
+	providers struct {
+		providers []provider
+
+		onChanges      map[string][]func(Config)
+		onChangesMutex sync.RWMutex
+		watchOnce      sync.Once
+	}
+)
 
 type DecodeHook any
 
 // New creates a new Config with the given Option(s).
-func New(opts ...Option) *Config {
+func New(opts ...Option) Config {
 	option := &options{
-		values:    make(map[string]any),
-		onChanges: make(map[string][]func(*Config)),
+		values: make(map[string]any),
+		providers: &providers{
+			onChanges: make(map[string][]func(Config)),
+		},
 	}
 	for _, opt := range opts {
 		opt(option)
@@ -65,7 +73,7 @@ func New(opts ...Option) *Config {
 		)
 	}
 
-	return (*Config)(option)
+	return Config(*option)
 }
 
 // Load loads configuration from the given loader.
@@ -73,7 +81,7 @@ func New(opts ...Option) *Config {
 //
 // This method can be called multiple times but it is not concurrency-safe.
 // It panics if loader is nil.
-func (c *Config) Load(loader Loader) error {
+func (c Config) Load(loader Loader) error {
 	if loader == nil {
 		panic("cannot load config from nil loader")
 	}
@@ -87,7 +95,7 @@ func (c *Config) Load(loader Loader) error {
 	// Merged to empty map to convert to lower case.
 	providerValues := make(map[string]any)
 	maps.Merge(providerValues, values)
-	c.providers = append(c.providers, provider{
+	c.providers.providers = append(c.providers.providers, provider{
 		loader: loader,
 		values: providerValues,
 	})
@@ -98,7 +106,7 @@ func (c *Config) Load(loader Loader) error {
 // Unmarshal reads configuration under the given path from the Config
 // and decodes it into the given object pointed to by target.
 // The path is case-insensitive.
-func (c *Config) Unmarshal(path string, target any) error {
+func (c Config) Unmarshal(path string, target any) error {
 	decoder, err := mapstructure.NewDecoder(
 		&mapstructure.DecoderConfig{
 			Result:           target,
@@ -148,7 +156,7 @@ func sub(values map[string]any, keys []string) any {
 // If there are sensitive information (e.g. password, secret) which should not be exposed,
 // you can use [WithValueFormatter] to pass a value formatter to blur the information.
 // By default, it uses CredentialFormatter to blur sensitive information.
-func (c *Config) Explain(path string, opts ...ExplainOption) string {
+func (c Config) Explain(path string, opts ...ExplainOption) string {
 	option := &explainOptions{}
 	for _, opt := range opts {
 		opt(option)
@@ -163,7 +171,7 @@ func (c *Config) Explain(path string, opts ...ExplainOption) string {
 	return explanation.String()
 }
 
-func (c *Config) explain(explanation *strings.Builder, path string, value any, option explainOptions) {
+func (c Config) explain(explanation *strings.Builder, path string, value any, option explainOptions) {
 	if values, ok := value.(map[string]any); ok {
 		for k, v := range values {
 			c.explain(explanation, path+c.delimiter+k, v, option)
@@ -173,7 +181,7 @@ func (c *Config) explain(explanation *strings.Builder, path string, value any, o
 	}
 
 	var loaders []loaderValue
-	for _, provider := range c.providers {
+	for _, provider := range c.providers.providers {
 		if v := sub(provider.values, strings.Split(path, c.delimiter)); v != nil {
 			loaders = append(loaders, loaderValue{provider.loader, v})
 		}

@@ -26,6 +26,6 @@ type Watcher interface {
 // Exists tests if the given path exist in the configuration.
 //
 // It's used by the loader to check if the configuration has been set by other loaders.
-func (c *Config) Exists(path []string) bool {
+func (c Config) Exists(path []string) bool {
 	return sub(c.values, path) != nil
 }
