@@ -372,7 +372,7 @@ func TestAppConfig_Watch(t *testing.T) {
 			)
 			assert.NoError(t, err)
 
-			buf := new(buffer)
+			buf := &buffer{}
 			loader := appconfig.New(
 				"app", "env", "profiler",
 				appconfig.WithAWSConfig(cfg),
