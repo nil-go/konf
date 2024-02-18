@@ -19,11 +19,11 @@ func TestConfig_Load_panic(t *testing.T) {
 	t.Parallel()
 
 	defer func() {
-		if r := recover(); r != nil {
-			assert.Equal(t, r.(string), "cannot load config from nil loader")
-		}
+		assert.Equal(t, "cannot load config from nil loader", recover().(string))
 	}()
+
 	_ = konf.New().Load(nil)
+	t.Fail()
 }
 
 func TestConfig_Unmarshal(t *testing.T) {

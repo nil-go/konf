@@ -62,11 +62,11 @@ func TestAppConfig_New_panic(t *testing.T) {
 			t.Parallel()
 
 			defer func() {
-				if r := recover(); r != nil {
-					assert.Equal(t, r.(string), testcase.err)
-				}
+				assert.Equal(t, testcase.err, recover().(string))
 			}()
+
 			testcase.call()
+			t.Fail()
 		})
 	}
 }

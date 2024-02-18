@@ -15,11 +15,11 @@ func TestFile_New_panic(t *testing.T) {
 	t.Parallel()
 
 	defer func() {
-		if r := recover(); r != nil {
-			assert.Equal(t, r.(string), "cannot create File with empty path")
-		}
+		assert.Equal(t, "cannot create File with empty path", recover().(string))
 	}()
+
 	file.New("")
+	t.Fail()
 }
 
 func TestFile_Load(t *testing.T) {
