@@ -44,19 +44,19 @@ func Unmarshal(path string, target any) error {
 // This method is concurrency-safe.
 // It panics if onChange is nil.
 func OnChange(onChange func(), paths ...string) {
-	Default().OnChange(func(*Config) { onChange() }, paths...)
+	Default().OnChange(func(Config) { onChange() }, paths...)
 }
 
 // SetDefault sets the given Config as the default Config.
 // After this call, the konf package's top functions (e.g. konf.Get)
 // will interact with the given Config.
-func SetDefault(config *Config) {
+func SetDefault(config Config) {
 	defaultConfig.Store(config)
 }
 
 // Default returns the default Config.
-func Default() *Config {
-	return defaultConfig.Load().(*Config) //nolint:forcetypeassert
+func Default() Config {
+	return defaultConfig.Load().(Config) //nolint:forcetypeassert
 }
 
 var defaultConfig atomic.Value //nolint:gochecknoglobals

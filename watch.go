@@ -21,12 +21,12 @@ import (
 //
 // It only can be called once. Call after first has no effects.
 // It panics if ctx is nil.
-func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocognit
+func (c Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocognit
 	if ctx == nil {
 		panic("cannot watch change with nil context")
 	}
 
-	if hasWatcher := slices.ContainsFunc(c.providers, func(provider provider) bool {
+	if hasWatcher := slices.ContainsFunc(c.providers.providers, func(provider provider) bool {
 		_, ok := provider.loader.(Watcher)
 
 		return ok
@@ -35,7 +35,7 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 	}
 
 	watched := true
-	c.watchOnce.Do(func() {
+	c.providers.watchOnce.Do(func() {
 		watched = false
 	})
 	if watched {
@@ -44,7 +44,7 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 		return nil
 	}
 
-	onChangesChannel := make(chan []func(*Config), 1)
+	onChangesChannel := make(chan []func(Config), 1)
 	defer close(onChangesChannel)
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -58,7 +58,7 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 			select {
 			case onChanges := <-onChangesChannel:
 				values := make(map[string]any)
-				for _, w := range c.providers {
+				for _, w := range c.providers.providers {
 					maps.Merge(values, w.values)
 				}
 				c.values = values
@@ -96,9 +96,9 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 		}
 	}()
 
-	errChan := make(chan error, len(c.providers))
-	for i := range c.providers {
-		provider := &c.providers[i] // Use pointer for later modification.
+	errChan := make(chan error, len(c.providers.providers))
+	for i := range c.providers.providers {
+		provider := &c.providers.providers[i] // Use pointer for later modification.
 
 		if watcher, ok := provider.loader.(Watcher); ok {
 			waitGroup.Add(1)
@@ -114,12 +114,12 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 					provider.values = newValues
 
 					// Find the onChanges should be triggered.
-					onChanges := func() []func(*Config) {
-						c.onChangesMutex.RLock()
-						defer c.onChangesMutex.RUnlock()
+					onChanges := func() []func(Config) {
+						c.providers.onChangesMutex.RLock()
+						defer c.providers.onChangesMutex.RUnlock()
 
-						var callbacks []func(*Config)
-						for path, onChanges := range c.onChanges {
+						var callbacks []func(Config)
+						for path, onChanges := range c.providers.onChanges {
 							keys := strings.Split(path, c.delimiter)
 							if sub(oldValues, keys) != nil || sub(newValues, keys) != nil {
 								callbacks = append(callbacks, onChanges...)
@@ -167,13 +167,13 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 //
 // This method is concurrency-safe.
 // It panics if onChange is nil.
-func (c *Config) OnChange(onChange func(*Config), paths ...string) {
+func (c Config) OnChange(onChange func(Config), paths ...string) {
 	if onChange == nil {
 		panic("cannot register nil onChange")
 	}
 
-	c.onChangesMutex.Lock()
-	defer c.onChangesMutex.Unlock()
+	c.providers.onChangesMutex.Lock()
+	defer c.providers.onChangesMutex.Unlock()
 
 	if len(paths) == 0 {
 		paths = []string{""}
@@ -181,6 +181,6 @@ func (c *Config) OnChange(onChange func(*Config), paths ...string) {
 
 	for _, path := range paths {
 		path = strings.ToLower(path)
-		c.onChanges[path] = append(c.onChanges[path], onChange)
+		c.providers.onChanges[path] = append(c.providers.onChanges[path], onChange)
 	}
 }
