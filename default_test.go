@@ -35,7 +35,7 @@ func TestGet(t *testing.T) {
 }
 
 func TestGet_error(t *testing.T) {
-	buf := new(buffer)
+	buf := &buffer{}
 	config := konf.New(konf.WithLogHandler(logHandler(buf)))
 	err := config.Load(mapLoader{"config": "string"})
 	assert.NoError(t, err)

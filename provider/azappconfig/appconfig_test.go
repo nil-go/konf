@@ -166,7 +166,7 @@ func TestAppConfig_Watch(t *testing.T) {
 			server := httpServer()
 			defer server.Close()
 
-			buf := new(buffer)
+			buf := &buffer{}
 			loader := azappconfig.New(
 				server.URL,
 				append(

@@ -189,7 +189,7 @@ func TestSecretManager_Watch(t *testing.T) {
 			conn, closer := grpcServer(t, testcase.service)
 			defer closer()
 
-			buf := new(buffer)
+			buf := &buffer{}
 			loader := secretmanager.New(append(
 				testcase.opts,
 				secretmanager.WithProject("test"),

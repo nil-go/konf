@@ -54,7 +54,7 @@ func TestConfig_Watch(t *testing.T) {
 func TestConfig_Watch_onchange_block(t *testing.T) {
 	t.Parallel()
 
-	buf := new(buffer)
+	buf := &buffer{}
 	config := konf.New(konf.WithLogHandler(logHandler(buf)))
 	watcher := stringWatcher{key: "Config", value: make(chan string)}
 	err := config.Load(watcher)
@@ -90,7 +90,7 @@ func TestConfig_Watch_without_loader(t *testing.T) {
 func TestConfig_Watch_twice(t *testing.T) {
 	t.Parallel()
 
-	buf := new(buffer)
+	buf := &buffer{}
 	config := konf.New(konf.WithLogHandler(logHandler(buf)))
 	assert.NoError(t, config.Load(stringWatcher{key: "Config", value: make(chan string)}))
 
