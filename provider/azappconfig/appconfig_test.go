@@ -25,11 +25,11 @@ func TestFile_New_panic(t *testing.T) {
 	t.Parallel()
 
 	defer func() {
-		if r := recover(); r != nil {
-			assert.Equal(t, r.(string), "cannot create Azure AppConfig with empty endpoint")
-		}
+		assert.Equal(t, "cannot create Azure AppConfig with empty endpoint", recover().(string))
 	}()
+
 	azappconfig.New("")
+	t.Fail()
 }
 
 func TestAppConfig_Load(t *testing.T) {

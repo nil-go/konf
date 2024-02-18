@@ -142,10 +142,9 @@ func TestConfig_Watch_panic(t *testing.T) {
 			t.Parallel()
 
 			defer func() {
-				if r := recover(); r != nil {
-					assert.Equal(t, r.(string), testcase.err)
-				}
+				assert.Equal(t, testcase.err, recover().(string))
 			}()
+
 			config := konf.New()
 			assert.NoError(t, config.Load(stringWatcher{key: "Config", value: make(chan string)}))
 			testcase.call(config)

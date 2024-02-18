@@ -18,11 +18,11 @@ func TestPFlag_New_panic(t *testing.T) {
 	t.Parallel()
 
 	defer func() {
-		if r := recover(); r != nil {
-			assert.Equal(t, r.(string), "cannot create Flag with nil konf")
-		}
+		assert.Equal(t, "cannot create Flag with nil konf", recover().(string))
 	}()
+
 	kflag.New(nil)
+	t.Fail()
 }
 
 func TestPFlag_Load(t *testing.T) {
