@@ -34,11 +34,7 @@ func (c Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocogn
 		return nil
 	}
 
-	watched := true
-	c.providers.watchOnce.Do(func() {
-		watched = false
-	})
-	if watched {
+	if watched := c.providers.watched.Swap(true); watched {
 		c.logger.WarnContext(ctx, "Config has been watched, call Watch again has no effects.")
 
 		return nil
