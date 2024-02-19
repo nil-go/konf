@@ -9,6 +9,7 @@ import (
 	"slices"
 	"strings"
 	"sync"
+	"sync/atomic"
 
 	"github.com/go-viper/mapstructure/v2"
 
@@ -39,7 +40,7 @@ type (
 
 		onChanges      map[string][]func(Config)
 		onChangesMutex sync.RWMutex
-		watchOnce      sync.Once
+		watched        atomic.Bool
 	}
 )
 
