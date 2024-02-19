@@ -1,7 +1,7 @@
 // Copyright (c) 2024 The konf authors
 // Use of this source code is governed by a MIT license found in the LICENSE file.
 
-package konf
+package credential
 
 import (
 	"fmt"
@@ -9,9 +9,8 @@ import (
 	"unsafe"
 )
 
-// CredentialFormatter provides the value formatter which blurs sensitive information.
-func CredentialFormatter(path string, _ Loader, value any) string {
-	if namePattern.MatchString(path) {
+func Blur(name string, value any) string {
+	if namePattern.MatchString(name) {
 		return "******"
 	}
 

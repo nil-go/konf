@@ -7,6 +7,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- [BREAKING] Change signature of valueFormatter for config.Explain (#146).
+
 ### Removed
 
 - Remove deprecated env.WithDelimiter/flag.WithDelimiter/pflag.WithDelimiter in favor of WithNameSplitter (#137).

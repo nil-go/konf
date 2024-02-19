@@ -195,13 +195,13 @@ func (c Config) explain(explanation *strings.Builder, path string, value any, op
 		return
 	}
 	_, _ = fmt.Fprintf(explanation, "%s has value[%s] that is loaded by loader[%v].\n",
-		path, option.valueFormatter(path, loaders[0].loader, loaders[0].value), loaders[0].loader,
+		path, option.valueFormatter(loaders[0].loader, path, loaders[0].value), loaders[0].loader,
 	)
 	if len(loaders) > 1 {
 		_, _ = fmt.Fprintf(explanation, "Here are other value(loader)s:\n")
 		for _, loader := range loaders[1:] {
 			_, _ = fmt.Fprintf(explanation, "  - %s(%v)\n",
-				option.valueFormatter(path, loader.loader, loader.value), loader.loader,
+				option.valueFormatter(loader.loader, path, loader.value), loader.loader,
 			)
 		}
 	}
