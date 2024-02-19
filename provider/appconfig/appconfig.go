@@ -16,7 +16,6 @@ import (
 	"fmt"
 	"log/slog"
 	"reflect"
-	"sync"
 	"sync/atomic"
 	"time"
 
@@ -133,17 +132,34 @@ type clientProxy struct {
 	profile      string
 	pollInterval time.Duration
 
-	client     *appconfigdata.Client
-	clientOnce sync.Once
+	client *appconfigdata.Client
 
 	timeout time.Duration
 	token   atomic.Pointer[string]
 }
 
 func (p *clientProxy) load(ctx context.Context) ([]byte, bool, error) {
-	client, err := p.loadClient(ctx)
-	if err != nil {
-		return nil, false, err
+	if p.client == nil {
+		if reflect.ValueOf(p.config).IsZero() {
+			var err error
+			if p.config, err = config.LoadDefaultConfig(ctx); err != nil {
+				return nil, false, fmt.Errorf("load default AWS config: %w", err)
+			}
+		}
+		p.client = appconfigdata.NewFromConfig(p.config)
+	}
+
+	if p.token.Load() == nil {
+		session, err := p.client.StartConfigurationSession(ctx, &appconfigdata.StartConfigurationSessionInput{
+			ApplicationIdentifier:                aws.String(p.application),
+			ConfigurationProfileIdentifier:       aws.String(p.profile),
+			EnvironmentIdentifier:                aws.String(p.environment),
+			RequiredMinimumPollIntervalInSeconds: aws.Int32(int32(p.pollInterval.Seconds())),
+		})
+		if err != nil {
+			return nil, false, fmt.Errorf("start configuration session: %w", err)
+		}
+		p.token.Store(session.InitialConfigurationToken)
 	}
 
 	if p.timeout > 0 {
@@ -152,7 +168,7 @@ func (p *clientProxy) load(ctx context.Context) ([]byte, bool, error) {
 		defer cancel()
 	}
 
-	resp, err := client.GetLatestConfiguration(ctx,
+	resp, err := p.client.GetLatestConfiguration(ctx,
 		&appconfigdata.GetLatestConfigurationInput{ConfigurationToken: p.token.Load()},
 	)
 	if err != nil {
@@ -162,39 +178,4 @@ func (p *clientProxy) load(ctx context.Context) ([]byte, bool, error) {
 
 	// It may return empty configuration data if the client already has the latest version.
 	return resp.Configuration, len(resp.Configuration) > 0, nil
-}
-
-func (p *clientProxy) loadClient(ctx context.Context) (*appconfigdata.Client, error) {
-	var err error
-
-	p.clientOnce.Do(func() {
-		if reflect.ValueOf(p.config).IsZero() {
-			if p.config, err = config.LoadDefaultConfig(ctx); err != nil {
-				err = fmt.Errorf("load default AWS config: %w", err)
-
-				return
-			}
-		}
-		p.client = appconfigdata.NewFromConfig(p.config)
-
-		if p.timeout > 0 {
-			var cancel context.CancelFunc
-			ctx, cancel = context.WithTimeout(ctx, p.timeout)
-			defer cancel()
-		}
-		var session *appconfigdata.StartConfigurationSessionOutput
-		if session, err = p.client.StartConfigurationSession(ctx, &appconfigdata.StartConfigurationSessionInput{
-			ApplicationIdentifier:                aws.String(p.application),
-			ConfigurationProfileIdentifier:       aws.String(p.profile),
-			EnvironmentIdentifier:                aws.String(p.environment),
-			RequiredMinimumPollIntervalInSeconds: aws.Int32(int32(p.pollInterval.Seconds())),
-		}); err != nil {
-			err = fmt.Errorf("start configuration session: %w", err)
-
-			return
-		}
-		p.token.Store(session.InitialConfigurationToken)
-	})
-
-	return p.client, err
 }

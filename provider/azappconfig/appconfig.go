@@ -11,8 +11,8 @@ import (
 	"fmt"
 	"log/slog"
 	"maps"
+	"reflect"
 	"strings"
-	"sync"
 	"sync/atomic"
 	"time"
 
@@ -129,17 +129,27 @@ type clientProxy struct {
 	labelFilter string
 	credential  azcore.TokenCredential
 
-	client     *azappconfig.Client
-	clientOnce sync.Once
+	client *azappconfig.Client
 
 	timeout   time.Duration
 	lastETags atomic.Pointer[map[string]azcore.ETag]
 }
 
-func (p *clientProxy) load(ctx context.Context) (map[string]string, bool, error) { //nolint:cyclop
-	client, err := p.loadClient()
-	if err != nil {
-		return nil, false, err
+func (p *clientProxy) load(ctx context.Context) (map[string]string, bool, error) { //nolint:cyclop,funlen
+	if p.client == nil {
+		if token, ok := p.credential.(*azidentity.DefaultAzureCredential); ok && reflect.ValueOf(*token).IsZero() {
+			var err error
+			credentialOptions := &azidentity.DefaultAzureCredentialOptions{}
+			if p.credential, err = azidentity.NewDefaultAzureCredential(credentialOptions); err != nil {
+				return nil, false, fmt.Errorf("load default Azure credential: %w", err)
+			}
+		}
+
+		var err error
+		clientOptions := &azappconfig.ClientOptions{}
+		if p.client, err = azappconfig.NewClient(p.endpoint, p.credential, clientOptions); err != nil {
+			return nil, false, fmt.Errorf("create Azure app configuration client: %w", err)
+		}
 	}
 
 	selector := azappconfig.SettingSelector{
@@ -155,7 +165,7 @@ func (p *clientProxy) load(ctx context.Context) (map[string]string, bool, error)
 	if p.labelFilter != "" {
 		selector.LabelFilter = &p.labelFilter
 	}
-	pager := client.NewListSettingsPager(selector, &azappconfig.ListSettingsOptions{})
+	pager := p.client.NewListSettingsPager(selector, &azappconfig.ListSettingsOptions{})
 
 	var (
 		values = make(map[string]string)
@@ -194,31 +204,4 @@ func (p *clientProxy) load(ctx context.Context) (map[string]string, bool, error)
 	}
 
 	return values, changed, nil
-}
-
-func (p *clientProxy) loadClient() (*azappconfig.Client, error) {
-	var err error
-
-	p.clientOnce.Do(func() {
-		if defaultToken, ok := p.credential.(*azidentity.DefaultAzureCredential); ok {
-			empty := azidentity.DefaultAzureCredential{}
-			if empty == *defaultToken {
-				credentialOptions := &azidentity.DefaultAzureCredentialOptions{}
-				if p.credential, err = azidentity.NewDefaultAzureCredential(credentialOptions); err != nil {
-					err = fmt.Errorf("load default Azure credential: %w", err)
-
-					return
-				}
-			}
-		}
-
-		clientOptions := &azappconfig.ClientOptions{}
-		if p.client, err = azappconfig.NewClient(p.endpoint, p.credential, clientOptions); err != nil {
-			err = fmt.Errorf("create Azure app configuration client: %w", err)
-
-			return
-		}
-	})
-
-	return p.client, err
 }
