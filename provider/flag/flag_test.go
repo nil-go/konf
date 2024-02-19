@@ -90,7 +90,7 @@ func TestFlag_Load(t *testing.T) {
 		},
 	}
 
-	parseOnce.Do(flag.Parse)
+	parse()
 	for _, testcase := range testcases {
 		testcase := testcase
 
@@ -143,8 +143,8 @@ func TestFlag_String(t *testing.T) {
 }
 
 var (
-	parseOnce sync.Once
-	set       = &flag.FlagSet{}
+	parse = sync.OnceFunc(flag.Parse)
+	set   = &flag.FlagSet{}
 )
 
 func init() {

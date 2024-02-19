@@ -125,43 +125,50 @@ func (a SecretManager) String() string {
 type clientProxy struct {
 	project string
 	filter  string
-	opts    []option.ClientOption
 
-	client     *secretmanager.Client
-	clientOnce sync.Once
-
+	client    *secretmanager.Client
+	opts      []option.ClientOption
 	lastETags atomic.Pointer[map[string]string]
 }
 
 func (p *clientProxy) load(ctx context.Context) (map[string]string, bool, error) { //nolint:cyclop,funlen
-	client, err := p.loadClient(ctx)
-	if err != nil {
-		return nil, false, err
+	if p.project == "" {
+		var err error
+		if p.project, err = metadata.ProjectID(); err != nil {
+			return nil, false, fmt.Errorf("get GCP project ID: %w", err)
+		}
+	}
+	if p.client == nil {
+		var err error
+		if p.client, err = secretmanager.NewClient(ctx, p.opts...); err != nil {
+			return nil, false, fmt.Errorf("create GCP secret manager client: %w", err)
+		}
 	}
 
 	eTags := make(map[string]string)
-	iter := client.ListSecrets(ctx, &secretmanagerpb.ListSecretsRequest{
-		Parent: "projects/" + p.project,
-		Filter: p.filter,
-	})
-	for resp, e := iter.Next(); !errors.Is(e, iterator.Done); resp, e = iter.Next() {
-		if e != nil {
-			return nil, false, fmt.Errorf("list secrets on %s: %w", p.project, e)
+	iter := p.client.ListSecrets(ctx,
+		&secretmanagerpb.ListSecretsRequest{
+			Parent: "projects/" + p.project,
+			Filter: p.filter,
+		},
+	)
+	for {
+		resp, err := iter.Next()
+		if errors.Is(err, iterator.Done) {
+			break
 		}
-
+		if err != nil {
+			return nil, false, fmt.Errorf("list secrets on %s: %w", p.project, err)
+		}
 		eTags[resp.GetName()] = resp.GetEtag()
 	}
 
-	var changed bool
-	if last := p.lastETags.Load(); last == nil || !maps.Equal(*last, eTags) {
-		changed = true
-		p.lastETags.Store(&eTags)
-	}
-	if !changed {
+	if last := p.lastETags.Load(); last != nil && maps.Equal(*last, eTags) {
 		return nil, false, nil
 	}
+	p.lastETags.Store(&eTags)
 
-	secretsCh := make(chan *secretmanagerpb.AccessSecretVersionResponse, len(eTags))
+	secretChan := make(chan *secretmanagerpb.AccessSecretVersionResponse, len(eTags))
 	errChan := make(chan error, len(eTags))
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -183,13 +190,14 @@ func (p *clientProxy) load(ctx context.Context) (map[string]string, bool, error)
 
 				return
 			}
-			secretsCh <- resp
+			secretChan <- resp
 		}()
 	}
 	waitGroup.Wait()
-	close(secretsCh)
+	close(secretChan)
 	close(errChan)
 
+	var err error
 	for e := range errChan {
 		if !errors.Is(e, ctx.Err()) {
 			err = errors.Join(e)
@@ -200,32 +208,10 @@ func (p *clientProxy) load(ctx context.Context) (map[string]string, bool, error)
 	}
 
 	values := make(map[string]string, len(eTags))
-	for resp := range secretsCh {
+	for resp := range secretChan {
 		data := resp.GetPayload().GetData()
 		values[strings.Split(resp.GetName(), "/")[3]] = unsafe.String(unsafe.SliceData(data), len(data))
 	}
 
 	return values, true, nil
-}
-
-func (p *clientProxy) loadClient(ctx context.Context) (*secretmanager.Client, error) {
-	var err error
-
-	p.clientOnce.Do(func() {
-		if p.project == "" {
-			if p.project, err = metadata.ProjectID(); err != nil {
-				err = fmt.Errorf("get GCP project ID: %w", err)
-
-				return
-			}
-		}
-
-		if p.client, err = secretmanager.NewClient(ctx, p.opts...); err != nil {
-			err = fmt.Errorf("create GCP secret manager client: %w", err)
-
-			return
-		}
-	})
-
-	return p.client, err
 }
