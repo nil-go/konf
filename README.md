@@ -2,10 +2,10 @@
 
 ![Go Version](https://img.shields.io/github/go-mod/go-version/nil-go/konf)
 [![Go Reference](https://pkg.go.dev/badge/github.com/nil-go/konf.svg)](https://pkg.go.dev/github.com/nil-go/konf)
-[![Build](https://github.com/nil-go/konf/actions/workflows/test.yml/badge.svg)](https://github.com/nil-go/konf/actions/workflows/test.yml)
-[![Go Report Card](https://goreportcard.com/badge/github.com/nil-go/konf)](https://goreportcard.com/report/github.com/nil-go/konf)
-[![Coverage](https://codecov.io/gh/nil-go/konf/branch/main/graph/badge.svg)](https://codecov.io/gh/nil-go/konf)
 [![Mentioned in Awesome Go](https://awesome.re/mentioned-badge.svg)](https://github.com/avelino/awesome-go)
+[![Go Report Card](https://goreportcard.com/badge/github.com/nil-go/konf)](https://goreportcard.com/report/github.com/nil-go/konf)
+[![Build](https://github.com/nil-go/konf/actions/workflows/test.yml/badge.svg)](https://github.com/nil-go/konf/actions/workflows/test.yml)
+[![Coverage](https://codecov.io/gh/nil-go/konf/branch/main/graph/badge.svg)](https://codecov.io/gh/nil-go/konf)
 
 konf offers an(other) opinion on how Go programs can read configuration without
 becoming coupled to a particular configuration source. It contains two APIs with two
