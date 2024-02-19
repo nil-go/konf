@@ -3,7 +3,11 @@
 
 package konf
 
-import "log/slog"
+import (
+	"log/slog"
+
+	"github.com/nil-go/konf/internal/credential"
+)
 
 // WithDelimiter provides the delimiter used when specifying config paths.
 // The delimiter is used to separate keys in the path.
@@ -56,7 +60,7 @@ type (
 // It's for hiding sensitive information (e.g. password, secret) which should not be exposed.
 //
 // By default, it uses fmt.Sprint to format the value.
-func WithValueFormatter(valueFormatter func(string, Loader, any) string) ExplainOption {
+func WithValueFormatter(valueFormatter func(Loader, string, any) string) ExplainOption {
 	return func(options *explainOptions) {
 		options.valueFormatter = valueFormatter
 	}
@@ -66,6 +70,11 @@ type (
 	// ExplainOption configures Config.Explain with specific options.
 	ExplainOption  func(*explainOptions)
 	explainOptions struct {
-		valueFormatter func(string, Loader, any) string
+		valueFormatter func(Loader, string, any) string
 	}
 )
+
+// CredentialFormatter provides the value formatter which blurs sensitive information.
+func CredentialFormatter(_ Loader, path string, value any) string {
+	return credential.Blur(path, value)
+}
