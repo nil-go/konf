@@ -162,7 +162,7 @@ func (c Config) Explain(path string, opts ...ExplainOption) string {
 		opt(option)
 	}
 	if option.valueFormatter == nil {
-		option.valueFormatter = CredentialFormatter()
+		option.valueFormatter = CredentialFormatter
 	}
 
 	explanation := &strings.Builder{}

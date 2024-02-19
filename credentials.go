@@ -10,11 +10,34 @@ import (
 )
 
 // CredentialFormatter provides the value formatter which blurs sensitive information.
-//
-//nolint:funlen,lll
-func CredentialFormatter() func(path string, loader Loader, value any) string {
-	namePattern := regexp.MustCompile(`(?i)password|passwd|pass|pwd|pw|secret|token|apiKey|bearer|cred`)
-	secretsPatterns := map[string]*regexp.Regexp{
+func CredentialFormatter(path string, _ Loader, value any) string {
+	if namePattern.MatchString(path) {
+		return "******"
+	}
+
+	var formatted string
+	switch v := value.(type) {
+	case string:
+		formatted = v
+	case []byte:
+		formatted = unsafe.String(unsafe.SliceData(v), len(v))
+	default:
+		formatted = fmt.Sprint(value)
+	}
+
+	for name, pattern := range secretsPatterns {
+		if pattern.MatchString(formatted) {
+			return name
+		}
+	}
+
+	return formatted
+}
+
+//nolint:gochecknoglobals,lll
+var (
+	namePattern     = regexp.MustCompile(`(?i)password|passwd|pass|pwd|pw|secret|token|apiKey|bearer|cred`)
+	secretsPatterns = map[string]*regexp.Regexp{
 		"RSA private key":                  regexp.MustCompile(`-----BEGIN RSA PRIVATE KEY-----`),
 		"SSH (DSA) private key":            regexp.MustCompile(`-----BEGIN DSA PRIVATE KEY-----`),
 		"SSH (EC) private key":             regexp.MustCompile(`-----BEGIN EC PRIVATE KEY-----`),
@@ -53,28 +76,4 @@ func CredentialFormatter() func(path string, loader Loader, value any) string {
 		"Twitter Access Token":             regexp.MustCompile(`[tT][wW][iI][tT][tT][eE][rR].*[1-9][0-9]+-[0-9a-zA-Z]{40}`),
 		"Twitter OAuth":                    regexp.MustCompile(`[tT][wW][iI][tT][tT][eE][rR].*[''|"][0-9a-zA-Z]{35,44}[''|"]`),
 	}
-
-	return func(path string, _ Loader, value any) string {
-		if namePattern.MatchString(path) {
-			return "******"
-		}
-
-		var formatted string
-		switch v := value.(type) {
-		case string:
-			formatted = v
-		case []byte:
-			formatted = unsafe.String(unsafe.SliceData(v), len(v))
-		default:
-			formatted = fmt.Sprint(value)
-		}
-
-		for name, pattern := range secretsPatterns {
-			if pattern.MatchString(formatted) {
-				return name
-			}
-		}
-
-		return formatted
-	}
-}
+)
