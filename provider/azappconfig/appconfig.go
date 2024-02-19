@@ -172,11 +172,8 @@ func (p *clientProxy) load(ctx context.Context) (map[string]string, bool, error)
 		eTags  = make(map[string]azcore.ETag)
 
 		nextPage = func(ctx context.Context) error {
-			if p.timeout > 0 {
-				var cancel context.CancelFunc
-				ctx, cancel = context.WithTimeout(ctx, p.timeout)
-				defer cancel()
-			}
+			ctx, cancel := context.WithTimeout(ctx, p.timeout)
+			defer cancel()
 
 			page, err := pager.NextPage(ctx)
 			if err != nil {

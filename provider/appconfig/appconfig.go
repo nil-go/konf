@@ -149,6 +149,9 @@ func (p *clientProxy) load(ctx context.Context) ([]byte, bool, error) {
 		p.client = appconfigdata.NewFromConfig(p.config)
 	}
 
+	ctx, cancel := context.WithTimeout(ctx, p.timeout)
+	defer cancel()
+
 	if p.token.Load() == nil {
 		session, err := p.client.StartConfigurationSession(ctx, &appconfigdata.StartConfigurationSessionInput{
 			ApplicationIdentifier:                aws.String(p.application),
@@ -160,12 +163,6 @@ func (p *clientProxy) load(ctx context.Context) ([]byte, bool, error) {
 			return nil, false, fmt.Errorf("start configuration session: %w", err)
 		}
 		p.token.Store(session.InitialConfigurationToken)
-	}
-
-	if p.timeout > 0 {
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, p.timeout)
-		defer cancel()
 	}
 
 	resp, err := p.client.GetLatestConfiguration(ctx,
