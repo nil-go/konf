@@ -17,6 +17,10 @@ jobs:
       security-events: write
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: 'stable'
+          cache-dependency-path: "**/go.sum"
       - uses: github/codeql-action/init@v3
         with:
           languages: go
