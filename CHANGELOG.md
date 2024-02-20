@@ -7,6 +7,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.6.0] - 2024-02-19
+
 ### Changed
 
 - [BREAKING] Change signature of valueFormatter for config.Explain (#146).
