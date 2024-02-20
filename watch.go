@@ -42,8 +42,8 @@ func (c Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocogn
 
 	onChangesChannel := make(chan []func(Config), 1)
 	defer close(onChangesChannel)
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
+	ctx, cancel := context.WithCancelCause(ctx)
+	defer cancel(nil)
 
 	var waitGroup sync.WaitGroup
 	waitGroup.Add(1)
@@ -62,9 +62,6 @@ func (c Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocogn
 
 				if len(onChanges) > 0 {
 					func() {
-						ctx, cancel = context.WithTimeout(ctx, time.Minute)
-						defer cancel()
-
 						done := make(chan struct{})
 						go func() {
 							defer close(done)
@@ -74,6 +71,9 @@ func (c Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocogn
 							}
 						}()
 
+						var tcancel context.CancelFunc
+						ctx, tcancel = context.WithTimeout(ctx, time.Minute)
+						defer tcancel()
 						select {
 						case <-done:
 							c.logger.DebugContext(ctx, "Configuration has been applied to onChanges.")
@@ -92,7 +92,6 @@ func (c Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocogn
 		}
 	}()
 
-	errChan := make(chan error, len(c.providers.providers))
 	for i := range c.providers.providers {
 		provider := &c.providers.providers[i] // Use pointer for later modification.
 
@@ -134,23 +133,18 @@ func (c Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocogn
 
 				c.logger.DebugContext(ctx, "Watching configuration change.", "loader", watcher)
 				if err := watcher.Watch(ctx, onChange); err != nil {
-					errChan <- fmt.Errorf("watch configuration change on %v: %w", watcher, err)
-					cancel()
+					cancel(fmt.Errorf("watch configuration change on %v: %w", watcher, err))
 				}
 			}()
 		}
 	}
 	waitGroup.Wait()
-	close(errChan)
 
-	var err error
-	for e := range errChan {
-		if !errors.Is(e, ctx.Err()) {
-			err = errors.Join(e)
-		}
+	if err := context.Cause(ctx); err != nil && !errors.Is(err, ctx.Err()) {
+		return err //nolint:wrapcheck
 	}
 
-	return err
+	return nil
 }
 
 // OnChange registers a callback function that is executed

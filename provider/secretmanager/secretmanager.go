@@ -169,9 +169,8 @@ func (p *clientProxy) load(ctx context.Context) (map[string]string, bool, error)
 	p.lastETags.Store(&eTags)
 
 	secretChan := make(chan *secretmanagerpb.AccessSecretVersionResponse, len(eTags))
-	errChan := make(chan error, len(eTags))
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
+	ctx, cancel := context.WithCancelCause(ctx)
+	defer cancel(nil)
 
 	var waitGroup sync.WaitGroup
 	waitGroup.Add(len(eTags))
@@ -181,12 +180,11 @@ func (p *clientProxy) load(ctx context.Context) (map[string]string, bool, error)
 		go func() {
 			defer waitGroup.Done()
 
-			resp, e := p.client.AccessSecretVersion(ctx, &secretmanagerpb.AccessSecretVersionRequest{
+			resp, err := p.client.AccessSecretVersion(ctx, &secretmanagerpb.AccessSecretVersionRequest{
 				Name: name + "/versions/latest",
 			})
-			if e != nil {
-				errChan <- fmt.Errorf("access secret %s: %w", strings.Split(name, "/")[3], e)
-				cancel()
+			if err != nil {
+				cancel(fmt.Errorf("access secret %s: %w", strings.Split(name, "/")[3], err))
 
 				return
 			}
@@ -195,15 +193,8 @@ func (p *clientProxy) load(ctx context.Context) (map[string]string, bool, error)
 	}
 	waitGroup.Wait()
 	close(secretChan)
-	close(errChan)
 
-	var err error
-	for e := range errChan {
-		if !errors.Is(e, ctx.Err()) {
-			err = errors.Join(e)
-		}
-	}
-	if err != nil {
+	if err := context.Cause(ctx); err != nil && !errors.Is(err, ctx.Err()) {
 		return nil, false, err
 	}
 
