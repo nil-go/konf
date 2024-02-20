@@ -28,3 +28,4 @@ jobs:
           output-file-path: output.txt
           external-data-json-path: ./cache/benchmark-data.json
           fail-on-alert: true
+          summary-always: true
