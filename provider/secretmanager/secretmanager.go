@@ -195,7 +195,7 @@ func (p *clientProxy) load(ctx context.Context) (map[string]string, bool, error)
 	close(secretChan)
 
 	if err := context.Cause(ctx); err != nil && !errors.Is(err, ctx.Err()) {
-		return nil, false, err
+		return nil, false, err //nolint:wrapcheck
 	}
 
 	values := make(map[string]string, len(eTags))
