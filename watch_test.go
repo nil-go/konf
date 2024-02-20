@@ -9,7 +9,6 @@ import (
 	"errors"
 	"log/slog"
 	"sync"
-	"sync/atomic"
 	"testing"
 	"time"
 
@@ -30,25 +29,26 @@ func TestConfig_Watch(t *testing.T) {
 	assert.NoError(t, config.Unmarshal("config", &value))
 	assert.Equal(t, "", value)
 
+	stopped := make(chan struct{})
 	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	var waitGroup sync.WaitGroup
-	waitGroup.Add(1)
+	defer func() {
+		cancel()
+		<-stopped
+	}()
 	go func() {
-		assert.NoError(t, config.Watch(ctx))
+		defer close(stopped)
+
+		_ = config.Watch(ctx)
 	}()
 
-	var newValue atomic.Value
+	newValue := make(chan string)
 	config.OnChange(func(config konf.Config) {
-		defer waitGroup.Done()
-
 		var value string
 		assert.NoError(t, config.Unmarshal("config", &value))
-		newValue.Store(value)
+		newValue <- value
 	}, "config")
 	watcher.change("changed")
-	waitGroup.Wait()
-	assert.Equal(t, "changed", newValue.Load())
+	assert.Equal(t, "changed", <-newValue)
 }
 
 func TestConfig_Watch_onchange_block(t *testing.T) {
@@ -94,18 +94,18 @@ func TestConfig_Watch_twice(t *testing.T) {
 	config := konf.New(konf.WithLogHandler(logHandler(buf)))
 	assert.NoError(t, config.Load(stringWatcher{key: "Config", value: make(chan string)}))
 
+	stopped := make(chan struct{})
 	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	var waitGroup sync.WaitGroup
-	waitGroup.Add(1)
+	defer func() {
+		cancel()
+		<-stopped
+	}()
 	go func() {
-		waitGroup.Done()
+		defer close(stopped)
 		assert.NoError(t, config.Watch(ctx))
 	}()
-	waitGroup.Wait()
+	time.Sleep(100 * time.Millisecond) // Wait for watch to start
 
-	time.Sleep(time.Second)
 	assert.NoError(t, config.Watch(ctx))
 	expected := "level=WARN msg=\"Config has been watched, call Watch again has no effects.\"\n"
 	assert.Equal(t, expected, buf.String())

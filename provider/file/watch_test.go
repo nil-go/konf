@@ -7,7 +7,6 @@ import (
 	"context"
 	"os"
 	"path/filepath"
-	"sync/atomic"
 	"testing"
 	"time"
 
@@ -45,7 +44,7 @@ func TestFile_Watch(t *testing.T) {
 			tmpFile := filepath.Join(t.TempDir(), "watch.json")
 			assert.NoError(t, os.WriteFile(tmpFile, []byte(`{"p": {"k": "v"}}`), 0o600))
 
-			var values atomic.Pointer[map[string]any]
+			values := make(chan map[string]any)
 
 			started := make(chan struct{})
 			ctx, cancel := context.WithCancel(context.Background())
@@ -54,7 +53,7 @@ func TestFile_Watch(t *testing.T) {
 			go func() {
 				close(started)
 				err := loader.Watch(ctx, func(changed map[string]any) {
-					values.Store(&changed)
+					values <- changed
 				})
 				assert.NoError(t, err)
 			}()
@@ -63,7 +62,7 @@ func TestFile_Watch(t *testing.T) {
 
 			assert.NoError(t, testcase.action(tmpFile))
 			time.Sleep(time.Second) // wait for the watcher to pick up the change from action
-			assert.Equal(t, testcase.expected, *values.Load())
+			assert.Equal(t, testcase.expected, <-values)
 		})
 	}
 }

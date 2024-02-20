@@ -10,7 +10,6 @@ import (
 	"errors"
 	"log/slog"
 	"sync"
-	"sync/atomic"
 	"testing"
 	"time"
 
@@ -380,26 +379,26 @@ func TestAppConfig_Watch(t *testing.T) {
 				appconfig.WithLogHandler(logHandler(buf)),
 				appconfig.WithUnmarshal(testcase.unmarshal),
 			)
-			var values atomic.Value
+			values := make(chan map[string]any)
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 
-			var waitGroup sync.WaitGroup
-			waitGroup.Add(1)
+			started := make(chan struct{})
 			go func() {
-				waitGroup.Done()
+				close(started)
 
 				err := loader.Watch(ctx, func(changed map[string]any) {
-					values.Store(changed)
+					values <- changed
 				})
 				assert.NoError(t, err)
 			}()
-			waitGroup.Wait()
+			<-started
 
 			time.Sleep(15 * time.Millisecond) // wait for the first tick, but not the second
-			if val, ok := values.Load().(map[string]any); ok {
+			select {
+			case val := <-values:
 				assert.Equal(t, testcase.expected, val)
-			} else {
+			default:
 				assert.Equal(t, testcase.log, buf.String())
 			}
 		})
