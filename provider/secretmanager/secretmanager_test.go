@@ -12,12 +12,14 @@ import (
 	"log/slog"
 	"net"
 	"os"
+	"path"
 	"strings"
 	"sync"
 	"testing"
 	"time"
 
 	pb "cloud.google.com/go/secretmanager/apiv1/secretmanagerpb"
+	"github.com/stretchr/testify/require"
 	"google.golang.org/api/option"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -227,8 +229,11 @@ func grpcServer(t *testing.T, service pb.SecretManagerServiceServer) (*grpc.Clie
 	server := grpc.NewServer()
 	pb.RegisterSecretManagerServiceServer(server, service)
 
+	temp, err := os.MkdirTemp("", "*") // t.TempDir() causes deadlock on macos.
+	require.NoError(t, err)
+	endpoint := path.Join(temp, "load.sock")
+
 	started := make(chan struct{})
-	endpoint := t.TempDir() + "/load.sock"
 	go func() {
 		_ = os.RemoveAll(endpoint)
 		listener, e := net.Listen("unix", endpoint)
