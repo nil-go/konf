@@ -15,6 +15,41 @@ import (
 	"github.com/nil-go/konf/provider/env"
 )
 
+func TestConfig_Load_error(t *testing.T) {
+	t.Parallel()
+
+	testcases := []struct {
+		description string
+		opts        []konf.LoadOption
+		err         string
+	}{
+		{
+			description: "error",
+			err:         "load configuration: load error",
+		},
+		{
+			description: "continue on error",
+			opts:        []konf.LoadOption{konf.ContinueOnError()},
+		},
+	}
+
+	for _, testcase := range testcases {
+		testcase := testcase
+
+		t.Run(testcase.description, func(t *testing.T) {
+			t.Parallel()
+
+			config := konf.New()
+			err := config.Load(&errorLoader{}, testcase.opts...)
+			if testcase.err == "" {
+				assert.NoError(t, err)
+			} else {
+				assert.Equal(t, testcase.err, err.Error())
+			}
+		})
+	}
+}
+
 func TestConfig_Load_panic(t *testing.T) {
 	t.Parallel()
 

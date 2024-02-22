@@ -45,24 +45,16 @@ jobs:
               name: "v${{ steps.query-release-info.outputs.version }}",
               body: `${{ steps.query-release-info.outputs.release-notes }}`
             })
-
-  tag:
-    strategy:
-      matrix:
-        module: [ 'provider/file', 'provider/pflag', 'provider/appconfig', 'provider/azappconfig', 'provider/secretmanager' ]
-    name: Submodules
-    needs: release
-    if: ${{ needs.release.steps.create-release.outcome == 'success' }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Create tag
+      - name: Tag Submodules
         uses: actions/github-script@v7
         with:
           script: |
-            ref = "refs/tags/${{ matrix.module }}/v${{ needs.release.steps.query-release-info.outputs.version }}"
-            github.rest.git.createRef({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              ref: ref,
-              sha: context.sha
-            })
+            const modules = [ 'provider/file', 'provider/pflag', 'provider/appconfig', 'provider/azappconfig', 'provider/secretmanager' ]
+            for (const module of modules) {
+              github.rest.git.createRef({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                ref: "refs/tags/${{ module }}/v${{ steps.query-release-info.outputs.version }}",
+                sha: context.sha
+              })
+            }
