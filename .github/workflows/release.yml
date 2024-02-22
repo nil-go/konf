@@ -54,7 +54,7 @@ jobs:
               github.rest.git.createRef({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                ref: "refs/tags/${{ module }}/v${{ steps.query-release-info.outputs.version }}",
+                ref: "refs/tags/"+module+"/v${{ steps.query-release-info.outputs.version }}",
                 sha: context.sha
               })
             }
