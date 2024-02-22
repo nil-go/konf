@@ -7,9 +7,16 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.6.2] - 2024-02-21
+
+### Fixed
+
+- Add ContinueOnError so watcher can continue watching even the loader fails to load the configuration (#161).
+
 ## [0.6.1] - 2024-02-21
 
 ### Changed
+
 - merge loader into providers even it fails the loading. Developers can ignore the loading error
   and wait for the watching to get latest configuration (#159).
 

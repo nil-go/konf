@@ -56,6 +56,20 @@ type (
 	options Config
 )
 
+func ContinueOnError() LoadOption {
+	return func(options *loadOptions) {
+		options.continueOnError = true
+	}
+}
+
+type (
+	// LoadOption configures Config.Load with specific options.
+	LoadOption  func(*loadOptions)
+	loadOptions struct {
+		continueOnError bool
+	}
+)
+
 // WithValueFormatter provides the value formatter for Config.Explain.
 // It's for hiding sensitive information (e.g. password, secret) which should not be exposed.
 //

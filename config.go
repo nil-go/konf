@@ -82,13 +82,25 @@ func New(opts ...Option) Config {
 //
 // This method can be called multiple times but it is not concurrency-safe.
 // It panics if loader is nil.
-func (c Config) Load(loader Loader) error {
+func (c Config) Load(loader Loader, opts ...LoadOption) error {
 	if loader == nil {
 		panic("cannot load config from nil loader")
 	}
 
+	loadOption := &loadOptions{}
+	for _, opt := range opts {
+		opt(loadOption)
+	}
+
 	values, err := loader.Load()
+	if err != nil {
+		if !loadOption.continueOnError {
+			return fmt.Errorf("load configuration: %w", err)
+		}
+		c.logger.Warn("failed to load configuration", "loader", loader, "error", err)
+	}
 	maps.Merge(c.values, values)
+
 	// Merged to empty map to convert to lower case.
 	providerValues := make(map[string]any)
 	maps.Merge(providerValues, values)
@@ -96,10 +108,6 @@ func (c Config) Load(loader Loader) error {
 		loader: loader,
 		values: providerValues,
 	})
-
-	if err != nil {
-		return fmt.Errorf("load configuration: %w", err)
-	}
 
 	return nil
 }
