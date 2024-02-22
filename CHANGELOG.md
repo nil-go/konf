@@ -7,6 +7,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+- merge loader into providers even it fails the loading. Developers can ignore the loading error
+  and wait for the watching to get latest configuration (#159).
+
 ## [0.6.0] - 2024-02-19
 
 ### Changed

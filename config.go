@@ -88,11 +88,7 @@ func (c Config) Load(loader Loader) error {
 	}
 
 	values, err := loader.Load()
-	if err != nil {
-		return fmt.Errorf("load configuration: %w", err)
-	}
 	maps.Merge(c.values, values)
-
 	// Merged to empty map to convert to lower case.
 	providerValues := make(map[string]any)
 	maps.Merge(providerValues, values)
@@ -100,6 +96,10 @@ func (c Config) Load(loader Loader) error {
 		loader: loader,
 		values: providerValues,
 	})
+
+	if err != nil {
+		return fmt.Errorf("load configuration: %w", err)
+	}
 
 	return nil
 }
