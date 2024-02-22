@@ -56,6 +56,7 @@ type (
 	options Config
 )
 
+// ContinueOnError allows watcher continues watching configuration even Config.Load fails to load the loader.
 func ContinueOnError() LoadOption {
 	return func(options *loadOptions) {
 		options.continueOnError = true
