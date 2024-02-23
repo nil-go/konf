@@ -5,7 +5,7 @@ go 1.21
 require (
 	github.com/aws/aws-sdk-go-v2 v1.25.1
 	github.com/aws/aws-sdk-go-v2/config v1.27.2
-	github.com/aws/aws-sdk-go-v2/service/appconfigdata v1.13.2
+	github.com/aws/aws-sdk-go-v2/service/appconfigdata v1.14.0
 	github.com/aws/smithy-go v1.20.1
 )
 
