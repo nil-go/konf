@@ -43,7 +43,8 @@ func TestGet_error(t *testing.T) {
 
 	assert.True(t, !konf.Get[bool]("config"))
 	expected := `level=WARN msg="Could not read config, return empty value instead."` +
+		` path=config type=bool` +
 		` error="decode: cannot parse '' as bool: strconv.ParseBool: parsing \"string\": invalid syntax"` +
-		` path=config type=bool` + "\n"
+		"\n"
 	assert.Equal(t, expected, buf.String())
 }

@@ -87,12 +87,13 @@ func (a AppConfig) Watch(ctx context.Context, onChange func(map[string]any)) err
 		case <-ticker.C:
 			values, changed, err := a.load(ctx)
 			if err != nil {
-				a.logger.WarnContext(
-					ctx, "Error when reloading from AWS AppConfig",
-					"application", a.client.application,
-					"environment", a.client.environment,
-					"profile", a.client.profile,
-					"error", err,
+				a.logger.LogAttrs(
+					ctx, slog.LevelWarn,
+					"Error when reloading from AWS AppConfig",
+					slog.String("application", a.client.application),
+					slog.String("environment", a.client.environment),
+					slog.String("profile", a.client.profile),
+					slog.Any("error", err),
 				)
 
 				continue

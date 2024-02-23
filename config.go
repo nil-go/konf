@@ -4,6 +4,7 @@
 package konf
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"slices"
@@ -97,7 +98,12 @@ func (c Config) Load(loader Loader, opts ...LoadOption) error {
 		if !loadOption.continueOnError {
 			return fmt.Errorf("load configuration: %w", err)
 		}
-		c.logger.Warn("failed to load configuration", "loader", loader, "error", err)
+		c.logger.LogAttrs(
+			context.Background(), slog.LevelWarn,
+			"failed to load configuration",
+			slog.Any("loader", loader),
+			slog.Any("error", err),
+		)
 	}
 	maps.Merge(c.values.values, values)
 

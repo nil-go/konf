@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"slices"
 	"strings"
 	"sync"
@@ -35,7 +36,7 @@ func (c Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocogn
 	}
 
 	if watched := c.values.watched.Swap(true); watched {
-		c.logger.WarnContext(ctx, "Config has been watched, call Watch again has no effects.")
+		c.logger.LogAttrs(ctx, slog.LevelWarn, "Config has been watched, call Watch again has no effects.")
 
 		return nil
 	}
@@ -58,7 +59,7 @@ func (c Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocogn
 					maps.Merge(values, w.values)
 				}
 				c.values.values = values
-				c.logger.DebugContext(ctx, "Configuration has been updated with change.")
+				c.logger.LogAttrs(ctx, slog.LevelDebug, "Configuration has been updated with change.")
 
 				if len(onChanges) > 0 {
 					func() {
@@ -76,11 +77,14 @@ func (c Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocogn
 						defer tcancel()
 						select {
 						case <-done:
-							c.logger.DebugContext(ctx, "Configuration has been applied to onChanges.")
+							c.logger.LogAttrs(ctx, slog.LevelDebug, "Configuration has been applied to onChanges.")
 						case <-ctx.Done():
 							if errors.Is(ctx.Err(), context.DeadlineExceeded) {
-								c.logger.WarnContext(ctx, "Configuration has not been fully applied to onChanges due to timeout."+
-									" Please check if the onChanges is blocking or takes too long to complete.")
+								c.logger.LogAttrs(
+									ctx, slog.LevelWarn,
+									"Configuration has not been fully applied to onChanges due to timeout."+
+										" Please check if the onChanges is blocking or takes too long to complete.",
+								)
 							}
 						}
 					}()
@@ -125,13 +129,15 @@ func (c Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocogn
 					}
 					onChangesChannel <- onChanges()
 
-					c.logger.Info(
+					c.logger.LogAttrs(
+						context.Background(),
+						slog.LevelInfo,
 						"Configuration has been changed.",
-						"loader", watcher,
+						slog.Any("loader", watcher),
 					)
 				}
 
-				c.logger.DebugContext(ctx, "Watching configuration change.", "loader", watcher)
+				c.logger.LogAttrs(ctx, slog.LevelDebug, "Watching configuration change.", slog.Any("loader", watcher))
 				if err := watcher.Watch(ctx, onChange); err != nil {
 					cancel(fmt.Errorf("watch configuration change on %v: %w", watcher, err))
 				}
