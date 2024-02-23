@@ -80,11 +80,12 @@ func (a SecretManager) Watch(ctx context.Context, onChange func(map[string]any))
 		case <-ticker.C:
 			values, changed, err := a.load(ctx)
 			if err != nil {
-				a.logger.WarnContext(
-					ctx, "Error when reloading from GCP Secret Manager",
-					"project", a.client.project,
-					"filter", a.client.filter,
-					"error", err,
+				a.logger.LogAttrs(
+					ctx, slog.LevelWarn,
+					"Error when reloading from GCP Secret Manager",
+					slog.String("project", a.client.project),
+					slog.String("filter", a.client.filter),
+					slog.Any("error", err),
 				)
 
 				continue

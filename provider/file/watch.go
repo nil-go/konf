@@ -6,6 +6,7 @@ package file
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"path/filepath"
 	"time"
 
@@ -20,7 +21,12 @@ func (f File) Watch(ctx context.Context, onChange func(map[string]any)) error {
 	}
 	defer func() {
 		if e := watcher.Close(); e != nil {
-			f.logger.WarnContext(ctx, "Error when closing file watcher.", "file", f.path, "error", e)
+			f.logger.LogAttrs(
+				ctx, slog.LevelWarn,
+				"Error when closing file watcher.",
+				slog.String("file", f.path),
+				slog.Any("error", e),
+			)
 		}
 	}()
 
@@ -63,12 +69,21 @@ func (f File) Watch(ctx context.Context, onChange func(map[string]any)) error {
 
 			switch {
 			case event.Has(fsnotify.Remove):
-				f.logger.WarnContext(ctx, "Config file has been removed.", "file", f.path)
+				f.logger.LogAttrs(
+					ctx, slog.LevelWarn,
+					"Config file has been removed.",
+					slog.String("file", f.path),
+				)
 				onChange(nil)
 			case event.Has(fsnotify.Create) || event.Has(fsnotify.Write):
 				values, err := f.Load()
 				if err != nil {
-					f.logger.WarnContext(ctx, "Error when reloading config file", "file", f.path, "error", err)
+					f.logger.LogAttrs(
+						ctx, slog.LevelWarn,
+						"Error when reloading config file",
+						slog.String("file", f.path),
+						slog.Any("error", err),
+					)
 
 					continue
 				}
@@ -76,7 +91,12 @@ func (f File) Watch(ctx context.Context, onChange func(map[string]any)) error {
 			}
 
 		case err := <-watcher.Errors:
-			f.logger.WarnContext(ctx, "Error when watching file", "file", f.path, "error", err)
+			f.logger.LogAttrs(
+				ctx, slog.LevelWarn,
+				"Error when watching file",
+				slog.String("file", f.path),
+				slog.Any("error", err),
+			)
 
 		case <-ctx.Done():
 			return nil

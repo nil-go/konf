@@ -80,12 +80,13 @@ func (a AppConfig) Watch(ctx context.Context, onChange func(map[string]any)) err
 		case <-ticker.C:
 			values, changed, err := a.load(ctx)
 			if err != nil {
-				a.logger.WarnContext(
-					ctx, "Error when reloading from Azure App Configuration",
-					"endpoint", a.client.endpoint,
-					"keyFilter", a.client.keyFilter,
-					"labelFilter", a.client.labelFilter,
-					"error", err,
+				a.logger.LogAttrs(
+					ctx, slog.LevelWarn,
+					"Error when reloading from Azure App Configuration",
+					slog.String("endpoint", a.client.endpoint),
+					slog.String("keyFilter", a.client.keyFilter),
+					slog.String("labelFilter", a.client.labelFilter),
+					slog.Any("error", err),
 				)
 
 				continue

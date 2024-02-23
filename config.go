@@ -4,6 +4,7 @@
 package konf
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"slices"
@@ -25,8 +26,7 @@ type Config struct {
 	tagName    string
 	delimiter  string
 
-	values    map[string]any
-	providers *providers
+	values *values
 }
 
 type (
@@ -35,7 +35,8 @@ type (
 		values map[string]any
 	}
 
-	providers struct {
+	values struct {
+		values    map[string]any
 		providers []provider
 
 		onChanges      map[string][]func(Config)
@@ -49,8 +50,8 @@ type DecodeHook any
 // New creates a new Config with the given Option(s).
 func New(opts ...Option) Config {
 	option := &options{
-		values: make(map[string]any),
-		providers: &providers{
+		values: &values{
+			values:    make(map[string]any),
 			onChanges: make(map[string][]func(Config)),
 		},
 	}
@@ -97,14 +98,19 @@ func (c Config) Load(loader Loader, opts ...LoadOption) error {
 		if !loadOption.continueOnError {
 			return fmt.Errorf("load configuration: %w", err)
 		}
-		c.logger.Warn("failed to load configuration", "loader", loader, "error", err)
+		c.logger.LogAttrs(
+			context.Background(), slog.LevelWarn,
+			"failed to load configuration",
+			slog.Any("loader", loader),
+			slog.Any("error", err),
+		)
 	}
-	maps.Merge(c.values, values)
+	maps.Merge(c.values.values, values)
 
 	// Merged to empty map to convert to lower case.
 	providerValues := make(map[string]any)
 	maps.Merge(providerValues, values)
-	c.providers.providers = append(c.providers.providers, provider{
+	c.values.providers = append(c.values.providers, provider{
 		loader: loader,
 		values: providerValues,
 	})
@@ -128,7 +134,7 @@ func (c Config) Unmarshal(path string, target any) error {
 		return fmt.Errorf("new decoder: %w", err)
 	}
 
-	if err := decoder.Decode(sub(c.values, strings.Split(path, c.delimiter))); err != nil {
+	if err := decoder.Decode(sub(c.values.values, strings.Split(path, c.delimiter))); err != nil {
 		return fmt.Errorf("decode: %w", err)
 	}
 
@@ -175,7 +181,7 @@ func (c Config) Explain(path string, opts ...ExplainOption) string {
 	}
 
 	explanation := &strings.Builder{}
-	c.explain(explanation, path, sub(c.values, strings.Split(path, c.delimiter)), *option)
+	c.explain(explanation, path, sub(c.values.values, strings.Split(path, c.delimiter)), *option)
 
 	return explanation.String()
 }
@@ -190,7 +196,7 @@ func (c Config) explain(explanation *strings.Builder, path string, value any, op
 	}
 
 	var loaders []loaderValue
-	for _, provider := range c.providers.providers {
+	for _, provider := range c.values.providers {
 		if v := sub(provider.values, strings.Split(path, c.delimiter)); v != nil {
 			loaders = append(loaders, loaderValue{provider.loader, v})
 		}
@@ -198,19 +204,25 @@ func (c Config) explain(explanation *strings.Builder, path string, value any, op
 	slices.Reverse(loaders)
 
 	if len(loaders) == 0 {
-		_, _ = fmt.Fprintf(explanation, "%s has no configuration.\n\n", path)
+		explanation.WriteString(path)
+		explanation.WriteString(" has no configuration.\n\n")
 
 		return
 	}
-	_, _ = fmt.Fprintf(explanation, "%s has value[%s] that is loaded by loader[%v].\n",
-		path, option.valueFormatter(loaders[0].loader, path, loaders[0].value), loaders[0].loader,
-	)
+	explanation.WriteString(path)
+	explanation.WriteString(" has value[")
+	explanation.WriteString(option.valueFormatter(loaders[0].loader, path, loaders[0].value))
+	explanation.WriteString("] that is loaded by loader[")
+	explanation.WriteString(fmt.Sprintf("%v", loaders[0].loader))
+	explanation.WriteString("].\n")
 	if len(loaders) > 1 {
-		_, _ = fmt.Fprintf(explanation, "Here are other value(loader)s:\n")
+		explanation.WriteString("Here are other value(loader)s:\n")
 		for _, loader := range loaders[1:] {
-			_, _ = fmt.Fprintf(explanation, "  - %s(%v)\n",
-				option.valueFormatter(loader.loader, path, loader.value), loader.loader,
-			)
+			explanation.WriteString("  - ")
+			explanation.WriteString(option.valueFormatter(loader.loader, path, loader.value))
+			explanation.WriteString("(")
+			explanation.WriteString(fmt.Sprintf("%v", loader.loader))
+			explanation.WriteString(")\n")
 		}
 	}
 	explanation.WriteString("\n")
