@@ -4,6 +4,7 @@
 package konf_test
 
 import (
+	"context"
 	"testing"
 
 	"github.com/nil-go/konf"
@@ -47,4 +48,37 @@ func TestGet_error(t *testing.T) {
 		` error="decode: cannot parse '' as bool: strconv.ParseBool: parsing \"string\": invalid syntax"` +
 		"\n"
 	assert.Equal(t, expected, buf.String())
+}
+
+func TestOnChange(t *testing.T) {
+	config := konf.New()
+	watcher := stringWatcher{key: "Config", value: make(chan string)}
+	err := config.Load(watcher)
+	assert.NoError(t, err)
+	konf.SetDefault(config)
+
+	var value string
+	assert.NoError(t, config.Unmarshal("config", &value))
+	assert.Equal(t, "", value)
+
+	stopped := make(chan struct{})
+	ctx, cancel := context.WithCancel(context.Background())
+	defer func() {
+		cancel()
+		<-stopped
+	}()
+	go func() {
+		defer close(stopped)
+
+		_ = config.Watch(ctx)
+	}()
+
+	newValue := make(chan string)
+	konf.OnChange(func() {
+		var value string
+		assert.NoError(t, konf.Unmarshal("config", &value))
+		newValue <- value
+	}, "config")
+	watcher.change("changed")
+	assert.Equal(t, "changed", <-newValue)
 }

@@ -7,6 +7,12 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.6.3] - 2024-02-23
+
+### Fixed
+
+- The changed values in watch may not update values in config (#171).
+
 ## [0.6.2] - 2024-02-21
 
 ### Fixed
