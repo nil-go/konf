@@ -84,7 +84,7 @@ func (a SecretManager) Watch(ctx context.Context, onChange func(map[string]any))
 					ctx, slog.LevelWarn,
 					"Error when reloading from GCP Secret Manager",
 					slog.String("project", a.client.project),
-					slog.String("project", a.client.project),
+					slog.String("filter", a.client.filter),
 					slog.Any("error", err),
 				)
 
