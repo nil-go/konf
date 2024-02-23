@@ -204,19 +204,25 @@ func (c Config) explain(explanation *strings.Builder, path string, value any, op
 	slices.Reverse(loaders)
 
 	if len(loaders) == 0 {
-		_, _ = fmt.Fprintf(explanation, "%s has no configuration.\n\n", path)
+		explanation.WriteString(path)
+		explanation.WriteString(" has no configuration.\n\n")
 
 		return
 	}
-	_, _ = fmt.Fprintf(explanation, "%s has value[%s] that is loaded by loader[%v].\n",
-		path, option.valueFormatter(loaders[0].loader, path, loaders[0].value), loaders[0].loader,
-	)
+	explanation.WriteString(path)
+	explanation.WriteString(" has value[")
+	explanation.WriteString(option.valueFormatter(loaders[0].loader, path, loaders[0].value))
+	explanation.WriteString("] that is loaded by loader[")
+	explanation.WriteString(fmt.Sprintf("%v", loaders[0].loader))
+	explanation.WriteString("].\n")
 	if len(loaders) > 1 {
-		_, _ = fmt.Fprintf(explanation, "Here are other value(loader)s:\n")
+		explanation.WriteString("Here are other value(loader)s:\n")
 		for _, loader := range loaders[1:] {
-			_, _ = fmt.Fprintf(explanation, "  - %s(%v)\n",
-				option.valueFormatter(loader.loader, path, loader.value), loader.loader,
-			)
+			explanation.WriteString("  - ")
+			explanation.WriteString(option.valueFormatter(loader.loader, path, loader.value))
+			explanation.WriteString("(")
+			explanation.WriteString(fmt.Sprintf("%v", loader.loader))
+			explanation.WriteString(")\n")
 		}
 	}
 	explanation.WriteString("\n")
