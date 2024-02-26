@@ -47,6 +47,7 @@ jobs:
             })
       - name: Tag Submodules
         uses: actions/github-script@v7
+        if: steps.create-release.outcome == 'success'
         with:
           script: |
             const modules = [ 'provider/file', 'provider/pflag', 'provider/appconfig', 'provider/azappconfig', 'provider/secretmanager' ]
