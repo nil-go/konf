@@ -6,7 +6,7 @@ require (
 	cloud.google.com/go/compute/metadata v0.2.3
 	cloud.google.com/go/secretmanager v1.11.5
 	github.com/stretchr/testify v1.8.4
-	google.golang.org/api v0.166.0
+	google.golang.org/api v0.167.0
 	google.golang.org/grpc v1.62.0
 	google.golang.org/protobuf v1.32.0
 )
