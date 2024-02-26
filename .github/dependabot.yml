@@ -6,46 +6,61 @@ updates:
     labels:
       - Skip-Changelog
     schedule:
-      interval: daily
+      interval: weekly
 
   - package-ecosystem: gomod
     directory: /provider/file
     labels:
       - Skip-Changelog
     schedule:
-      interval: daily
+      interval: weekly
 
   - package-ecosystem: gomod
     directory: /provider/pflag
     labels:
       - Skip-Changelog
     schedule:
-      interval: daily
+      interval: weekly
 
   - package-ecosystem: gomod
     directory: /provider/appconfig
     labels:
       - Skip-Changelog
     schedule:
-      interval: daily
+      interval: weekly
+    groups:
+      aws-sdk-go:
+        patterns:
+          - github.com/aws/aws-sdk-go-v2/*
 
   - package-ecosystem: gomod
     directory: /provider/azappconfig
     labels:
       - Skip-Changelog
     schedule:
-      interval: daily
+      interval: weekly
+    groups:
+      azure-sdk-for-go:
+        patterns:
+          - github.com/Azure/azure-sdk-for-go/sdk/*
 
   - package-ecosystem: gomod
     directory: /provider/secretmanager
     labels:
       - Skip-Changelog
     schedule:
-      interval: daily
+      interval: weekly
+    groups:
+      cloud.google.com/go:
+        patterns:
+          - cloud.google.com/go/*
+          - google.golang.org/api
+          - google.golang.org/grpc
+          - google.golang.org/protobuf
 
   - package-ecosystem: github-actions
     directory: /
     labels:
       - Skip-Changelog
     schedule:
-      interval: daily
+      interval: weekly
