@@ -12,7 +12,7 @@ func Equal[T any](tb testing.TB, expected, actual T) {
 	tb.Helper()
 
 	if !reflect.DeepEqual(expected, actual) {
-		tb.Errorf("expected: %v; actual: %v", expected, actual)
+		tb.Errorf("\nexpected: %v\n  actual: %v", expected, actual)
 	}
 }
 
