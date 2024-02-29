@@ -11,8 +11,8 @@ import (
 func Equal[T any](tb testing.TB, expected, actual T) {
 	tb.Helper()
 
-	if !reflect.DeepEqual(expected, actual) {
-		tb.Errorf("\nexpected: %v\n  actual: %v", expected, actual)
+	if !reflect.DeepEqual(actual, expected) {
+		tb.Errorf("\n  actual: %v\nexpected: %v", actual, expected)
 	}
 }
 
@@ -29,8 +29,8 @@ func EqualError(tb testing.TB, err error, message string) {
 
 	switch {
 	case err == nil:
-		tb.Errorf("\nexpected: %v\n  actual: <nil>", message)
+		tb.Errorf("\n  actual: <nil>\nexpected: %v", message)
 	case err.Error() != message:
-		tb.Errorf("\nexpected: %v\n  actual: %v", message, err.Error())
+		tb.Errorf("\n  actual: %v\nexpected: %v", err.Error(), message)
 	}
 }

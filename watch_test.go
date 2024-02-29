@@ -73,9 +73,9 @@ func TestConfig_Watch_onchange_block(t *testing.T) {
 
 	<-ctx.Done()
 	time.Sleep(10 * time.Millisecond) // Wait for log to be written
-	expected := "level=INFO msg=\"Configuration has been changed.\" loader=stringWatcher\n" +
-		"level=WARN msg=\"Configuration has not been fully applied to onChanges due to timeout." +
-		" Please check if the onChanges is blocking or takes too long to complete.\"\n"
+	expected := `level=INFO msg="Configuration has been changed." loader=stringWatcher
+level=WARN msg="Configuration has not been fully applied to onChanges due to timeout. Please check if the onChanges is blocking or takes too long to complete."
+`
 	assert.Equal(t, expected, buf.String())
 }
 
@@ -124,14 +124,7 @@ func TestConfig_Watch_panic(t *testing.T) {
 			call: func(config konf.Config) {
 				_ = config.Watch(nil) //nolint:staticcheck
 			},
-			err: "cannot watch change with nil context",
-		},
-		{
-			description: "onchange",
-			call: func(config konf.Config) {
-				config.OnChange(nil)
-			},
-			err: "cannot register nil onChange",
+			err: "cannot create context from nil parent",
 		},
 	}
 

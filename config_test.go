@@ -4,7 +4,6 @@
 package konf_test
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
@@ -15,21 +14,27 @@ import (
 	"github.com/nil-go/konf/provider/env"
 )
 
-func TestConfig_Load_error(t *testing.T) {
+func TestConfig_Load(t *testing.T) {
 	t.Parallel()
 
 	testcases := []struct {
 		description string
+		loader      konf.Loader
 		opts        []konf.LoadOption
 		err         string
 	}{
 		{
 			description: "error",
+			loader:      &errorLoader{},
 			err:         "load configuration: load error",
 		},
 		{
 			description: "continue on error",
+			loader:      &errorLoader{},
 			opts:        []konf.LoadOption{konf.ContinueOnError()},
+		},
+		{
+			description: "nil loader",
 		},
 	}
 
@@ -40,7 +45,7 @@ func TestConfig_Load_error(t *testing.T) {
 			t.Parallel()
 
 			config := konf.New()
-			err := config.Load(&errorLoader{}, testcase.opts...)
+			err := config.Load(testcase.loader, testcase.opts...)
 			if testcase.err == "" {
 				assert.NoError(t, err)
 			} else {
@@ -48,17 +53,6 @@ func TestConfig_Load_error(t *testing.T) {
 			}
 		})
 	}
-}
-
-func TestConfig_Load_panic(t *testing.T) {
-	t.Parallel()
-
-	defer func() {
-		assert.Equal(t, "cannot load config from nil loader", recover().(string))
-	}()
-
-	_ = konf.New().Load(nil)
-	t.Fail()
 }
 
 func TestConfig_Unmarshal(t *testing.T) {
@@ -274,17 +268,4 @@ Here are other value(loader)s:
 			assert.Equal(t, testcase.expected, config.Explain(testcase.path))
 		})
 	}
-
-	t.Run("with value formatter", func(t *testing.T) {
-		t.Parallel()
-
-		assert.Equal(t,
-			"number has value[value:123] that is loaded by loader[map].\n\n",
-			config.Explain("number", konf.WithValueFormatter(
-				func(_ konf.Loader, _ string, value any) string {
-					return fmt.Sprintf("value:%v", value)
-				},
-			)),
-		)
-	})
 }

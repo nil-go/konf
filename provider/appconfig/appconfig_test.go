@@ -129,8 +129,7 @@ func TestAppConfig_Load(t *testing.T) {
 				}
 			},
 			unmarshal: json.Unmarshal,
-			err: "start configuration session: operation error AppConfigData: StartConfigurationSession," +
-				" start session error",
+			err:       "start configuration session: operation error AppConfigData: StartConfigurationSession, start session error",
 		},
 		{
 			description: "get configuration error",

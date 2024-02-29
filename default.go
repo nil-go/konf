@@ -18,7 +18,7 @@ import (
 func Get[T any](path string) T { //nolint:ireturn
 	var value T
 	if err := Unmarshal(path, &value); err != nil {
-		Default().logger.LogAttrs(
+		defaultConfig.Load().logger.LogAttrs(
 			context.Background(), slog.LevelWarn,
 			"Could not read config, return empty value instead.",
 			slog.String("path", path),
@@ -34,7 +34,7 @@ func Get[T any](path string) T { //nolint:ireturn
 // and decodes it into the given object pointed to by target.
 // The path is case-insensitive.
 func Unmarshal(path string, target any) error {
-	return Default().Unmarshal(path, target)
+	return defaultConfig.Load().Unmarshal(path, target)
 }
 
 // OnChange registers a callback function that is executed
@@ -47,26 +47,28 @@ func Unmarshal(path string, target any) error {
 // This method is concurrency-safe.
 // It panics if onChange is nil.
 func OnChange(onChange func(), paths ...string) {
-	Default().OnChange(func(Config) { onChange() }, paths...)
+	defaultConfig.Load().OnChange(func(Config) { onChange() }, paths...)
+}
+
+// Explain provides information about how default Config resolve each value
+// from loaders for the given path. It blur sensitive information.
+// The path is case-insensitive.
+func Explain(path string) string {
+	return defaultConfig.Load().Explain(path)
 }
 
 // SetDefault sets the given Config as the default Config.
 // After this call, the konf package's top functions (e.g. konf.Get)
 // will interact with the given Config.
 func SetDefault(config Config) {
-	defaultConfig.Store(config)
+	defaultConfig.Store(&config)
 }
 
-// Default returns the default Config.
-func Default() Config {
-	return defaultConfig.Load().(Config) //nolint:forcetypeassert
-}
-
-var defaultConfig atomic.Value //nolint:gochecknoglobals
+var defaultConfig atomic.Pointer[Config] //nolint:gochecknoglobals
 
 func init() { //nolint:gochecknoinits
 	config := New()
 	// Ignore error as env loader does not return error.
 	_ = config.Load(env.New())
-	defaultConfig.Store(config)
+	defaultConfig.Store(&config)
 }

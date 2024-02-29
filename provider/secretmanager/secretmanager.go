@@ -16,7 +16,6 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
-	"unsafe"
 
 	"cloud.google.com/go/compute/metadata"
 	secretmanager "cloud.google.com/go/secretmanager/apiv1"
@@ -202,7 +201,7 @@ func (p *clientProxy) load(ctx context.Context) (map[string]string, bool, error)
 	values := make(map[string]string, len(eTags))
 	for resp := range secretChan {
 		data := resp.GetPayload().GetData()
-		values[strings.Split(resp.GetName(), "/")[3]] = unsafe.String(unsafe.SliceData(data), len(data))
+		values[strings.Split(resp.GetName(), "/")[3]] = string(data)
 	}
 
 	return values, true, nil

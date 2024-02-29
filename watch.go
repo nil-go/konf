@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"reflect"
 	"slices"
 	"strings"
 	"sync"
@@ -21,12 +22,7 @@ import (
 // WARNING: All loaders passed in Load after calling Watch do not get watched.
 //
 // It only can be called once. Call after first has no effects.
-// It panics if ctx is nil.
 func (c Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocognit
-	if ctx == nil {
-		panic("cannot watch change with nil context")
-	}
-
 	if hasWatcher := slices.ContainsFunc(c.values.providers, func(provider provider) bool {
 		_, ok := provider.loader.(Watcher)
 
@@ -120,7 +116,9 @@ func (c Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocogn
 						var callbacks []func(Config)
 						for path, onChanges := range c.values.onChanges {
 							keys := strings.Split(path, c.delimiter)
-							if sub(oldValues, keys) != nil || sub(newValues, keys) != nil {
+							oldVal := maps.Sub(oldValues, keys)
+							newVal := maps.Sub(newValues, keys)
+							if !reflect.DeepEqual(oldVal, newVal) {
 								callbacks = append(callbacks, onChanges...)
 							}
 						}
@@ -165,7 +163,9 @@ func (c Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocogn
 // It panics if onChange is nil.
 func (c Config) OnChange(onChange func(Config), paths ...string) {
 	if onChange == nil {
-		panic("cannot register nil onChange")
+		c.logger.Warn("cannot register nil onChange")
+
+		return
 	}
 
 	c.values.onChangesMutex.Lock()
