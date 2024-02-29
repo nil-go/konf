@@ -45,7 +45,6 @@ func Unmarshal(path string, target any) error {
 // If it requires a long time to complete, it should be executed in a separate goroutine.
 //
 // This method is concurrency-safe.
-// It panics if onChange is nil.
 func OnChange(onChange func(), paths ...string) {
 	defaultConfig.Load().OnChange(func(Config) { onChange() }, paths...)
 }
