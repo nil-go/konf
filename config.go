@@ -134,34 +134,11 @@ func (c Config) Unmarshal(path string, target any) error {
 		return fmt.Errorf("new decoder: %w", err)
 	}
 
-	if err := decoder.Decode(sub(c.values.values, strings.Split(path, c.delimiter))); err != nil {
+	if err := decoder.Decode(maps.Sub(c.values.values, strings.Split(path, c.delimiter))); err != nil {
 		return fmt.Errorf("decode: %w", err)
 	}
 
 	return nil
-}
-
-func sub(values map[string]any, keys []string) any {
-	if len(keys) == 0 || len(keys) == 1 && keys[0] == "" {
-		return values
-	}
-
-	var next any = values
-	for _, key := range keys {
-		key = strings.ToLower(key)
-		mp, ok := next.(map[string]any)
-		if !ok {
-			return nil
-		}
-
-		val, exist := mp[key]
-		if !exist {
-			return nil
-		}
-		next = val
-	}
-
-	return next
 }
 
 // Explain provides information about how Config resolve each value
@@ -181,7 +158,7 @@ func (c Config) Explain(path string, opts ...ExplainOption) string {
 	}
 
 	explanation := &strings.Builder{}
-	c.explain(explanation, path, sub(c.values.values, strings.Split(path, c.delimiter)), *option)
+	c.explain(explanation, path, maps.Sub(c.values.values, strings.Split(path, c.delimiter)), *option)
 
 	return explanation.String()
 }
@@ -197,7 +174,7 @@ func (c Config) explain(explanation *strings.Builder, path string, value any, op
 
 	var loaders []loaderValue
 	for _, provider := range c.values.providers {
-		if v := sub(provider.values, strings.Split(path, c.delimiter)); v != nil {
+		if v := maps.Sub(provider.values, strings.Split(path, c.delimiter)); v != nil {
 			loaders = append(loaders, loaderValue{provider.loader, v})
 		}
 	}

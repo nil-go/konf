@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"reflect"
 	"slices"
 	"strings"
 	"sync"
@@ -120,7 +121,9 @@ func (c Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocogn
 						var callbacks []func(Config)
 						for path, onChanges := range c.values.onChanges {
 							keys := strings.Split(path, c.delimiter)
-							if sub(oldValues, keys) != nil || sub(newValues, keys) != nil {
+							oldVal := maps.Sub(oldValues, keys)
+							newVal := maps.Sub(newValues, keys)
+							if !reflect.DeepEqual(oldVal, newVal) {
 								callbacks = append(callbacks, onChanges...)
 							}
 						}
