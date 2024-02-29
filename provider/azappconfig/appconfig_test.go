@@ -97,8 +97,7 @@ func TestAppConfig_Load(t *testing.T) {
 		},
 		{
 			description: "default credential",
-			err: "next page of list settings: " +
-				"authenticated requests are not permitted for non TLS protected (https) endpoints",
+			err:         "next page of list settings: authenticated requests are not permitted for non TLS protected (https) endpoints",
 		},
 	}
 
