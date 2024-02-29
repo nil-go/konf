@@ -74,8 +74,7 @@ func TestConfig_Watch_onchange_block(t *testing.T) {
 	<-ctx.Done()
 	time.Sleep(10 * time.Millisecond) // Wait for log to be written
 	expected := `level=INFO msg="Configuration has been changed." loader=stringWatcher
-		"level=WARN msg="Configuration has not been fully applied to onChanges due to timeout.
-		" Please check if the onChanges is blocking or takes too long to complete."
+level=WARN msg="Configuration has not been fully applied to onChanges due to timeout. Please check if the onChanges is blocking or takes too long to complete."
 `
 	assert.Equal(t, expected, buf.String())
 }
