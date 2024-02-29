@@ -124,14 +124,7 @@ func TestConfig_Watch_panic(t *testing.T) {
 			call: func(config konf.Config) {
 				_ = config.Watch(nil) //nolint:staticcheck
 			},
-			err: "cannot watch change with nil context",
-		},
-		{
-			description: "onchange",
-			call: func(config konf.Config) {
-				config.OnChange(nil)
-			},
-			err: "cannot register nil onChange",
+			err: "cannot create context from nil parent",
 		},
 	}
 

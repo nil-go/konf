@@ -64,13 +64,6 @@ func SetDefault(config Config) {
 	defaultConfig.Store(&config)
 }
 
-// Default returns the default Config.
-//
-// Deprecated: Do not allow to load configuration into the default Config.
-func Default() Config {
-	return *defaultConfig.Load()
-}
-
 var defaultConfig atomic.Pointer[Config] //nolint:gochecknoglobals
 
 func init() { //nolint:gochecknoinits

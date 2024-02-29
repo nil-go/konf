@@ -83,10 +83,11 @@ func New(opts ...Option) Config {
 // Each loader takes precedence over the loaders before it.
 //
 // This method can be called multiple times but it is not concurrency-safe.
-// It panics if loader is nil.
 func (c Config) Load(loader Loader, opts ...LoadOption) error {
 	if loader == nil {
-		panic("cannot load config from nil loader")
+		c.logger.Warn("cannot load config from nil loader")
+
+		return nil
 	}
 
 	loadOption := &loadOptions{}

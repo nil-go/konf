@@ -7,12 +7,9 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-### Deprecated
-
-- Deprecate konf.Default() to disallow loading configuration into the default Config.
-
 ### Removed
-- Remove ExplainOption from Config.Explain for always blurring sensitive information.
+- Remove konf.Default() to disallow loading configuration into the default Config (#180).
+- Remove ExplainOption from Config.Explain for always blurring sensitive information (#180).
 
 ## [0.6.3] - 2024-02-23
 
