@@ -30,10 +30,6 @@ type File struct {
 //
 // It panics if the path is empty.
 func New(path string, opts ...Option) File {
-	if path == "" {
-		panic("cannot create File with empty path")
-	}
-
 	option := &options{
 		path: path,
 	}

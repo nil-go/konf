@@ -37,16 +37,6 @@ type AppConfig struct {
 
 // New creates an AppConfig with the given application, environment, profile and Option(s).
 func New(application, environment, profile string, opts ...Option) AppConfig {
-	if application == "" {
-		panic("cannot create AppConfig with empty application")
-	}
-	if environment == "" {
-		panic("cannot create AppConfig with empty environment")
-	}
-	if profile == "" {
-		panic("cannot create AppConfig with empty profile")
-	}
-
 	option := &options{
 		client: &clientProxy{
 			application: application,

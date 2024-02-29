@@ -42,10 +42,6 @@ type konf interface {
 //
 // It panics if the konf is nil.
 func New(konf konf, opts ...Option) Flag {
-	if konf == nil {
-		panic("cannot create Flag with nil konf")
-	}
-
 	option := &options{
 		konf: konf,
 	}

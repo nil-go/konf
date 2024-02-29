@@ -20,17 +20,6 @@ import (
 	"github.com/nil-go/konf/provider/azappconfig/internal/assert"
 )
 
-func TestFile_New_panic(t *testing.T) {
-	t.Parallel()
-
-	defer func() {
-		assert.Equal(t, "cannot create Azure AppConfig with empty endpoint", recover().(string))
-	}()
-
-	azappconfig.New("")
-	t.Fail()
-}
-
 func TestAppConfig_Load(t *testing.T) {
 	t.Parallel()
 

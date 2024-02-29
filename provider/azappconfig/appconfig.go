@@ -36,10 +36,6 @@ type AppConfig struct {
 
 // New creates an AppConfig with the given endpoint and Option(s).
 func New(endpoint string, opts ...Option) AppConfig {
-	if endpoint == "" {
-		panic("cannot create Azure AppConfig with empty endpoint")
-	}
-
 	option := &options{
 		client: &clientProxy{
 			// Place holder for the default credential.

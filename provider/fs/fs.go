@@ -12,6 +12,7 @@ package fs
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/fs"
 )
@@ -28,14 +29,7 @@ type FS struct {
 // New creates a FS with the given fs.FS, path and Option(s).
 //
 // It panics if the fs is nil or the path is empty.
-func New(fs fs.FS, path string, opts ...Option) FS { //nolint:varnamelen
-	if fs == nil {
-		panic("cannot create FS with nil fs")
-	}
-	if path == "" {
-		panic("cannot create FS with empty path")
-	}
-
+func New(fs fs.FS, path string, opts ...Option) FS {
 	option := &options{
 		fs:   fs,
 		path: path,
@@ -50,7 +44,13 @@ func New(fs fs.FS, path string, opts ...Option) FS { //nolint:varnamelen
 	return FS(*option)
 }
 
+var errNilFS = errors.New("can not read config file from nil fs")
+
 func (f FS) Load() (map[string]any, error) {
+	if f.fs == nil {
+		return nil, errNilFS
+	}
+
 	bytes, err := fs.ReadFile(f.fs, f.path)
 	if err != nil {
 		return nil, fmt.Errorf("read file: %w", err)
