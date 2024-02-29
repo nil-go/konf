@@ -7,6 +7,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Deprecated
+
+- Deprecate konf.Default() to disallow loading configuration into the default Config.
+
 ## [0.6.3] - 2024-02-23
 
 ### Fixed
