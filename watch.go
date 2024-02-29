@@ -167,12 +167,12 @@ func (c Config) OnChange(onChange func(Config), paths ...string) {
 		return
 	}
 
-	c.values.onChangesMutex.Lock()
-	defer c.values.onChangesMutex.Unlock()
-
 	if len(paths) == 0 {
 		paths = []string{""}
 	}
+
+	c.values.onChangesMutex.Lock()
+	defer c.values.onChangesMutex.Unlock()
 
 	for _, path := range paths {
 		path = strings.ToLower(path)
