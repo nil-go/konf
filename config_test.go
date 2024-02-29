@@ -20,7 +20,6 @@ func TestConfig_Load(t *testing.T) {
 	testcases := []struct {
 		description string
 		loader      konf.Loader
-		opts        []konf.LoadOption
 		err         string
 	}{
 		{
@@ -29,12 +28,8 @@ func TestConfig_Load(t *testing.T) {
 			err:         "load configuration: load error",
 		},
 		{
-			description: "continue on error",
-			loader:      &errorLoader{},
-			opts:        []konf.LoadOption{konf.ContinueOnError()},
-		},
-		{
 			description: "nil loader",
+			err:         "cannot load config from nil loader",
 		},
 	}
 
@@ -45,7 +40,7 @@ func TestConfig_Load(t *testing.T) {
 			t.Parallel()
 
 			config := konf.New()
-			err := config.Load(testcase.loader, testcase.opts...)
+			err := config.Load(testcase.loader)
 			if testcase.err == "" {
 				assert.NoError(t, err)
 			} else {
