@@ -12,9 +12,9 @@ package fs
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/fs"
+	"os"
 )
 
 // FS is a Provider that loads configuration from file system.
@@ -40,17 +40,15 @@ func New(fs fs.FS, path string, opts ...Option) FS {
 	if option.unmarshal == nil {
 		option.unmarshal = json.Unmarshal
 	}
+	if option.fs == nil {
+		path, _ := os.Getwd()
+		option.fs = os.DirFS(path)
+	}
 
 	return FS(*option)
 }
 
-var errNilFS = errors.New("can not read config file from nil fs")
-
 func (f FS) Load() (map[string]any, error) {
-	if f.fs == nil {
-		return nil, errNilFS
-	}
-
 	bytes, err := fs.ReadFile(f.fs, f.path)
 	if err != nil {
 		return nil, fmt.Errorf("read file: %w", err)

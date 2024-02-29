@@ -36,7 +36,11 @@ func TestFS_Load(t *testing.T) {
 		{
 			description: "nil fs",
 			path:        "config.json",
-			err:         "can not read config file from nil fs",
+			expected: map[string]any{
+				"p": map[string]any{
+					"k": "v",
+				},
+			},
 		},
 		{
 			description: "fs file",
