@@ -27,20 +27,12 @@ type File struct {
 }
 
 // New creates a File with the given path and Option(s).
-//
-// It panics if the path is empty.
 func New(path string, opts ...Option) File {
 	option := &options{
 		path: path,
 	}
 	for _, opt := range opts {
 		opt(option)
-	}
-	if option.logger == nil {
-		option.logger = slog.Default()
-	}
-	if option.unmarshal == nil {
-		option.unmarshal = json.Unmarshal
 	}
 
 	return File(*option)
@@ -52,8 +44,12 @@ func (f File) Load() (map[string]any, error) {
 		return nil, fmt.Errorf("read file: %w", err)
 	}
 
+	unmarshal := f.unmarshal
+	if unmarshal == nil {
+		unmarshal = json.Unmarshal
+	}
 	var out map[string]any
-	if err := f.unmarshal(bytes, &out); err != nil {
+	if err := unmarshal(bytes, &out); err != nil {
 		return nil, fmt.Errorf("unmarshal: %w", err)
 	}
 

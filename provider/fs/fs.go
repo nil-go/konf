@@ -27,8 +27,6 @@ type FS struct {
 }
 
 // New creates a FS with the given fs.FS, path and Option(s).
-//
-// It panics if the fs is nil or the path is empty.
 func New(fs fs.FS, path string, opts ...Option) FS {
 	option := &options{
 		fs:   fs,
@@ -40,16 +38,18 @@ func New(fs fs.FS, path string, opts ...Option) FS {
 	if option.unmarshal == nil {
 		option.unmarshal = json.Unmarshal
 	}
-	if option.fs == nil {
-		path, _ := os.Getwd()
-		option.fs = os.DirFS(path)
-	}
 
 	return FS(*option)
 }
 
 func (f FS) Load() (map[string]any, error) {
-	bytes, err := fs.ReadFile(f.fs, f.path)
+	ffs := f.fs
+	if ffs == nil {
+		path, _ := os.Getwd()
+		ffs = os.DirFS(path)
+	}
+
+	bytes, err := fs.ReadFile(ffs, f.path)
 	if err != nil {
 		return nil, fmt.Errorf("read file: %w", err)
 	}

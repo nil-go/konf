@@ -47,17 +47,8 @@ func New(application, environment, profile string, opts ...Option) AppConfig {
 	for _, opt := range opts {
 		opt(option)
 	}
-	if option.logger == nil {
-		option.logger = slog.Default()
-	}
-	if option.unmarshal == nil {
-		option.unmarshal = json.Unmarshal
-	}
-	if option.pollInterval <= 0 {
-		option.pollInterval = time.Minute
-	}
-	option.client.pollInterval = max(option.pollInterval/2, time.Second) //nolint:gomnd
-	option.client.timeout = max(option.pollInterval/2, 10*time.Second)   //nolint:gomnd
+	option.client.pollInterval = option.pollInterval / 2 //nolint:gomnd
+	option.client.timeout = option.pollInterval / 2      //nolint:gomnd
 
 	return AppConfig(*option)
 }
@@ -69,7 +60,11 @@ func (a AppConfig) Load() (map[string]any, error) {
 }
 
 func (a AppConfig) Watch(ctx context.Context, onChange func(map[string]any)) error {
-	ticker := time.NewTicker(a.pollInterval)
+	pollInterval := time.Minute
+	if a.pollInterval > 0 {
+		pollInterval = a.pollInterval
+	}
+	ticker := time.NewTicker(pollInterval)
 	defer ticker.Stop()
 
 	for {
@@ -77,7 +72,12 @@ func (a AppConfig) Watch(ctx context.Context, onChange func(map[string]any)) err
 		case <-ticker.C:
 			values, changed, err := a.load(ctx)
 			if err != nil {
-				a.logger.LogAttrs(
+				logger := a.logger
+				if logger == nil {
+					logger = slog.Default()
+				}
+
+				logger.LogAttrs(
 					ctx, slog.LevelWarn,
 					"Error when reloading from AWS AppConfig",
 					slog.String("application", a.client.application),
@@ -104,8 +104,12 @@ func (a AppConfig) load(ctx context.Context) (map[string]any, bool, error) {
 		return nil, false, err
 	}
 
+	unmarshal := a.unmarshal
+	if unmarshal == nil {
+		unmarshal = json.Unmarshal
+	}
 	var values map[string]any
-	if e := a.unmarshal(resp, &values); e != nil {
+	if e := unmarshal(resp, &values); e != nil {
 		return nil, false, fmt.Errorf("unmarshal: %w", e)
 	}
 
@@ -130,6 +134,10 @@ type clientProxy struct {
 }
 
 func (p *clientProxy) load(ctx context.Context) ([]byte, bool, error) {
+	if p == nil {
+		p = &clientProxy{}
+	}
+
 	if p.client == nil {
 		if reflect.ValueOf(p.config).IsZero() {
 			var err error
@@ -139,6 +147,8 @@ func (p *clientProxy) load(ctx context.Context) ([]byte, bool, error) {
 		}
 		p.client = appconfigdata.NewFromConfig(p.config)
 	}
+	p.pollInterval = max(p.pollInterval, time.Second)
+	p.timeout = max(p.timeout, 10*time.Second) //nolint:gomnd
 
 	ctx, cancel := context.WithTimeout(ctx, p.timeout)
 	defer cancel()

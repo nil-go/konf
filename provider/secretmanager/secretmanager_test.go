@@ -29,6 +29,15 @@ import (
 	"github.com/nil-go/konf/provider/secretmanager/internal/assert"
 )
 
+func TestSecretManager_empty(t *testing.T) {
+	var loader secretmanager.SecretManager
+	values, err := loader.Load()
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	assert.Equal(t, nil, values)
+}
+
 func TestSecretManager_Load(t *testing.T) {
 	t.Parallel()
 

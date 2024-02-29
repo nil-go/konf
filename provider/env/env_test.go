@@ -14,6 +14,15 @@ import (
 
 var _ konf.Loader = (*env.Env)(nil)
 
+func TestEnv_empty(t *testing.T) {
+	t.Setenv("P_K", "v")
+
+	var loader env.Env
+	values, err := loader.Load()
+	assert.NoError(t, err)
+	assert.Equal(t, "v", values["P"].(map[string]any)["K"].(string))
+}
+
 func TestEnv_Load(t *testing.T) {
 	testcases := []struct {
 		description string

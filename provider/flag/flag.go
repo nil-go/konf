@@ -39,8 +39,6 @@ type konf interface {
 // The first parameter is the konf Config instance that checks if the defined flags
 // have been set by other providers. If not, default flag values are merged.
 // If they exist, flag values are merged only if explicitly set in the command line.
-//
-// It panics if the konf is nil.
 func New(konf konf, opts ...Option) Flag {
 	option := &options{
 		konf: konf,
@@ -48,34 +46,49 @@ func New(konf konf, opts ...Option) Flag {
 	for _, opt := range opts {
 		opt(option)
 	}
-	if option.splitter == nil {
-		option.splitter = func(s string) []string { return strings.Split(s, ".") }
-	}
-	if option.set == nil {
-		if !flag.Parsed() {
-			flag.Parse()
-		}
-		option.set = flag.CommandLine
-	}
 
 	return Flag(*option)
 }
 
-func (f Flag) Load() (map[string]any, error) {
+func (f Flag) Load() (map[string]any, error) { //nolint:cyclop
+	set := f.set
+	if set == nil {
+		if !flag.Parsed() {
+			flag.Parse()
+		}
+		set = flag.CommandLine
+	}
+
+	splitter := f.splitter
+	if splitter == nil {
+		splitter = func(s string) []string {
+			return strings.Split(s, ".")
+		}
+	}
+
+	var exists func([]string) bool
+	if f.konf != nil && !reflect.ValueOf(f.konf).IsNil() {
+		exists = f.konf.Exists
+	} else {
+		exists = func([]string) bool {
+			return false
+		}
+	}
+
 	values := make(map[string]any)
-	f.set.VisitAll(func(flag *flag.Flag) {
+	set.VisitAll(func(flag *flag.Flag) {
 		if f.prefix != "" && !strings.HasPrefix(flag.Name, f.prefix) {
 			return
 		}
 
-		keys := f.splitter(flag.Name)
+		keys := splitter(flag.Name)
 		if len(keys) == 0 || len(keys) == 1 && keys[0] == "" {
 			return
 		}
 
 		val := flag.Value.String()
 		// Skip zero default value to avoid overriding values set by other loader.
-		if val == flag.DefValue && (f.konf.Exists(keys) || isZeroDefValue(flag)) {
+		if val == flag.DefValue && (exists(keys) || isZeroDefValue(flag)) {
 			return
 		}
 

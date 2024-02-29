@@ -13,12 +13,19 @@ import (
 	kflag "github.com/nil-go/konf/provider/flag"
 )
 
+func TestFlag_empty(t *testing.T) {
+	var loader kflag.Flag
+	values, err := loader.Load()
+	assert.NoError(t, err)
+	assert.Equal(t, "v", values["p"].(map[string]any)["k"].(string))
+}
+
 func TestFlag_Load(t *testing.T) {
 	t.Parallel()
 
 	testcases := []struct {
 		description string
-		konf        konf
+		konf        *konfStub
 		opts        []kflag.Option
 		expected    map[string]any
 	}{
@@ -34,7 +41,7 @@ func TestFlag_Load(t *testing.T) {
 		},
 		{
 			description: "with flag set",
-			konf:        konf{exists: false},
+			konf:        &konfStub{exists: false},
 			opts:        []kflag.Option{kflag.WithFlagSet(set)},
 			expected: map[string]any{
 				"k": "v",
@@ -42,7 +49,7 @@ func TestFlag_Load(t *testing.T) {
 		},
 		{
 			description: "with delimiter",
-			konf:        konf{exists: false},
+			konf:        &konfStub{exists: false},
 			opts: []kflag.Option{
 				kflag.WithPrefix("p_"),
 				kflag.WithNameSplitter(func(s string) []string { return strings.Split(s, "_") }),
@@ -55,7 +62,7 @@ func TestFlag_Load(t *testing.T) {
 		},
 		{
 			description: "with nil splitter",
-			konf:        konf{exists: false},
+			konf:        &konfStub{exists: false},
 			opts: []kflag.Option{
 				kflag.WithPrefix("p_"),
 				kflag.WithNameSplitter(func(string) []string { return nil }),
@@ -64,7 +71,7 @@ func TestFlag_Load(t *testing.T) {
 		},
 		{
 			description: "with empty splitter",
-			konf:        konf{exists: false},
+			konf:        &konfStub{exists: false},
 			opts: []kflag.Option{
 				kflag.WithPrefix("p_"),
 				kflag.WithNameSplitter(func(string) []string { return []string{""} }),
@@ -73,7 +80,7 @@ func TestFlag_Load(t *testing.T) {
 		},
 		{
 			description: "with prefix",
-			konf:        konf{exists: false},
+			konf:        &konfStub{exists: false},
 			opts:        []kflag.Option{kflag.WithPrefix("p.")},
 			expected: map[string]any{
 				"p": map[string]any{
@@ -84,7 +91,7 @@ func TestFlag_Load(t *testing.T) {
 		},
 		{
 			description: "with exists",
-			konf:        konf{exists: true},
+			konf:        &konfStub{exists: true},
 			opts:        []kflag.Option{kflag.WithPrefix("p.")},
 			expected: map[string]any{
 				"p": map[string]any{
@@ -137,7 +144,7 @@ func TestFlag_String(t *testing.T) {
 				t,
 				testcase.expected,
 				kflag.New(
-					konf{},
+					konfStub{},
 					kflag.WithPrefix(testcase.prefix),
 					kflag.WithFlagSet(&flag.FlagSet{}),
 				).String(),
@@ -161,10 +168,10 @@ func init() {
 	set.String("k", "v", "")
 }
 
-type konf struct {
+type konfStub struct {
 	exists bool
 }
 
-func (k konf) Exists([]string) bool {
+func (k konfStub) Exists([]string) bool {
 	return k.exists
 }

@@ -47,16 +47,10 @@ func New(endpoint string, opts ...Option) AppConfig {
 		opt(option)
 	}
 
-	if option.logger == nil {
-		option.logger = slog.Default()
-	}
 	if option.splitter == nil {
 		option.splitter = func(s string) []string { return strings.Split(s, "/") }
 	}
-	if option.pollInterval <= 0 {
-		option.pollInterval = time.Minute
-	}
-	option.client.timeout = max(option.pollInterval/2, 10*time.Second) //nolint:gomnd
+	option.client.timeout = option.pollInterval / 2 //nolint:gomnd
 
 	return AppConfig(*option)
 }
@@ -68,7 +62,11 @@ func (a AppConfig) Load() (map[string]any, error) {
 }
 
 func (a AppConfig) Watch(ctx context.Context, onChange func(map[string]any)) error {
-	ticker := time.NewTicker(a.pollInterval)
+	pollInterval := time.Minute
+	if a.pollInterval > 0 {
+		pollInterval = a.pollInterval
+	}
+	ticker := time.NewTicker(pollInterval)
 	defer ticker.Stop()
 
 	for {
@@ -76,7 +74,12 @@ func (a AppConfig) Watch(ctx context.Context, onChange func(map[string]any)) err
 		case <-ticker.C:
 			values, changed, err := a.load(ctx)
 			if err != nil {
-				a.logger.LogAttrs(
+				logger := a.logger
+				if a.logger == nil {
+					logger = slog.Default()
+				}
+
+				logger.LogAttrs(
 					ctx, slog.LevelWarn,
 					"Error when reloading from Azure App Configuration",
 					slog.String("endpoint", a.client.endpoint),
@@ -103,9 +106,13 @@ func (a AppConfig) load(ctx context.Context) (map[string]any, bool, error) {
 		return nil, false, err
 	}
 
+	splitter := a.splitter
+	if splitter == nil {
+		splitter = func(s string) []string { return strings.Split(s, "-") }
+	}
 	values := make(map[string]any)
 	for key, value := range resp {
-		keys := a.splitter(key)
+		keys := splitter(key)
 		if len(keys) == 0 || len(keys) == 1 && keys[0] == "" {
 			continue
 		}
@@ -133,6 +140,10 @@ type clientProxy struct {
 }
 
 func (p *clientProxy) load(ctx context.Context) (map[string]string, bool, error) { //nolint:cyclop,funlen
+	if p == nil {
+		p = &clientProxy{}
+	}
+
 	if p.client == nil {
 		if token, ok := p.credential.(*azidentity.DefaultAzureCredential); ok && reflect.ValueOf(*token).IsZero() {
 			var err error
@@ -148,6 +159,7 @@ func (p *clientProxy) load(ctx context.Context) (map[string]string, bool, error)
 			return nil, false, fmt.Errorf("create Azure app configuration client: %w", err)
 		}
 	}
+	p.timeout = max(p.timeout, 10*time.Second) //nolint:gomnd
 
 	selector := azappconfig.SettingSelector{
 		Fields: []azappconfig.SettingFields{

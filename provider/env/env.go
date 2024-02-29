@@ -32,14 +32,16 @@ func New(opts ...Option) Env {
 	for _, opt := range opts {
 		opt(option)
 	}
-	if option.splitter == nil {
-		option.splitter = func(s string) []string { return strings.Split(s, "_") }
-	}
 
 	return Env(*option)
 }
 
 func (e Env) Load() (map[string]any, error) {
+	splitter := e.splitter
+	if splitter == nil {
+		splitter = func(s string) []string { return strings.Split(s, "_") }
+	}
+
 	values := make(map[string]any)
 	for _, env := range os.Environ() {
 		if e.prefix == "" || strings.HasPrefix(env, e.prefix) {
@@ -49,7 +51,7 @@ func (e Env) Load() (map[string]any, error) {
 				continue
 			}
 
-			if keys := e.splitter(key); len(keys) > 1 || len(keys) == 1 && keys[0] != "" {
+			if keys := splitter(key); len(keys) > 1 || len(keys) == 1 && keys[0] != "" {
 				maps.Insert(values, keys, value)
 			}
 		}
