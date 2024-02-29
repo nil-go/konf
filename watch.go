@@ -162,9 +162,7 @@ func (c Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocogn
 // This method is concurrency-safe.
 func (c Config) OnChange(onChange func(Config), paths ...string) {
 	if onChange == nil {
-		c.logger.Warn("cannot register nil onChange")
-
-		return
+		return // Do nothing is onchange is nil.
 	}
 
 	if len(paths) == 0 {

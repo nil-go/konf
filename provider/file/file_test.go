@@ -11,17 +11,6 @@ import (
 	"github.com/nil-go/konf/provider/file/internal/assert"
 )
 
-func TestFile_New_panic(t *testing.T) {
-	t.Parallel()
-
-	defer func() {
-		assert.Equal(t, "cannot create File with empty path", recover().(string))
-	}()
-
-	file.New("")
-	t.Fail()
-}
-
 func TestFile_Load(t *testing.T) {
 	t.Parallel()
 
@@ -32,6 +21,10 @@ func TestFile_Load(t *testing.T) {
 		expected    map[string]any
 		err         string
 	}{
+		{
+			description: "empty path",
+			err:         "read file: open : no such file or directory",
+		},
 		{
 			description: "file",
 			path:        "testdata/config.json",

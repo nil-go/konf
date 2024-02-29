@@ -4,7 +4,7 @@
 package konf
 
 import (
-	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"slices"
@@ -79,33 +79,20 @@ func New(opts ...Option) Config {
 	return Config(*option)
 }
 
+var errNilLoader = errors.New("cannot load config from nil loader")
+
 // Load loads configuration from the given loader.
 // Each loader takes precedence over the loaders before it.
 //
 // This method can be called multiple times but it is not concurrency-safe.
-func (c Config) Load(loader Loader, opts ...LoadOption) error {
+func (c Config) Load(loader Loader) error {
 	if loader == nil {
-		c.logger.Warn("cannot load config from nil loader")
-
-		return nil
-	}
-
-	loadOption := &loadOptions{}
-	for _, opt := range opts {
-		opt(loadOption)
+		return errNilLoader
 	}
 
 	values, err := loader.Load()
 	if err != nil {
-		if !loadOption.continueOnError {
-			return fmt.Errorf("load configuration: %w", err)
-		}
-		c.logger.LogAttrs(
-			context.Background(), slog.LevelWarn,
-			"failed to load configuration",
-			slog.Any("loader", loader),
-			slog.Any("error", err),
-		)
+		return fmt.Errorf("load configuration: %w", err)
 	}
 	maps.Merge(c.values.values, values)
 

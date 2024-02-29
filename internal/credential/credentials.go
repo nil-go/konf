@@ -6,6 +6,7 @@ package credential
 import (
 	"fmt"
 	"regexp"
+	"unsafe"
 )
 
 func Blur(name string, value any) string {
@@ -18,7 +19,7 @@ func Blur(name string, value any) string {
 	case string:
 		formatted = v
 	case []byte:
-		formatted = string(v)
+		formatted = unsafe.String(unsafe.SliceData(v), len(v))
 	default:
 		formatted = fmt.Sprint(value)
 	}

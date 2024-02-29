@@ -23,53 +23,6 @@ import (
 	"github.com/nil-go/konf/provider/appconfig/internal/assert"
 )
 
-func TestAppConfig_New_panic(t *testing.T) {
-	t.Parallel()
-
-	testcases := []struct {
-		description string
-		call        func()
-		err         string
-	}{
-		{
-			description: "application",
-			call: func() {
-				appconfig.New("", "env", "profile")
-			},
-			err: "cannot create AppConfig with empty application",
-		},
-		{
-			description: "environment",
-			call: func() {
-				appconfig.New("app", "", "profile")
-			},
-			err: "cannot create AppConfig with empty environment",
-		},
-		{
-			description: "profile",
-			call: func() {
-				appconfig.New("app", "env", "")
-			},
-			err: "cannot create AppConfig with empty profile",
-		},
-	}
-
-	for _, testcase := range testcases {
-		testcase := testcase
-
-		t.Run(testcase.description, func(t *testing.T) {
-			t.Parallel()
-
-			defer func() {
-				assert.Equal(t, testcase.err, recover().(string))
-			}()
-
-			testcase.call()
-			t.Fail()
-		})
-	}
-}
-
 func TestAppConfig_Load(t *testing.T) {
 	t.Parallel()
 

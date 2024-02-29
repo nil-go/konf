@@ -20,15 +20,13 @@ import (
 	"github.com/nil-go/konf/provider/azappconfig/internal/assert"
 )
 
-func TestFile_New_panic(t *testing.T) {
+func TestAppConfig(t *testing.T) {
 	t.Parallel()
 
-	defer func() {
-		assert.Equal(t, "cannot create Azure AppConfig with empty endpoint", recover().(string))
-	}()
-
-	azappconfig.New("")
-	t.Fail()
+	loader := azappconfig.New("")
+	values, err := loader.Load()
+	assert.Equal(t, nil, values)
+	assert.EqualError(t, err, "next page of list settings: no Host in request URL")
 }
 
 func TestAppConfig_Load(t *testing.T) {

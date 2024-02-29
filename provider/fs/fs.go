@@ -14,6 +14,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/fs"
+	"os"
 )
 
 // FS is a Provider that loads configuration from file system.
@@ -28,14 +29,7 @@ type FS struct {
 // New creates a FS with the given fs.FS, path and Option(s).
 //
 // It panics if the fs is nil or the path is empty.
-func New(fs fs.FS, path string, opts ...Option) FS { //nolint:varnamelen
-	if fs == nil {
-		panic("cannot create FS with nil fs")
-	}
-	if path == "" {
-		panic("cannot create FS with empty path")
-	}
-
+func New(fs fs.FS, path string, opts ...Option) FS {
 	option := &options{
 		fs:   fs,
 		path: path,
@@ -45,6 +39,10 @@ func New(fs fs.FS, path string, opts ...Option) FS { //nolint:varnamelen
 	}
 	if option.unmarshal == nil {
 		option.unmarshal = json.Unmarshal
+	}
+	if option.fs == nil {
+		path, _ := os.Getwd()
+		option.fs = os.DirFS(path)
 	}
 
 	return FS(*option)
