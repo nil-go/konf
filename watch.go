@@ -160,7 +160,6 @@ func (c Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocogn
 // If it requires a long time to complete, it should be executed in a separate goroutine.
 //
 // This method is concurrency-safe.
-// It panics if onChange is nil.
 func (c Config) OnChange(onChange func(Config), paths ...string) {
 	if onChange == nil {
 		c.logger.Warn("cannot register nil onChange")
