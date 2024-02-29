@@ -20,6 +20,15 @@ import (
 	"github.com/nil-go/konf/provider/azappconfig/internal/assert"
 )
 
+func TestAppConfig(t *testing.T) {
+	t.Parallel()
+
+	loader := azappconfig.New("")
+	values, err := loader.Load()
+	assert.Equal(t, nil, values)
+	assert.EqualError(t, err, "next page of list settings: no Host in request URL")
+}
+
 func TestAppConfig_Load(t *testing.T) {
 	t.Parallel()
 
