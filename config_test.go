@@ -4,7 +4,6 @@
 package konf_test
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
@@ -274,17 +273,4 @@ Here are other value(loader)s:
 			assert.Equal(t, testcase.expected, config.Explain(testcase.path))
 		})
 	}
-
-	t.Run("with value formatter", func(t *testing.T) {
-		t.Parallel()
-
-		assert.Equal(t,
-			"number has value[value:123] that is loaded by loader[map].\n\n",
-			config.Explain("number", konf.WithValueFormatter(
-				func(_ konf.Loader, _ string, value any) string {
-					return fmt.Sprintf("value:%v", value)
-				},
-			)),
-		)
-	})
 }

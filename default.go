@@ -51,14 +51,10 @@ func OnChange(onChange func(), paths ...string) {
 }
 
 // Explain provides information about how default Config resolve each value
-// from loaders for the given path.
+// from loaders for the given path. It blur sensitive information.
 // The path is case-insensitive.
-//
-// If there are sensitive information (e.g. password, secret) which should not be exposed,
-// you can use [WithValueFormatter] to pass a value formatter to blur the information.
-// By default, it uses CredentialFormatter to blur sensitive information.
-func Explain(path string, opts ...ExplainOption) string {
-	return defaultConfig.Load().Explain(path, opts...)
+func Explain(path string) string {
+	return defaultConfig.Load().Explain(path)
 }
 
 // SetDefault sets the given Config as the default Config.

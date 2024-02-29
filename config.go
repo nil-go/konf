@@ -14,6 +14,7 @@ import (
 
 	"github.com/go-viper/mapstructure/v2"
 
+	"github.com/nil-go/konf/internal/credential"
 	"github.com/nil-go/konf/internal/maps"
 )
 
@@ -142,31 +143,19 @@ func (c Config) Unmarshal(path string, target any) error {
 }
 
 // Explain provides information about how Config resolve each value
-// from loaders for the given path.
+// from loaders for the given path. It blur sensitive information.
 // The path is case-insensitive.
-//
-// If there are sensitive information (e.g. password, secret) which should not be exposed,
-// you can use [WithValueFormatter] to pass a value formatter to blur the information.
-// By default, it uses CredentialFormatter to blur sensitive information.
-func (c Config) Explain(path string, opts ...ExplainOption) string {
-	option := &explainOptions{}
-	for _, opt := range opts {
-		opt(option)
-	}
-	if option.valueFormatter == nil {
-		option.valueFormatter = CredentialFormatter
-	}
-
+func (c Config) Explain(path string) string {
 	explanation := &strings.Builder{}
-	c.explain(explanation, path, maps.Sub(c.values.values, strings.Split(path, c.delimiter)), *option)
+	c.explain(explanation, path, maps.Sub(c.values.values, strings.Split(path, c.delimiter)))
 
 	return explanation.String()
 }
 
-func (c Config) explain(explanation *strings.Builder, path string, value any, option explainOptions) {
+func (c Config) explain(explanation *strings.Builder, path string, value any) {
 	if values, ok := value.(map[string]any); ok {
 		for k, v := range values {
-			c.explain(explanation, path+c.delimiter+k, v, option)
+			c.explain(explanation, path+c.delimiter+k, v)
 		}
 
 		return
@@ -188,7 +177,7 @@ func (c Config) explain(explanation *strings.Builder, path string, value any, op
 	}
 	explanation.WriteString(path)
 	explanation.WriteString(" has value[")
-	explanation.WriteString(option.valueFormatter(loaders[0].loader, path, loaders[0].value))
+	explanation.WriteString(credential.Blur(path, loaders[0].value))
 	explanation.WriteString("] that is loaded by loader[")
 	explanation.WriteString(fmt.Sprintf("%v", loaders[0].loader))
 	explanation.WriteString("].\n")
@@ -196,7 +185,7 @@ func (c Config) explain(explanation *strings.Builder, path string, value any, op
 		explanation.WriteString("Here are other value(loader)s:\n")
 		for _, loader := range loaders[1:] {
 			explanation.WriteString("  - ")
-			explanation.WriteString(option.valueFormatter(loader.loader, path, loader.value))
+			explanation.WriteString(credential.Blur(path, loader.value))
 			explanation.WriteString("(")
 			explanation.WriteString(fmt.Sprintf("%v", loader.loader))
 			explanation.WriteString(")\n")
