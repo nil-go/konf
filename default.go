@@ -18,7 +18,12 @@ import (
 func Get[T any](path string) T { //nolint:ireturn
 	var value T
 	if err := Unmarshal(path, &value); err != nil {
-		defaultConfig.Load().logger.LogAttrs(
+		logger := defaultConfig.Load().logger
+		if logger == nil {
+			logger = slog.Default()
+		}
+
+		logger.LogAttrs(
 			context.Background(), slog.LevelWarn,
 			"Could not read config, return empty value instead.",
 			slog.String("path", path),

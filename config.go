@@ -59,22 +59,6 @@ func New(opts ...Option) Config {
 	for _, opt := range opts {
 		opt(option)
 	}
-	if option.logger == nil {
-		option.logger = slog.Default()
-	}
-	if option.delimiter == "" {
-		option.delimiter = "."
-	}
-	if option.tagName == "" {
-		option.tagName = "konf"
-	}
-	if option.decodeHook == nil {
-		option.decodeHook = mapstructure.ComposeDecodeHookFunc(
-			mapstructure.StringToTimeDurationHookFunc(),
-			mapstructure.StringToSliceHookFunc(","),
-			mapstructure.TextUnmarshallerHookFunc(),
-		)
-	}
 
 	return Config(*option)
 }
@@ -107,27 +91,50 @@ func (c Config) Load(loader Loader) error {
 	return nil
 }
 
+var defaultDecodeHook = mapstructure.ComposeDecodeHookFunc( //nolint:gochecknoglobals
+	mapstructure.StringToTimeDurationHookFunc(),
+	mapstructure.StringToSliceHookFunc(","),
+	mapstructure.TextUnmarshallerHookFunc(),
+)
+
 // Unmarshal reads configuration under the given path from the Config
 // and decodes it into the given object pointed to by target.
 // The path is case-insensitive.
 func (c Config) Unmarshal(path string, target any) error {
+	decodeHook := c.decodeHook
+	if decodeHook == nil {
+		decodeHook = defaultDecodeHook
+	}
+	tagName := c.tagName
+	if tagName == "" {
+		tagName = "konf"
+	}
 	decoder, err := mapstructure.NewDecoder(
 		&mapstructure.DecoderConfig{
 			Result:           target,
 			WeaklyTypedInput: true,
-			DecodeHook:       c.decodeHook,
-			TagName:          c.tagName,
+			DecodeHook:       decodeHook,
+			TagName:          tagName,
 		},
 	)
 	if err != nil {
 		return fmt.Errorf("new decoder: %w", err)
 	}
 
-	if err := decoder.Decode(maps.Sub(c.values.values, strings.Split(path, c.delimiter))); err != nil {
+	if err := decoder.Decode(maps.Sub(c.values.values, c.split(path))); err != nil {
 		return fmt.Errorf("decode: %w", err)
 	}
 
 	return nil
+}
+
+func (c Config) split(key string) []string {
+	delimiter := c.delimiter
+	if delimiter == "" {
+		delimiter = "."
+	}
+
+	return strings.Split(key, delimiter)
 }
 
 // Explain provides information about how Config resolve each value
@@ -135,15 +142,20 @@ func (c Config) Unmarshal(path string, target any) error {
 // The path is case-insensitive.
 func (c Config) Explain(path string) string {
 	explanation := &strings.Builder{}
-	c.explain(explanation, path, maps.Sub(c.values.values, strings.Split(path, c.delimiter)))
+	c.explain(explanation, path, maps.Sub(c.values.values, c.split(path)))
 
 	return explanation.String()
 }
 
 func (c Config) explain(explanation *strings.Builder, path string, value any) {
+	delimiter := c.delimiter
+	if delimiter == "" {
+		delimiter = "."
+	}
+
 	if values, ok := value.(map[string]any); ok {
 		for k, v := range values {
-			c.explain(explanation, path+c.delimiter+k, v)
+			c.explain(explanation, path+delimiter+k, v)
 		}
 
 		return
@@ -151,7 +163,7 @@ func (c Config) explain(explanation *strings.Builder, path string, value any) {
 
 	var loaders []loaderValue
 	for _, provider := range c.values.providers {
-		if v := maps.Sub(provider.values, strings.Split(path, c.delimiter)); v != nil {
+		if v := maps.Sub(provider.values, c.split(path)); v != nil {
 			loaders = append(loaders, loaderValue{provider.loader, v})
 		}
 	}
