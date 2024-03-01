@@ -90,7 +90,7 @@ func (f PFlag) Load() (map[string]any, error) { //nolint:cyclop
 				return
 			}
 
-			val := f.flagVal(set, flag)
+			val, _ := f.flagVal(set, flag) // Ignore error as it uses whatever returned.
 			// Skip zero default value to avoid overriding values set by other loader.
 			if !flag.Changed && (exists(keys) || reflect.ValueOf(val).IsZero()) {
 				return
@@ -103,119 +103,83 @@ func (f PFlag) Load() (map[string]any, error) { //nolint:cyclop
 	return values, nil
 }
 
-//nolint:cyclop,funlen,gocyclo,nlreturn
-func (f PFlag) flagVal(set *pflag.FlagSet, flag *pflag.Flag) any {
+//nolint:cyclop,funlen,gocyclo,wrapcheck
+func (f PFlag) flagVal(set *pflag.FlagSet, flag *pflag.Flag) (any, error) {
 	switch flag.Value.Type() {
 	case "int":
-		i, _ := set.GetInt(flag.Name)
-		return int64(i)
+		return set.GetInt(flag.Name)
 	case "uint":
-		i, _ := set.GetUint(flag.Name)
-		return uint64(i)
+		return set.GetUint(flag.Name)
 	case "int8":
-		i, _ := set.GetInt8(flag.Name)
-		return int64(i)
+		return set.GetInt8(flag.Name)
 	case "uint8":
-		i, _ := set.GetUint8(flag.Name)
-		return uint64(i)
+		return set.GetUint8(flag.Name)
 	case "int16":
-		i, _ := set.GetInt16(flag.Name)
-		return int64(i)
+		return set.GetInt16(flag.Name)
 	case "uint16":
-		i, _ := set.GetUint16(flag.Name)
-		return uint64(i)
+		return set.GetUint16(flag.Name)
 	case "int32":
-		i, _ := set.GetInt32(flag.Name)
-		return int64(i)
+		return set.GetInt32(flag.Name)
 	case "uint32":
-		i, _ := set.GetUint32(flag.Name)
-		return uint64(i)
+		return set.GetUint32(flag.Name)
 	case "int64":
-		val, _ := set.GetInt64(flag.Name)
-		return val
+		return set.GetInt64(flag.Name)
 	case "uint64":
-		val, _ := set.GetUint64(flag.Name)
-		return val
+		return set.GetUint64(flag.Name)
 	case "float":
-		val, _ := set.GetFloat64(flag.Name)
-		return val
+		return set.GetFloat64(flag.Name)
 	case "float32":
-		val, _ := set.GetFloat32(flag.Name)
-		return val
+		return set.GetFloat32(flag.Name)
 	case "float64":
-		val, _ := set.GetFloat64(flag.Name)
-		return val
+		return set.GetFloat64(flag.Name)
 	case "bool":
-		val, _ := set.GetBool(flag.Name)
-		return val
+		return set.GetBool(flag.Name)
 	case "duration":
-		val, _ := set.GetDuration(flag.Name)
-		return val
+		return set.GetDuration(flag.Name)
 	case "ip":
-		val, _ := set.GetIP(flag.Name)
-		return val
+		return set.GetIP(flag.Name)
 	case "ipMask":
-		val, _ := set.GetIPv4Mask(flag.Name)
-		return val
+		return set.GetIPv4Mask(flag.Name)
 	case "ipNet":
-		val, _ := set.GetIPNet(flag.Name)
-		return val
+		return set.GetIPNet(flag.Name)
 	case "count":
-		val, _ := set.GetCount(flag.Name)
-		return val
+		return set.GetCount(flag.Name)
 	case "bytesHex":
-		val, _ := set.GetBytesHex(flag.Name)
-		return val
+		return set.GetBytesHex(flag.Name)
 	case "bytesBase64":
-		val, _ := set.GetBytesBase64(flag.Name)
-		return val
+		return set.GetBytesBase64(flag.Name)
 	case "string":
-		val, _ := set.GetString(flag.Name)
-		return val
+		return set.GetString(flag.Name)
 	case "stringSlice":
-		val, _ := set.GetStringSlice(flag.Name)
-		return val
+		return set.GetStringSlice(flag.Name)
 	case "intSlice":
-		val, _ := set.GetIntSlice(flag.Name)
-		return val
+		return set.GetIntSlice(flag.Name)
 	case "uintSlice":
-		val, _ := set.GetUintSlice(flag.Name)
-		return val
+		return set.GetUintSlice(flag.Name)
 	case "int32Slice":
-		val, _ := set.GetInt32Slice(flag.Name)
-		return val
+		return set.GetInt32Slice(flag.Name)
 	case "int64Slice":
-		val, _ := set.GetInt64Slice(flag.Name)
-		return val
+		return set.GetInt64Slice(flag.Name)
 	case "float32Slice":
-		val, _ := set.GetFloat32Slice(flag.Name)
-		return val
+		return set.GetFloat32Slice(flag.Name)
 	case "float64Slice":
-		val, _ := set.GetFloat64Slice(flag.Name)
-		return val
+		return set.GetFloat64Slice(flag.Name)
 	case "boolSlice":
-		val, _ := set.GetBoolSlice(flag.Name)
-		return val
+		return set.GetBoolSlice(flag.Name)
 	case "durationSlice":
-		val, _ := set.GetDurationSlice(flag.Name)
-		return val
+		return set.GetDurationSlice(flag.Name)
 	case "ipSlice":
-		val, _ := set.GetIPSlice(flag.Name)
-		return val
+		return set.GetIPSlice(flag.Name)
 	case "stringArray":
-		val, _ := set.GetStringArray(flag.Name)
-		return val
+		return set.GetStringArray(flag.Name)
 	case "stringToString":
-		val, _ := set.GetStringToString(flag.Name)
-		return val
+		return set.GetStringToString(flag.Name)
 	case "stringToInt":
-		val, _ := set.GetStringToInt(flag.Name)
-		return val
+		return set.GetStringToInt(flag.Name)
 	case "stringToInt64":
-		val, _ := set.GetStringToInt64(flag.Name)
-		return val
+		return set.GetStringToInt64(flag.Name)
 	default:
-		return flag.Value.String()
+		return flag.Value.String(), nil
 	}
 }
 

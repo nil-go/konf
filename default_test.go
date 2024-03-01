@@ -70,7 +70,7 @@ func TestOnChange(t *testing.T) {
 	go func() {
 		defer close(stopped)
 
-		_ = config.Watch(ctx)
+		assert.NoError(t, config.Watch(ctx))
 	}()
 
 	newValue := make(chan string)
