@@ -14,6 +14,16 @@ import (
 	"github.com/nil-go/konf/provider/env"
 )
 
+func TestConfig_nil(t *testing.T) {
+	var config *konf.Config
+
+	assert.True(t, !config.Exists([]string{"key"}))
+	assert.Equal(t, "key has no configuration.\n\n", config.Explain("key"))
+	var value string
+	assert.NoError(t, config.Unmarshal("key", &value))
+	assert.Equal(t, "", value)
+}
+
 func TestConfig_Load(t *testing.T) {
 	t.Parallel()
 
