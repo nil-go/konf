@@ -87,6 +87,10 @@ func (c *Config) Load(loader Loader) error {
 // and decodes it into the given object pointed to by target.
 // The path is case-insensitive.
 func (c *Config) Unmarshal(path string, target any) error {
+	if c == nil {
+		return nil
+	}
+
 	c.nocopy.Check()
 
 	decodeHook := c.decodeHook
@@ -129,6 +133,10 @@ func (c *Config) split(key string) []string {
 // from loaders for the given path. It blur sensitive information.
 // The path is case-insensitive.
 func (c *Config) Explain(path string) string {
+	if c == nil {
+		return path + " has no configuration.\n\n"
+	}
+
 	c.nocopy.Check()
 
 	explanation := &strings.Builder{}
