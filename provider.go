@@ -5,6 +5,8 @@ package konf
 
 import (
 	"context"
+
+	"github.com/nil-go/konf/internal/maps"
 )
 
 // Loader is the interface that wraps the Load method.
@@ -28,6 +30,6 @@ type Watcher interface {
 // Exists tests if the given path exist in the configuration.
 //
 // It's used by the loader to check if the configuration has been set by other loaders.
-func (c Config) Exists(path []string) bool {
-	return c.values.sub(path) != nil
+func (c *Config) Exists(path []string) bool {
+	return maps.Sub(c.values, path) != nil
 }

@@ -42,7 +42,7 @@ func TestConfig_Watch(t *testing.T) {
 	}()
 
 	newValue := make(chan string)
-	config.OnChange(func(config konf.Config) {
+	config.OnChange(func(config *konf.Config) {
 		var value string
 		assert.NoError(t, config.Unmarshal("config", &value))
 		newValue <- value
@@ -60,7 +60,7 @@ func TestConfig_Watch_onchange_block(t *testing.T) {
 	err := config.Load(watcher)
 	assert.NoError(t, err)
 
-	config.OnChange(func(konf.Config) {
+	config.OnChange(func(*konf.Config) {
 		time.Sleep(time.Second)
 	})
 
@@ -116,12 +116,12 @@ func TestConfig_Watch_panic(t *testing.T) {
 
 	testcases := []struct {
 		description string
-		call        func(konf.Config)
+		call        func(*konf.Config)
 		err         string
 	}{
 		{
 			description: "watch",
-			call: func(config konf.Config) {
+			call: func(config *konf.Config) {
 				assert.NoError(t, config.Watch(nil)) //nolint:staticcheck
 			},
 			err: "cannot create context from nil parent",

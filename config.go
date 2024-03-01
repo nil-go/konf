@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"slices"
 	"strings"
+	"sync/atomic"
 
 	"github.com/go-viper/mapstructure/v2"
 
@@ -25,25 +26,28 @@ type Config struct {
 	tagName    string
 	delimiter  string
 
-	values   *values
-	onChange *onChange
+	values    map[string]any
+	providers []provider
+
+	onChange onChange
+	watched  atomic.Bool
+}
+
+type provider struct {
+	loader Loader
+	values map[string]any
 }
 
 type DecodeHook any
 
 // New creates a new Config with the given Option(s).
-func New(opts ...Option) Config {
-	option := &options{
-		values: &values{
-			values: make(map[string]any),
-		},
-		onChange: &onChange{},
-	}
+func New(opts ...Option) *Config {
+	option := &options{}
 	for _, opt := range opts {
 		opt(option)
 	}
 
-	return Config(*option)
+	return (*Config)(option)
 }
 
 var errNilLoader = errors.New("cannot load config from nil loader")
@@ -52,21 +56,25 @@ var errNilLoader = errors.New("cannot load config from nil loader")
 // Each loader takes precedence over the loaders before it.
 //
 // This method can be called multiple times but it is not concurrency-safe.
-func (c Config) Load(loader Loader) error {
+func (c *Config) Load(loader Loader) error {
 	if loader == nil {
 		return errNilLoader
+	}
+
+	if c.values == nil {
+		c.values = make(map[string]any)
 	}
 
 	values, err := loader.Load()
 	if err != nil {
 		return fmt.Errorf("load configuration: %w", err)
 	}
-	maps.Merge(c.values.values, values)
+	maps.Merge(c.values, values)
 
 	// Merged to empty map to convert to lower case.
 	providerValues := make(map[string]any)
 	maps.Merge(providerValues, values)
-	c.values.providers = append(c.values.providers, provider{
+	c.providers = append(c.providers, provider{
 		loader: loader,
 		values: providerValues,
 	})
@@ -83,7 +91,7 @@ var defaultDecodeHook = mapstructure.ComposeDecodeHookFunc( //nolint:gochecknogl
 // Unmarshal reads configuration under the given path from the Config
 // and decodes it into the given object pointed to by target.
 // The path is case-insensitive.
-func (c Config) Unmarshal(path string, target any) error {
+func (c *Config) Unmarshal(path string, target any) error {
 	decodeHook := c.decodeHook
 	if decodeHook == nil {
 		decodeHook = defaultDecodeHook
@@ -104,14 +112,14 @@ func (c Config) Unmarshal(path string, target any) error {
 		return fmt.Errorf("new decoder: %w", err)
 	}
 
-	if err := decoder.Decode(c.values.sub(c.split(path))); err != nil {
+	if err := decoder.Decode(maps.Sub(c.values, c.split(path))); err != nil {
 		return fmt.Errorf("decode: %w", err)
 	}
 
 	return nil
 }
 
-func (c Config) split(key string) []string {
+func (c *Config) split(key string) []string {
 	delimiter := c.delimiter
 	if delimiter == "" {
 		delimiter = "."
@@ -123,14 +131,14 @@ func (c Config) split(key string) []string {
 // Explain provides information about how Config resolve each value
 // from loaders for the given path. It blur sensitive information.
 // The path is case-insensitive.
-func (c Config) Explain(path string) string {
+func (c *Config) Explain(path string) string {
 	explanation := &strings.Builder{}
-	c.explain(explanation, path, c.values.sub(c.split(path)))
+	c.explain(explanation, path, maps.Sub(c.values, c.split(path)))
 
 	return explanation.String()
 }
 
-func (c Config) explain(explanation *strings.Builder, path string, value any) {
+func (c *Config) explain(explanation *strings.Builder, path string, value any) {
 	delimiter := c.delimiter
 	if delimiter == "" {
 		delimiter = "."
@@ -145,7 +153,7 @@ func (c Config) explain(explanation *strings.Builder, path string, value any) {
 	}
 
 	var loaders []loaderValue
-	for _, provider := range c.values.providers {
+	for _, provider := range c.providers {
 		if v := maps.Sub(provider.values, c.split(path)); v != nil {
 			loaders = append(loaders, loaderValue{provider.loader, v})
 		}
