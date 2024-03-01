@@ -9,8 +9,6 @@ import (
 	"log/slog"
 	"slices"
 	"strings"
-	"sync"
-	"sync/atomic"
 
 	"github.com/go-viper/mapstructure/v2"
 
@@ -27,24 +25,9 @@ type Config struct {
 	tagName    string
 	delimiter  string
 
-	values *values
+	values   *values
+	onChange *onChange
 }
-
-type (
-	provider struct {
-		loader Loader
-		values map[string]any
-	}
-
-	values struct {
-		values    map[string]any
-		providers []provider
-
-		onChanges      map[string][]func(Config)
-		onChangesMutex sync.RWMutex
-		watched        atomic.Bool
-	}
-)
 
 type DecodeHook any
 
@@ -52,9 +35,9 @@ type DecodeHook any
 func New(opts ...Option) Config {
 	option := &options{
 		values: &values{
-			values:    make(map[string]any),
-			onChanges: make(map[string][]func(Config)),
+			values: make(map[string]any),
 		},
+		onChange: &onChange{},
 	}
 	for _, opt := range opts {
 		opt(option)
@@ -121,7 +104,7 @@ func (c Config) Unmarshal(path string, target any) error {
 		return fmt.Errorf("new decoder: %w", err)
 	}
 
-	if err := decoder.Decode(maps.Sub(c.values.values, c.split(path))); err != nil {
+	if err := decoder.Decode(c.values.sub(c.split(path))); err != nil {
 		return fmt.Errorf("decode: %w", err)
 	}
 
@@ -142,7 +125,7 @@ func (c Config) split(key string) []string {
 // The path is case-insensitive.
 func (c Config) Explain(path string) string {
 	explanation := &strings.Builder{}
-	c.explain(explanation, path, maps.Sub(c.values.values, c.split(path)))
+	c.explain(explanation, path, c.values.sub(c.split(path)))
 
 	return explanation.String()
 }

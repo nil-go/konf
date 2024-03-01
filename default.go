@@ -46,7 +46,7 @@ func Unmarshal(path string, target any) error {
 // when the value of any given path in the default Config changes.
 // The paths are case-insensitive.
 //
-// The onChange function must be non-blocking and usually completes instantly.
+// The register function must be non-blocking and usually completes instantly.
 // If it requires a long time to complete, it should be executed in a separate goroutine.
 //
 // This method is concurrency-safe.

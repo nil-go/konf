@@ -10,7 +10,6 @@ import (
 	"log/slog"
 	"reflect"
 	"slices"
-	"strings"
 	"sync"
 	"time"
 
@@ -115,18 +114,15 @@ func (c Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocogn
 
 					// Find the onChanges should be triggered.
 					onChanges := func() []func(Config) {
-						c.values.onChangesMutex.RLock()
-						defer c.values.onChangesMutex.RUnlock()
-
 						var callbacks []func(Config)
-						for path, onChanges := range c.values.onChanges {
+						c.onChange.walk(func(path string, onChanges []func(Config)) {
 							keys := c.split(path)
 							oldVal := maps.Sub(oldValues, keys)
 							newVal := maps.Sub(newValues, keys)
 							if !reflect.DeepEqual(oldVal, newVal) {
 								callbacks = append(callbacks, onChanges...)
 							}
-						}
+						})
 
 						return callbacks
 					}
@@ -161,7 +157,7 @@ func (c Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocogn
 // It requires Config.Watch has been called first.
 // The paths are case-insensitive.
 //
-// The onChange function must be non-blocking and usually completes instantly.
+// The register function must be non-blocking and usually completes instantly.
 // If it requires a long time to complete, it should be executed in a separate goroutine.
 //
 // This method is concurrency-safe.
@@ -173,12 +169,5 @@ func (c Config) OnChange(onChange func(Config), paths ...string) {
 	if len(paths) == 0 {
 		paths = []string{""}
 	}
-
-	c.values.onChangesMutex.Lock()
-	defer c.values.onChangesMutex.Unlock()
-
-	for _, path := range paths {
-		path = strings.ToLower(path)
-		c.values.onChanges[path] = append(c.values.onChanges[path], onChange)
-	}
+	c.onChange.register(onChange, paths)
 }
