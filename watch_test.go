@@ -20,7 +20,7 @@ import (
 func TestConfig_Watch(t *testing.T) {
 	t.Parallel()
 
-	config := konf.New()
+	var config konf.Config
 	watcher := stringWatcher{key: "Config", value: make(chan string)}
 	err := config.Load(watcher)
 	assert.NoError(t, err)
@@ -82,7 +82,7 @@ level=WARN msg="Configuration has not been fully applied to onChanges due to tim
 func TestConfig_Watch_without_loader(t *testing.T) {
 	t.Parallel()
 
-	config := konf.New()
+	var config konf.Config
 	assert.NoError(t, config.Load(env.New()))
 	assert.NoError(t, config.Watch(context.Background()))
 }
@@ -138,9 +138,9 @@ func TestConfig_Watch_panic(t *testing.T) {
 				assert.Equal(t, testcase.err, recover().(string))
 			}()
 
-			config := konf.New()
+			var config konf.Config
 			assert.NoError(t, config.Load(stringWatcher{key: "Config", value: make(chan string)}))
-			testcase.call(config)
+			testcase.call(&config)
 			t.Fail()
 		})
 	}
@@ -177,7 +177,7 @@ func (m stringWatcher) String() string {
 func TestConfig_Watch_error(t *testing.T) {
 	t.Parallel()
 
-	config := konf.New()
+	var config konf.Config
 	err := config.Load(errorWatcher{})
 	assert.NoError(t, err)
 
@@ -242,7 +242,7 @@ func (b *buffer) String() string {
 func TestConfig_error(t *testing.T) {
 	t.Parallel()
 
-	config := konf.New()
+	var config konf.Config
 	err := config.Load(errorLoader{})
 	assert.EqualError(t, err, "load configuration: load error")
 }

@@ -23,6 +23,8 @@ import (
 //
 // It only can be called once. Call after first has no effects.
 func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocognit
+	c.nocopy.Check()
+
 	if hasWatcher := slices.ContainsFunc(c.providers, func(provider provider) bool {
 		_, ok := provider.loader.(Watcher)
 
@@ -115,15 +117,18 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 
 					// Find the onChanges should be triggered.
 					onChanges := func() []func(*Config) {
+						c.onChangesMutex.RLock()
+						defer c.onChangesMutex.RUnlock()
+
 						var callbacks []func(*Config)
-						c.onChange.walk(func(path string, onChanges []func(*Config)) {
+						for path, onChanges := range c.onChanges {
 							keys := c.split(path)
 							oldVal := maps.Sub(oldValues, keys)
 							newVal := maps.Sub(newValues, keys)
 							if !reflect.DeepEqual(oldVal, newVal) {
 								callbacks = append(callbacks, onChanges...)
 							}
-						})
+						}
 
 						return callbacks
 					}
@@ -163,6 +168,8 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 //
 // This method is concurrency-safe.
 func (c *Config) OnChange(onChange func(*Config), paths ...string) {
+	c.nocopy.Check()
+
 	if onChange == nil {
 		return // Do nothing is onchange is nil.
 	}
@@ -170,33 +177,15 @@ func (c *Config) OnChange(onChange func(*Config), paths ...string) {
 	if len(paths) == 0 {
 		paths = []string{""}
 	}
-	c.onChange.register(onChange, paths)
-}
-
-type onChange struct {
-	onChanges      map[string][]func(*Config)
-	onChangesMutex sync.RWMutex
-}
-
-func (c *onChange) register(onChange func(*Config), paths []string) {
-	if c.onChanges == nil {
-		c.onChanges = make(map[string][]func(*Config))
-	}
 
 	c.onChangesMutex.Lock()
 	defer c.onChangesMutex.Unlock()
 
+	if c.onChanges == nil {
+		c.onChanges = make(map[string][]func(*Config))
+	}
 	for _, path := range paths {
 		path = strings.ToLower(path)
 		c.onChanges[path] = append(c.onChanges[path], onChange)
-	}
-}
-
-func (c *onChange) walk(fn func(path string, onChanges []func(*Config))) {
-	c.onChangesMutex.RLock()
-	defer c.onChangesMutex.RUnlock()
-
-	for path, onChanges := range c.onChanges {
-		fn(path, onChanges)
 	}
 }

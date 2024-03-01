@@ -14,10 +14,10 @@ import (
 func TestUnmarshal(t *testing.T) {
 	t.Parallel()
 
-	config := konf.New()
+	var config konf.Config
 	err := config.Load(mapLoader{"config": "string"})
 	assert.NoError(t, err)
-	konf.SetDefault(config)
+	konf.SetDefault(&config)
 
 	var v string
 	assert.NoError(t, konf.Unmarshal("config", &v))
@@ -27,10 +27,10 @@ func TestUnmarshal(t *testing.T) {
 func TestGet(t *testing.T) {
 	t.Parallel()
 
-	config := konf.New()
+	var config konf.Config
 	err := config.Load(mapLoader{"config": "string"})
 	assert.NoError(t, err)
-	konf.SetDefault(config)
+	konf.SetDefault(&config)
 
 	assert.Equal(t, "string", konf.Get[string]("config"))
 }
@@ -51,11 +51,11 @@ func TestGet_error(t *testing.T) {
 }
 
 func TestOnChange(t *testing.T) {
-	config := konf.New()
+	var config konf.Config
 	watcher := stringWatcher{key: "Config", value: make(chan string)}
 	err := config.Load(watcher)
 	assert.NoError(t, err)
-	konf.SetDefault(config)
+	konf.SetDefault(&config)
 
 	var value string
 	assert.NoError(t, config.Unmarshal("config", &value))

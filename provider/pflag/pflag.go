@@ -32,10 +32,6 @@ type PFlag struct {
 	splitter func(string) []string
 }
 
-type konf interface {
-	Exists([]string) bool
-}
-
 // New creates a PFlag with the given Option(s).
 //
 // The first parameter is the konf Config instance that checks if the defined flags
@@ -189,4 +185,8 @@ func (f PFlag) String() string {
 	}
 
 	return "pflag:" + f.prefix
+}
+
+type konf interface {
+	Exists([]string) bool
 }

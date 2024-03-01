@@ -11,7 +11,7 @@ import (
 )
 
 func BenchmarkLoad(b *testing.B) {
-	config := konf.New()
+	var config konf.Config
 
 	var err error
 	b.ResetTimer()
@@ -27,9 +27,9 @@ func BenchmarkLoad(b *testing.B) {
 }
 
 func BenchmarkGet(b *testing.B) {
-	config := konf.New()
+	var config konf.Config
 	assert.NoError(b, config.Load(mapLoader{"k": "v"}))
-	konf.SetDefault(config)
+	konf.SetDefault(&config)
 
 	var value string
 	b.ResetTimer()
@@ -42,9 +42,9 @@ func BenchmarkGet(b *testing.B) {
 }
 
 func BenchmarkUnmarshal(b *testing.B) {
-	config := konf.New()
+	var config konf.Config
 	assert.NoError(b, config.Load(mapLoader{"k": "v"}))
-	konf.SetDefault(config)
+	konf.SetDefault(&config)
 
 	var (
 		value string

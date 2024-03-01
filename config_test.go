@@ -39,7 +39,7 @@ func TestConfig_Load(t *testing.T) {
 		t.Run(testcase.description, func(t *testing.T) {
 			t.Parallel()
 
-			config := konf.New()
+			var config konf.Config
 			err := config.Load(testcase.loader)
 			if testcase.err == "" {
 				assert.NoError(t, err)
@@ -181,7 +181,7 @@ func TestConfig_Unmarshal(t *testing.T) {
 		t.Run(testcase.description, func(t *testing.T) {
 			t.Parallel()
 
-			config := konf.Config{}
+			var config konf.Config
 			if len(testcase.opts) > 0 {
 				config = *konf.New(testcase.opts...)
 			}
@@ -191,6 +191,19 @@ func TestConfig_Unmarshal(t *testing.T) {
 			testcase.assert(&config)
 		})
 	}
+}
+
+func TestConfigCopyPanic(t *testing.T) {
+	defer func() {
+		assert.Equal(t, recover(), "illegal use of non-zero Config copied by value")
+	}()
+
+	var config konf.Config
+	assert.NoError(t, config.Load(mapLoader{}))
+	configCopy := config //nolint:govet
+	assert.NoError(t, configCopy.Load(mapLoader{}))
+
+	t.Fail()
 }
 
 type mapLoader map[string]any
@@ -206,7 +219,7 @@ func (m mapLoader) String() string {
 func TestConfig_Explain(t *testing.T) {
 	t.Parallel()
 
-	config := konf.New()
+	var config konf.Config
 	err := config.Load(env.New())
 	assert.NoError(t, err)
 	err = config.Load(mapLoader{

@@ -9,10 +9,12 @@ import (
 	"log/slog"
 	"slices"
 	"strings"
+	"sync"
 	"sync/atomic"
 
 	"github.com/go-viper/mapstructure/v2"
 
+	"github.com/nil-go/konf/internal"
 	"github.com/nil-go/konf/internal/credential"
 	"github.com/nil-go/konf/internal/maps"
 )
@@ -21,24 +23,23 @@ import (
 //
 // To create a new Config, call [New].
 type Config struct {
+	nocopy internal.NoCopy[Config]
+
+	// Options.
 	logger     *slog.Logger
 	decodeHook mapstructure.DecodeHookFunc
 	tagName    string
 	delimiter  string
 
+	// Loaded configuration.
 	values    map[string]any
 	providers []provider
 
-	onChange onChange
-	watched  atomic.Bool
+	// For watching changes.
+	onChanges      map[string][]func(*Config)
+	onChangesMutex sync.RWMutex
+	watched        atomic.Bool
 }
-
-type provider struct {
-	loader Loader
-	values map[string]any
-}
-
-type DecodeHook any
 
 // New creates a new Config with the given Option(s).
 func New(opts ...Option) *Config {
@@ -50,13 +51,13 @@ func New(opts ...Option) *Config {
 	return (*Config)(option)
 }
 
-var errNilLoader = errors.New("cannot load config from nil loader")
-
 // Load loads configuration from the given loader.
 // Each loader takes precedence over the loaders before it.
 //
 // This method can be called multiple times but it is not concurrency-safe.
 func (c *Config) Load(loader Loader) error {
+	c.nocopy.Check()
+
 	if loader == nil {
 		return errNilLoader
 	}
@@ -82,16 +83,12 @@ func (c *Config) Load(loader Loader) error {
 	return nil
 }
 
-var defaultDecodeHook = mapstructure.ComposeDecodeHookFunc( //nolint:gochecknoglobals
-	mapstructure.StringToTimeDurationHookFunc(),
-	mapstructure.StringToSliceHookFunc(","),
-	mapstructure.TextUnmarshallerHookFunc(),
-)
-
 // Unmarshal reads configuration under the given path from the Config
 // and decodes it into the given object pointed to by target.
 // The path is case-insensitive.
 func (c *Config) Unmarshal(path string, target any) error {
+	c.nocopy.Check()
+
 	decodeHook := c.decodeHook
 	if decodeHook == nil {
 		decodeHook = defaultDecodeHook
@@ -132,6 +129,8 @@ func (c *Config) split(key string) []string {
 // from loaders for the given path. It blur sensitive information.
 // The path is case-insensitive.
 func (c *Config) Explain(path string) string {
+	c.nocopy.Check()
+
 	explanation := &strings.Builder{}
 	c.explain(explanation, path, maps.Sub(c.values, c.split(path)))
 
@@ -152,6 +151,10 @@ func (c *Config) explain(explanation *strings.Builder, path string, value any) {
 		return
 	}
 
+	type loaderValue struct {
+		loader Loader
+		value  any
+	}
 	var loaders []loaderValue
 	for _, provider := range c.providers {
 		if v := maps.Sub(provider.values, c.split(path)); v != nil {
@@ -185,7 +188,17 @@ func (c *Config) explain(explanation *strings.Builder, path string, value any) {
 	explanation.WriteString("\n")
 }
 
-type loaderValue struct {
+type provider struct {
 	loader Loader
-	value  any
+	values map[string]any
 }
+
+var (
+	errNilLoader = errors.New("cannot load config from nil loader")
+
+	defaultDecodeHook = mapstructure.ComposeDecodeHookFunc( //nolint:gochecknoglobals
+		mapstructure.StringToTimeDurationHookFunc(),
+		mapstructure.StringToSliceHookFunc(","),
+		mapstructure.TextUnmarshallerHookFunc(),
+	)
+)
