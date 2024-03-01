@@ -30,10 +30,6 @@ type Flag struct {
 	splitter func(string) []string
 }
 
-type konf interface {
-	Exists([]string) bool
-}
-
 // New creates a Flag with the given Option(s).
 //
 // The first parameter is the konf Config instance that checks if the defined flags
@@ -119,4 +115,8 @@ func (f Flag) String() string {
 	}
 
 	return "flag:" + f.prefix
+}
+
+type konf interface {
+	Exists([]string) bool
 }

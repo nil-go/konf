@@ -32,8 +32,7 @@ configuration source(s) (implementation) it actually wants to use. Something lik
     var config embed.FS
 
     func main() {
-        // Create the Config.
-        config := konf.New()
+        var config konf.Config
 
         // Load configuration from embed file system.
         if err := config.Load(fs.New(config, "config/config.json")); err != nil {

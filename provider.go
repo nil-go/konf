@@ -20,7 +20,7 @@ type Loader interface {
 
 // Watcher is the interface that wraps the Watch method.
 //
-// Watch watches the configuration and triggers the onChange callback with the latest
+// Watch watches the configuration and triggers the register callback with the latest
 // full configurations as a nested map[string]any when it changes.
 // It blocks until ctx is done, or the watching returns an error.
 type Watcher interface {
@@ -30,6 +30,8 @@ type Watcher interface {
 // Exists tests if the given path exist in the configuration.
 //
 // It's used by the loader to check if the configuration has been set by other loaders.
-func (c Config) Exists(path []string) bool {
-	return maps.Sub(c.values.values, path) != nil
+func (c *Config) Exists(path []string) bool {
+	c.nocopy.Check()
+
+	return maps.Sub(c.values, path) != nil
 }

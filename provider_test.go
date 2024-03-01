@@ -11,7 +11,7 @@ import (
 )
 
 func TestConfig_Exists(t *testing.T) {
-	config := konf.New()
+	var config konf.Config
 	assert.NoError(t, config.Load(mapLoader{"config": "string"}))
 	assert.True(t, config.Exists([]string{"config"}))
 	assert.True(t, !config.Exists([]string{"other"}))

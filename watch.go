@@ -22,8 +22,10 @@ import (
 // WARNING: All loaders passed in Load after calling Watch do not get watched.
 //
 // It only can be called once. Call after first has no effects.
-func (c Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocognit
-	if hasWatcher := slices.ContainsFunc(c.values.providers, func(provider provider) bool {
+func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocognit
+	c.nocopy.Check()
+
+	if hasWatcher := slices.ContainsFunc(c.providers, func(provider provider) bool {
 		_, ok := provider.loader.(Watcher)
 
 		return ok
@@ -31,13 +33,18 @@ func (c Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocogn
 		return nil
 	}
 
-	if watched := c.values.watched.Swap(true); watched {
-		c.logger.LogAttrs(ctx, slog.LevelWarn, "Config has been watched, call Watch again has no effects.")
+	logger := c.logger
+	if logger == nil {
+		logger = slog.Default()
+	}
+
+	if watched := c.watched.Swap(true); watched {
+		logger.LogAttrs(ctx, slog.LevelWarn, "Config has been watched, call Watch again has no effects.")
 
 		return nil
 	}
 
-	onChangesChannel := make(chan []func(Config), 1)
+	onChangesChannel := make(chan []func(*Config), 1)
 	defer close(onChangesChannel)
 	ctx, cancel := context.WithCancelCause(ctx)
 	defer cancel(nil)
@@ -51,11 +58,11 @@ func (c Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocogn
 			select {
 			case onChanges := <-onChangesChannel:
 				values := make(map[string]any)
-				for _, w := range c.values.providers {
+				for _, w := range c.providers {
 					maps.Merge(values, w.values)
 				}
-				c.values.values = values
-				c.logger.LogAttrs(ctx, slog.LevelDebug, "Configuration has been updated with change.")
+				c.values = values
+				logger.LogAttrs(ctx, slog.LevelDebug, "Configuration has been updated with change.")
 
 				if len(onChanges) > 0 {
 					func() {
@@ -73,10 +80,10 @@ func (c Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocogn
 						defer tcancel()
 						select {
 						case <-done:
-							c.logger.LogAttrs(ctx, slog.LevelDebug, "Configuration has been applied to onChanges.")
+							logger.LogAttrs(ctx, slog.LevelDebug, "Configuration has been applied to onChanges.")
 						case <-ctx.Done():
 							if errors.Is(ctx.Err(), context.DeadlineExceeded) {
-								c.logger.LogAttrs(
+								logger.LogAttrs(
 									ctx, slog.LevelWarn,
 									"Configuration has not been fully applied to onChanges due to timeout."+
 										" Please check if the onChanges is blocking or takes too long to complete.",
@@ -92,8 +99,8 @@ func (c Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocogn
 		}
 	}()
 
-	for i := range c.values.providers {
-		provider := &c.values.providers[i] // Use pointer for later modification.
+	for i := range c.providers {
+		provider := &c.providers[i] // Use pointer for later modification.
 
 		if watcher, ok := provider.loader.(Watcher); ok {
 			waitGroup.Add(1)
@@ -109,13 +116,13 @@ func (c Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocogn
 					provider.values = newValues
 
 					// Find the onChanges should be triggered.
-					onChanges := func() []func(Config) {
-						c.values.onChangesMutex.RLock()
-						defer c.values.onChangesMutex.RUnlock()
+					onChanges := func() []func(*Config) {
+						c.onChangesMutex.RLock()
+						defer c.onChangesMutex.RUnlock()
 
-						var callbacks []func(Config)
-						for path, onChanges := range c.values.onChanges {
-							keys := strings.Split(path, c.delimiter)
+						var callbacks []func(*Config)
+						for path, onChanges := range c.onChanges {
+							keys := c.split(path)
 							oldVal := maps.Sub(oldValues, keys)
 							newVal := maps.Sub(newValues, keys)
 							if !reflect.DeepEqual(oldVal, newVal) {
@@ -127,7 +134,7 @@ func (c Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocogn
 					}
 					onChangesChannel <- onChanges()
 
-					c.logger.LogAttrs(
+					logger.LogAttrs(
 						context.Background(),
 						slog.LevelInfo,
 						"Configuration has been changed.",
@@ -135,7 +142,7 @@ func (c Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocogn
 					)
 				}
 
-				c.logger.LogAttrs(ctx, slog.LevelDebug, "Watching configuration change.", slog.Any("loader", watcher))
+				logger.LogAttrs(ctx, slog.LevelDebug, "Watching configuration change.", slog.Any("loader", watcher))
 				if err := watcher.Watch(ctx, onChange); err != nil {
 					cancel(fmt.Errorf("watch configuration change on %v: %w", watcher, err))
 				}
@@ -156,11 +163,13 @@ func (c Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocogn
 // It requires Config.Watch has been called first.
 // The paths are case-insensitive.
 //
-// The onChange function must be non-blocking and usually completes instantly.
+// The register function must be non-blocking and usually completes instantly.
 // If it requires a long time to complete, it should be executed in a separate goroutine.
 //
 // This method is concurrency-safe.
-func (c Config) OnChange(onChange func(Config), paths ...string) {
+func (c *Config) OnChange(onChange func(*Config), paths ...string) {
+	c.nocopy.Check()
+
 	if onChange == nil {
 		return // Do nothing is onchange is nil.
 	}
@@ -169,11 +178,14 @@ func (c Config) OnChange(onChange func(Config), paths ...string) {
 		paths = []string{""}
 	}
 
-	c.values.onChangesMutex.Lock()
-	defer c.values.onChangesMutex.Unlock()
+	c.onChangesMutex.Lock()
+	defer c.onChangesMutex.Unlock()
 
+	if c.onChanges == nil {
+		c.onChanges = make(map[string][]func(*Config))
+	}
 	for _, path := range paths {
 		path = strings.ToLower(path)
-		c.values.onChanges[path] = append(c.values.onChanges[path], onChange)
+		c.onChanges[path] = append(c.onChanges[path], onChange)
 	}
 }

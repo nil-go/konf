@@ -42,7 +42,7 @@ func ExampleUnmarshal() {
 var testdata embed.FS
 
 func ExampleSetDefault() {
-	config := konf.New()
+	var config konf.Config
 	if err := config.Load(kfs.New(testdata, "testdata/config.json")); err != nil {
 		// Handle error here.
 		panic(err)
@@ -51,6 +51,6 @@ func ExampleSetDefault() {
 		// Handle error here.
 		panic(err)
 	}
-	konf.SetDefault(config)
+	konf.SetDefault(&config)
 	// Output:
 }

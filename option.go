@@ -50,4 +50,6 @@ type (
 	// Option configures a Config with specific options.
 	Option  func(*options)
 	options Config
+
+	DecodeHook any
 )

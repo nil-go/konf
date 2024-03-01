@@ -14,6 +14,7 @@ import (
 
 	"github.com/go-viper/mapstructure/v2"
 
+	"github.com/nil-go/konf/internal"
 	"github.com/nil-go/konf/internal/credential"
 	"github.com/nil-go/konf/internal/maps"
 )
@@ -22,84 +23,59 @@ import (
 //
 // To create a new Config, call [New].
 type Config struct {
+	nocopy internal.NoCopy[Config]
+
+	// Options.
 	logger     *slog.Logger
 	decodeHook mapstructure.DecodeHookFunc
 	tagName    string
 	delimiter  string
 
-	values *values
+	// Loaded configuration.
+	values    map[string]any
+	providers []provider
+
+	// For watching changes.
+	onChanges      map[string][]func(*Config)
+	onChangesMutex sync.RWMutex
+	watched        atomic.Bool
 }
 
-type (
-	provider struct {
-		loader Loader
-		values map[string]any
-	}
-
-	values struct {
-		values    map[string]any
-		providers []provider
-
-		onChanges      map[string][]func(Config)
-		onChangesMutex sync.RWMutex
-		watched        atomic.Bool
-	}
-)
-
-type DecodeHook any
-
 // New creates a new Config with the given Option(s).
-func New(opts ...Option) Config {
-	option := &options{
-		values: &values{
-			values:    make(map[string]any),
-			onChanges: make(map[string][]func(Config)),
-		},
-	}
+func New(opts ...Option) *Config {
+	option := &options{}
 	for _, opt := range opts {
 		opt(option)
 	}
-	if option.logger == nil {
-		option.logger = slog.Default()
-	}
-	if option.delimiter == "" {
-		option.delimiter = "."
-	}
-	if option.tagName == "" {
-		option.tagName = "konf"
-	}
-	if option.decodeHook == nil {
-		option.decodeHook = mapstructure.ComposeDecodeHookFunc(
-			mapstructure.StringToTimeDurationHookFunc(),
-			mapstructure.StringToSliceHookFunc(","),
-			mapstructure.TextUnmarshallerHookFunc(),
-		)
-	}
 
-	return Config(*option)
+	return (*Config)(option)
 }
-
-var errNilLoader = errors.New("cannot load config from nil loader")
 
 // Load loads configuration from the given loader.
 // Each loader takes precedence over the loaders before it.
 //
 // This method can be called multiple times but it is not concurrency-safe.
-func (c Config) Load(loader Loader) error {
+func (c *Config) Load(loader Loader) error {
+	c.nocopy.Check()
+
 	if loader == nil {
 		return errNilLoader
+	}
+
+	if c.values == nil {
+		c.values = make(map[string]any)
 	}
 
 	values, err := loader.Load()
 	if err != nil {
 		return fmt.Errorf("load configuration: %w", err)
 	}
-	maps.Merge(c.values.values, values)
+	maps.Merge(c.values, values)
 
 	// Merged to empty map to convert to lower case.
 	providerValues := make(map[string]any)
 	maps.Merge(providerValues, values)
-	c.values.providers = append(c.values.providers, provider{
+	c.providers = append(c.providers, provider{
 		loader: loader,
 		values: providerValues,
 	})
@@ -110,48 +86,78 @@ func (c Config) Load(loader Loader) error {
 // Unmarshal reads configuration under the given path from the Config
 // and decodes it into the given object pointed to by target.
 // The path is case-insensitive.
-func (c Config) Unmarshal(path string, target any) error {
+func (c *Config) Unmarshal(path string, target any) error {
+	c.nocopy.Check()
+
+	decodeHook := c.decodeHook
+	if decodeHook == nil {
+		decodeHook = defaultDecodeHook
+	}
+	tagName := c.tagName
+	if tagName == "" {
+		tagName = "konf"
+	}
 	decoder, err := mapstructure.NewDecoder(
 		&mapstructure.DecoderConfig{
 			Result:           target,
 			WeaklyTypedInput: true,
-			DecodeHook:       c.decodeHook,
-			TagName:          c.tagName,
+			DecodeHook:       decodeHook,
+			TagName:          tagName,
 		},
 	)
 	if err != nil {
 		return fmt.Errorf("new decoder: %w", err)
 	}
 
-	if err := decoder.Decode(maps.Sub(c.values.values, strings.Split(path, c.delimiter))); err != nil {
+	if err := decoder.Decode(maps.Sub(c.values, c.split(path))); err != nil {
 		return fmt.Errorf("decode: %w", err)
 	}
 
 	return nil
 }
 
+func (c *Config) split(key string) []string {
+	delimiter := c.delimiter
+	if delimiter == "" {
+		delimiter = "."
+	}
+
+	return strings.Split(key, delimiter)
+}
+
 // Explain provides information about how Config resolve each value
 // from loaders for the given path. It blur sensitive information.
 // The path is case-insensitive.
-func (c Config) Explain(path string) string {
+func (c *Config) Explain(path string) string {
+	c.nocopy.Check()
+
 	explanation := &strings.Builder{}
-	c.explain(explanation, path, maps.Sub(c.values.values, strings.Split(path, c.delimiter)))
+	c.explain(explanation, path, maps.Sub(c.values, c.split(path)))
 
 	return explanation.String()
 }
 
-func (c Config) explain(explanation *strings.Builder, path string, value any) {
+func (c *Config) explain(explanation *strings.Builder, path string, value any) {
+	delimiter := c.delimiter
+	if delimiter == "" {
+		delimiter = "."
+	}
+
 	if values, ok := value.(map[string]any); ok {
 		for k, v := range values {
-			c.explain(explanation, path+c.delimiter+k, v)
+			c.explain(explanation, path+delimiter+k, v)
 		}
 
 		return
 	}
 
+	type loaderValue struct {
+		loader Loader
+		value  any
+	}
 	var loaders []loaderValue
-	for _, provider := range c.values.providers {
-		if v := maps.Sub(provider.values, strings.Split(path, c.delimiter)); v != nil {
+	for _, provider := range c.providers {
+		if v := maps.Sub(provider.values, c.split(path)); v != nil {
 			loaders = append(loaders, loaderValue{provider.loader, v})
 		}
 	}
@@ -182,7 +188,17 @@ func (c Config) explain(explanation *strings.Builder, path string, value any) {
 	explanation.WriteString("\n")
 }
 
-type loaderValue struct {
+type provider struct {
 	loader Loader
-	value  any
+	values map[string]any
 }
+
+var (
+	errNilLoader = errors.New("cannot load config from nil loader")
+
+	defaultDecodeHook = mapstructure.ComposeDecodeHookFunc( //nolint:gochecknoglobals
+		mapstructure.StringToTimeDurationHookFunc(),
+		mapstructure.StringToSliceHookFunc(","),
+		mapstructure.TextUnmarshallerHookFunc(),
+	)
+)

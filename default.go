@@ -18,7 +18,12 @@ import (
 func Get[T any](path string) T { //nolint:ireturn
 	var value T
 	if err := Unmarshal(path, &value); err != nil {
-		defaultConfig.Load().logger.LogAttrs(
+		logger := defaultConfig.Load().logger
+		if logger == nil {
+			logger = slog.Default()
+		}
+
+		logger.LogAttrs(
 			context.Background(), slog.LevelWarn,
 			"Could not read config, return empty value instead.",
 			slog.String("path", path),
@@ -41,12 +46,12 @@ func Unmarshal(path string, target any) error {
 // when the value of any given path in the default Config changes.
 // The paths are case-insensitive.
 //
-// The onChange function must be non-blocking and usually completes instantly.
+// The register function must be non-blocking and usually completes instantly.
 // If it requires a long time to complete, it should be executed in a separate goroutine.
 //
 // This method is concurrency-safe.
 func OnChange(onChange func(), paths ...string) {
-	defaultConfig.Load().OnChange(func(Config) { onChange() }, paths...)
+	defaultConfig.Load().OnChange(func(*Config) { onChange() }, paths...)
 }
 
 // Explain provides information about how default Config resolve each value
@@ -59,14 +64,16 @@ func Explain(path string) string {
 // SetDefault sets the given Config as the default Config.
 // After this call, the konf package's top functions (e.g. konf.Get)
 // will interact with the given Config.
-func SetDefault(config Config) {
-	defaultConfig.Store(&config)
+func SetDefault(config *Config) {
+	if config != nil {
+		defaultConfig.Store(config)
+	}
 }
 
 var defaultConfig atomic.Pointer[Config] //nolint:gochecknoglobals
 
 func init() { //nolint:gochecknoinits
-	config := New()
+	var config Config
 	// Ignore error as env loader does not return error.
 	_ = config.Load(env.Env{})
 	defaultConfig.Store(&config)
