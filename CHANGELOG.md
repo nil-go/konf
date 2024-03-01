@@ -7,10 +7,17 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.7.0] - 2024-02-29
+
+### Changed
+
+- [Breaking] Use pointer receiver for konf.Config to make empty Config useful (#187).
+
 ### Removed
-- Remove konf.Default() to disallow loading configuration into the default Config (#180).
-- Remove ExplainOption from Config.Explain for always blurring sensitive information (#180).
-- Remove LoadOption from Config.Load (#184).
+
+- [Breaking] Remove konf.Default() to disallow loading configuration into the default Config (#180).
+- [Breaking] Remove ExplainOption from Config.Explain for always blurring sensitive information (#180).
+- [Breaking] Remove LoadOption from Config.Load (#184).
 
 ## [0.6.3] - 2024-02-23
 
