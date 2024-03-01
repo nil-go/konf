@@ -13,6 +13,13 @@ import (
 	kfs "github.com/nil-go/konf/provider/fs"
 )
 
+func TestFS_empty(t *testing.T) {
+	var loader kfs.FS
+	values, err := loader.Load()
+	assert.EqualError(t, err, "read file: readfile : invalid argument")
+	assert.Equal(t, nil, values)
+}
+
 func TestFS_Load(t *testing.T) {
 	t.Parallel()
 
@@ -24,6 +31,10 @@ func TestFS_Load(t *testing.T) {
 		expected    map[string]any
 		err         string
 	}{
+		{
+			description: "empty",
+			err:         "read file: readfile : invalid argument",
+		},
 		{
 			description: "empty path",
 			fs: fstest.MapFS{

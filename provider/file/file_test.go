@@ -11,6 +11,13 @@ import (
 	"github.com/nil-go/konf/provider/file/internal/assert"
 )
 
+func TestFS_empty(t *testing.T) {
+	var loader file.File
+	values, err := loader.Load()
+	assert.EqualError(t, err, "read file: open : no such file or directory")
+	assert.Equal(t, nil, values)
+}
+
 func TestFile_Load(t *testing.T) {
 	t.Parallel()
 

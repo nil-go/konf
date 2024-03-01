@@ -20,6 +20,15 @@ import (
 	"github.com/nil-go/konf/provider/azappconfig/internal/assert"
 )
 
+func TestAppConfig_empty(t *testing.T) {
+	var loader azappconfig.AppConfig
+	values, err := loader.Load()
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	assert.Equal(t, nil, values)
+}
+
 func TestAppConfig(t *testing.T) {
 	t.Parallel()
 

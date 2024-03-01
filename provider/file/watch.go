@@ -15,13 +15,18 @@ import (
 
 //nolint:cyclop,funlen
 func (f File) Watch(ctx context.Context, onChange func(map[string]any)) error {
+	logger := f.logger
+	if logger == nil {
+		logger = slog.Default()
+	}
+
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		return fmt.Errorf("create file watcher for %s: %w", f.path, err)
 	}
 	defer func() {
 		if e := watcher.Close(); e != nil {
-			f.logger.LogAttrs(
+			logger.LogAttrs(
 				ctx, slog.LevelWarn,
 				"Error when closing file watcher.",
 				slog.String("file", f.path),
@@ -69,7 +74,7 @@ func (f File) Watch(ctx context.Context, onChange func(map[string]any)) error {
 
 			switch {
 			case event.Has(fsnotify.Remove):
-				f.logger.LogAttrs(
+				logger.LogAttrs(
 					ctx, slog.LevelWarn,
 					"Config file has been removed.",
 					slog.String("file", f.path),
@@ -78,7 +83,7 @@ func (f File) Watch(ctx context.Context, onChange func(map[string]any)) error {
 			case event.Has(fsnotify.Create) || event.Has(fsnotify.Write):
 				values, err := f.Load()
 				if err != nil {
-					f.logger.LogAttrs(
+					logger.LogAttrs(
 						ctx, slog.LevelWarn,
 						"Error when reloading config file",
 						slog.String("file", f.path),
@@ -91,7 +96,7 @@ func (f File) Watch(ctx context.Context, onChange func(map[string]any)) error {
 			}
 
 		case err := <-watcher.Errors:
-			f.logger.LogAttrs(
+			logger.LogAttrs(
 				ctx, slog.LevelWarn,
 				"Error when watching file",
 				slog.String("file", f.path),

@@ -68,6 +68,6 @@ var defaultConfig atomic.Pointer[Config] //nolint:gochecknoglobals
 func init() { //nolint:gochecknoinits
 	config := New()
 	// Ignore error as env loader does not return error.
-	_ = config.Load(env.New())
+	_ = config.Load(env.Env{})
 	defaultConfig.Store(&config)
 }

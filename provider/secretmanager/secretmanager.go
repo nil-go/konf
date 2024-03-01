@@ -52,16 +52,6 @@ func New(opts ...Option) SecretManager {
 		}
 	}
 
-	if option.pollInterval <= 0 {
-		option.pollInterval = time.Minute
-	}
-	if option.splitter == nil {
-		option.splitter = func(s string) []string { return strings.Split(s, "-") }
-	}
-	if option.logger == nil {
-		option.logger = slog.Default()
-	}
-
 	return SecretManager(*option)
 }
 
@@ -72,7 +62,11 @@ func (a SecretManager) Load() (map[string]any, error) {
 }
 
 func (a SecretManager) Watch(ctx context.Context, onChange func(map[string]any)) error {
-	ticker := time.NewTicker(a.pollInterval)
+	pollInterval := time.Minute
+	if a.pollInterval > 0 {
+		pollInterval = a.pollInterval
+	}
+	ticker := time.NewTicker(pollInterval)
 	defer ticker.Stop()
 
 	for {
@@ -80,7 +74,12 @@ func (a SecretManager) Watch(ctx context.Context, onChange func(map[string]any))
 		case <-ticker.C:
 			values, changed, err := a.load(ctx)
 			if err != nil {
-				a.logger.LogAttrs(
+				logger := slog.Default()
+				if a.logger != nil {
+					logger = a.logger
+				}
+
+				logger.LogAttrs(
 					ctx, slog.LevelWarn,
 					"Error when reloading from GCP Secret Manager",
 					slog.String("project", a.client.project),
@@ -106,9 +105,16 @@ func (a SecretManager) load(ctx context.Context) (map[string]any, bool, error) {
 		return nil, false, err
 	}
 
+	splitter := a.splitter
+	if splitter == nil {
+		splitter = func(s string) []string {
+			return strings.Split(s, "-")
+		}
+	}
+
 	values := make(map[string]any)
 	for key, value := range resp {
-		keys := a.splitter(key)
+		keys := splitter(key)
 		if len(keys) == 0 || len(keys) == 1 && keys[0] == "" {
 			continue
 		}
@@ -133,6 +139,10 @@ type clientProxy struct {
 }
 
 func (p *clientProxy) load(ctx context.Context) (map[string]string, bool, error) { //nolint:cyclop,funlen
+	if p == nil {
+		p = &clientProxy{}
+	}
+
 	if p.project == "" {
 		var err error
 		if p.project, err = metadata.ProjectID(); err != nil {
