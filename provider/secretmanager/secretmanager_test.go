@@ -244,7 +244,7 @@ func grpcServer(t *testing.T, service pb.SecretManagerServiceServer) (*grpc.Clie
 
 	started := make(chan struct{})
 	go func() {
-		_ = os.RemoveAll(endpoint)
+		assert.NoError(t, os.RemoveAll(endpoint))
 		listener, e := net.Listen("unix", endpoint)
 		assert.NoError(t, e)
 		close(started)
@@ -257,7 +257,7 @@ func grpcServer(t *testing.T, service pb.SecretManagerServiceServer) (*grpc.Clie
 	assert.NoError(t, err)
 
 	return conn, func() {
-		_ = conn.Close()
+		assert.NoError(t, conn.Close())
 		server.GracefulStop()
 	}
 }

@@ -38,7 +38,7 @@ func TestConfig_Watch(t *testing.T) {
 	go func() {
 		defer close(stopped)
 
-		_ = config.Watch(ctx)
+		assert.NoError(t, config.Watch(ctx))
 	}()
 
 	newValue := make(chan string)
@@ -122,7 +122,7 @@ func TestConfig_Watch_panic(t *testing.T) {
 		{
 			description: "watch",
 			call: func(config konf.Config) {
-				_ = config.Watch(nil) //nolint:staticcheck
+				assert.NoError(t, config.Watch(nil)) //nolint:staticcheck
 			},
 			err: "cannot create context from nil parent",
 		},

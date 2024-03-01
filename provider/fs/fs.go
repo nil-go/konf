@@ -45,7 +45,7 @@ func New(fs fs.FS, path string, opts ...Option) FS {
 func (f FS) Load() (map[string]any, error) {
 	ffs := f.fs
 	if ffs == nil {
-		path, _ := os.Getwd()
+		path, _ := os.Getwd() // Ignore error as it uses whatever returned.
 		ffs = os.DirFS(path)
 	}
 
