@@ -72,29 +72,33 @@ func (f Flag) Load() (map[string]any, error) { //nolint:cyclop
 	}
 
 	values := make(map[string]any)
-	set.VisitAll(func(flag *flag.Flag) {
-		if f.prefix != "" && !strings.HasPrefix(flag.Name, f.prefix) {
+	set.VisitAll(func(flg *flag.Flag) {
+		if f.prefix != "" && !strings.HasPrefix(flg.Name, f.prefix) {
 			return
 		}
 
-		keys := splitter(flag.Name)
+		keys := splitter(flg.Name)
 		if len(keys) == 0 || len(keys) == 1 && keys[0] == "" {
 			return
 		}
 
-		val := flag.Value.String()
+		value := flg.Value.String()
 		// Skip zero default value to avoid overriding values set by other loader.
-		if val == flag.DefValue && (exists(keys) || isZeroDefValue(flag)) {
+		if value == flg.DefValue && (exists(keys) || zeroDefValue(flg)) {
 			return
 		}
 
-		maps.Insert(values, keys, val)
+		if getter, ok := flg.Value.(flag.Getter); ok {
+			maps.Insert(values, keys, getter.Get())
+		} else {
+			maps.Insert(values, keys, value)
+		}
 	})
 
 	return values, nil
 }
 
-func isZeroDefValue(flg *flag.Flag) bool {
+func zeroDefValue(flg *flag.Flag) bool {
 	// Build a zero value of the flag's Value type, and see if the
 	// result of calling its String method equals the value passed in.
 	// This works unless the Value type is itself an interface type.
