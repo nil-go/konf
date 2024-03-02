@@ -84,7 +84,7 @@ func (f Flag) Load() (map[string]any, error) { //nolint:cyclop
 
 		value := flg.Value.String()
 		// Skip zero default value to avoid overriding values set by other loader.
-		if value == flg.DefValue && (exists(keys) || zeroDefValue(flg)) {
+		if value == flg.DefValue && (exists(keys) || isZeroValue(flg)) {
 			return
 		}
 
@@ -98,7 +98,8 @@ func (f Flag) Load() (map[string]any, error) { //nolint:cyclop
 	return values, nil
 }
 
-func zeroDefValue(flg *flag.Flag) bool {
+// isZeroValue is copied from flag/flag.go.
+func isZeroValue(flg *flag.Flag) bool {
 	// Build a zero value of the flag's Value type, and see if the
 	// result of calling its String method equals the value passed in.
 	// This works unless the Value type is itself an interface type.
