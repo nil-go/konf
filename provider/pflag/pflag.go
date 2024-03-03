@@ -87,7 +87,7 @@ func (f PFlag) Load() (map[string]any, error) { //nolint:cyclop
 			}
 
 			// Skip zero default value to avoid overriding values set by other loader.
-			if !flag.Changed && (exists(keys) || zeroDefaultValue(flag)) {
+			if !flag.Changed && (exists(keys) || isZeroValue(flag)) {
 				return
 			}
 
@@ -99,7 +99,8 @@ func (f PFlag) Load() (map[string]any, error) { //nolint:cyclop
 	return values, nil
 }
 
-func zeroDefaultValue(flag *pflag.Flag) bool { //nolint:cyclop
+// isZeroValue is copied from flag/flag.go.
+func isZeroValue(flag *pflag.Flag) bool {
 	switch flag.Value.Type() {
 	case "bool":
 		return flag.DefValue == "false"
@@ -120,12 +121,18 @@ func zeroDefaultValue(flag *pflag.Flag) bool { //nolint:cyclop
 		"intSlice", "int32Slice", "int64Slice", "uintSlice", "float32Slice", "float64Slice":
 		return flag.DefValue == "[]"
 	default:
-		switch flag.DefValue {
-		case "false", "<nil>", "", "0":
-			return true
-		default:
-			return false
+		// Build a zero value of the flag's Value type, and see if the
+		// result of calling its String method equals the value passed in.
+		// This works unless the Value type is itself an interface type.
+		typ := reflect.TypeOf(flag.Value)
+		var val reflect.Value
+		if typ.Kind() == reflect.Pointer {
+			val = reflect.New(typ.Elem())
+		} else {
+			val = reflect.Zero(typ)
 		}
+
+		return flag.DefValue == val.Interface().(pflag.Value).String() //nolint:forcetypeassert
 	}
 }
 
