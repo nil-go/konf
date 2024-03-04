@@ -4,7 +4,6 @@
 package konf
 
 import (
-	"errors"
 	"fmt"
 	"log/slog"
 	"slices"
@@ -59,7 +58,7 @@ func (c *Config) Load(loader Loader) error {
 	c.nocopy.Check()
 
 	if loader == nil {
-		return errNilLoader
+		return nil
 	}
 
 	if c.values == nil {
@@ -201,12 +200,8 @@ type provider struct {
 	values map[string]any
 }
 
-var (
-	errNilLoader = errors.New("cannot load config from nil loader")
-
-	defaultDecodeHook = mapstructure.ComposeDecodeHookFunc( //nolint:gochecknoglobals
-		mapstructure.StringToTimeDurationHookFunc(),
-		mapstructure.StringToSliceHookFunc(","),
-		mapstructure.TextUnmarshallerHookFunc(),
-	)
+var defaultDecodeHook = mapstructure.ComposeDecodeHookFunc( //nolint:gochecknoglobals
+	mapstructure.StringToTimeDurationHookFunc(),
+	mapstructure.StringToSliceHookFunc(","),
+	mapstructure.TextUnmarshallerHookFunc(),
 )
