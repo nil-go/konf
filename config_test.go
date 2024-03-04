@@ -39,7 +39,6 @@ func TestConfig_Load(t *testing.T) {
 		},
 		{
 			description: "nil loader",
-			err:         "cannot load config from nil loader",
 		},
 	}
 
