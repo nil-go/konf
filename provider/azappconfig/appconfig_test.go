@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -178,9 +179,11 @@ list settings error
 					azappconfig.WithPollInterval(10*time.Millisecond),
 				)...,
 			)
-			var err error
+			var err atomic.Pointer[error]
 			loader.Status(func(_ bool, e error) {
-				err = e
+				if e != nil {
+					err.Store(&e)
+				}
 			})
 
 			values := make(chan map[string]any)
@@ -203,7 +206,7 @@ list settings error
 			case val := <-values:
 				assert.Equal(t, testcase.expected, val)
 			default:
-				assert.EqualError(t, err, fmt.Sprintf(testcase.err, server.URL))
+				assert.EqualError(t, *err.Load(), fmt.Sprintf(testcase.err, server.URL))
 			}
 		})
 	}

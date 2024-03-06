@@ -12,6 +12,7 @@ import (
 	"os"
 	"path"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -199,9 +200,11 @@ func TestSecretManager_Watch(t *testing.T) {
 				option.WithGRPCConn(conn),
 				secretmanager.WithPollInterval(10*time.Millisecond),
 			)...)
-			var err error
+			var err atomic.Pointer[error]
 			loader.Status(func(_ bool, e error) {
-				err = e
+				if e != nil {
+					err.Store(&e)
+				}
 			})
 
 			values := make(chan map[string]any)
@@ -223,7 +226,7 @@ func TestSecretManager_Watch(t *testing.T) {
 			case val := <-values:
 				assert.Equal(t, testcase.expected, val)
 			default:
-				assert.EqualError(t, err, testcase.err)
+				assert.EqualError(t, *err.Load(), testcase.err)
 			}
 		})
 	}

@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -309,7 +310,7 @@ func TestAppConfig_Watch(t *testing.T) {
 		t.Run(testcase.description, func(t *testing.T) {
 			t.Parallel()
 
-			cfg, err := config.LoadDefaultConfig(
+			cfg, cerr := config.LoadDefaultConfig(
 				context.Background(),
 				config.WithAPIOptions([]func(*middleware.Stack) error{
 					func(stack *middleware.Stack) error {
@@ -323,8 +324,9 @@ func TestAppConfig_Watch(t *testing.T) {
 					},
 				}),
 			)
-			assert.NoError(t, err)
+			assert.NoError(t, cerr)
 
+			var err atomic.Pointer[error]
 			loader := appconfig.New(
 				"app", "env", "profiler",
 				appconfig.WithAWSConfig(cfg),
@@ -332,7 +334,9 @@ func TestAppConfig_Watch(t *testing.T) {
 				appconfig.WithUnmarshal(testcase.unmarshal),
 			)
 			loader.Status(func(_ bool, e error) {
-				err = e
+				if e != nil {
+					err.Store(&e)
+				}
 			})
 
 			values := make(chan map[string]any)
@@ -356,9 +360,9 @@ func TestAppConfig_Watch(t *testing.T) {
 				assert.Equal(t, testcase.expected, val)
 			default:
 				if testcase.err == "" {
-					assert.NoError(t, err)
+					assert.Equal(t, nil, err.Load())
 				} else {
-					assert.EqualError(t, err, testcase.err)
+					assert.EqualError(t, *err.Load(), testcase.err)
 				}
 			}
 		})
