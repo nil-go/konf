@@ -51,13 +51,13 @@ func TestConverter(t *testing.T) { //nolint:maintidx
 			expected:    pointer("str"),
 		},
 		{
-			description: "from is nil pointer",
+			description: "from is typed nil",
 			from:        (*string)(nil),
 			to:          pointer("str"),
 			expected:    pointer("str"),
 		},
 		{
-			description: "from is nested nil pointer",
+			description: "from is nested typed nil",
 			from:        pointer(pointer((*string)(nil))),
 			to:          pointer("str"),
 			expected:    pointer("str"),
@@ -70,7 +70,7 @@ func TestConverter(t *testing.T) { //nolint:maintidx
 			expected:    pointer(2 * time.Second),
 		},
 		{
-			description: "string to []string]",
+			description: "string to []string",
 			from:        "a,b,c",
 			to:          pointer([]string(nil)),
 			expected:    pointer([]string{"a", "b", "c"}),

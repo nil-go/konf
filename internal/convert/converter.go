@@ -299,11 +299,10 @@ func (c Converter) convertArray(name string, fromVal, toVal reflect.Value) error
 		toVal.SetZero()
 		errs := make([]error, 0, toVal.Len())
 		for i := 0; i < fromVal.Len(); i++ {
-			fromElem := fromVal.Index(i).Interface()
-			toElemVal := toVal.Index(i)
-
 			fieldName := name + "[" + strconv.Itoa(i) + "]"
-			if err := c.convert(fieldName, fromElem, pointer(toElemVal)); err != nil {
+			fromElemVal := fromVal.Index(i)
+			toElemVal := toVal.Index(i)
+			if err := c.convert(fieldName, fromElemVal.Interface(), pointer(toElemVal)); err != nil {
 				errs = append(errs, err)
 			}
 		}
@@ -344,24 +343,24 @@ func (c Converter) convertMap(name string, fromVal, toVal reflect.Value) error {
 		toKeyType := toVal.Type().Key()
 		toValueType := toVal.Type().Elem()
 		errs := make([]error, 0, toVal.Len())
-		for _, fromKey := range fromVal.MapKeys() {
-			fieldName := name + "[" + fromKey.String() + "]"
-
-			toKey := reflect.New(toKeyType)
-			if err := c.convert(fieldName, fromKey.Interface(), toKey); err != nil {
+		for _, fromKeyVal := range fromVal.MapKeys() {
+			fieldName := name + "[" + fromKeyVal.String() + "]"
+			toKeyVal := reflect.New(toKeyType)
+			if err := c.convert(fieldName, fromKeyVal.Interface(), pointer(toKeyVal)); err != nil {
 				errs = append(errs, err)
 
 				continue
 			}
 
-			toValue := reflect.New(toValueType)
-			if err := c.convert(fieldName, fromVal.MapIndex(fromKey).Interface(), toValue); err != nil {
+			fromValueVal := fromVal.MapIndex(fromKeyVal)
+			toValueVal := reflect.New(toValueType)
+			if err := c.convert(fieldName, fromValueVal.Interface(), pointer(toValueVal)); err != nil {
 				errs = append(errs, err)
 
 				continue
 			}
 
-			toVal.SetMapIndex(reflect.Indirect(toKey), reflect.Indirect(toValue))
+			toVal.SetMapIndex(reflect.Indirect(toKeyVal), reflect.Indirect(toValueVal))
 		}
 
 		return errors.Join(errs...)
@@ -403,11 +402,10 @@ func (c Converter) convertSlice(name string, fromVal, toVal reflect.Value) error
 
 		errs := make([]error, 0, toVal.Len())
 		for i := 0; i < fromVal.Len(); i++ {
-			fromElem := fromVal.Index(i).Interface()
-			toElemVal := toVal.Index(i)
-
 			fieldName := name + "[" + strconv.Itoa(i) + "]"
-			if err := c.convert(fieldName, fromElem, pointer(toElemVal)); err != nil {
+			fromElemVal := fromVal.Index(i)
+			toElemVal := toVal.Index(i)
+			if err := c.convert(fieldName, fromElemVal.Interface(), pointer(toElemVal)); err != nil {
 				errs = append(errs, err)
 			}
 		}
@@ -478,13 +476,13 @@ func (c Converter) convertStruct(name string, fromVal, toVal reflect.Value) erro
 			)
 		}
 
-		fromKeys := fromVal.MapKeys()
 		// This slice will keep track of all the structs it'll be decoding.
 		// There can be more than one struct if there are embedded structs
 		// that are squashed.
 		structs := make([]reflect.Value, 0, 5) //nolint:gomnd
 		structs = append(structs, toVal)
 
+		fromKeys := fromVal.MapKeys()
 		var errs []error
 		for len(structs) > 0 {
 			structVal := structs[0]
