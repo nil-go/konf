@@ -1,6 +1,7 @@
 // Copyright (c) 2024 The konf authors
 // Use of this source code is governed by a MIT license found in the LICENSE file.
 
+//nolint:dupword
 /*
 Package konf provides a general-purpose configuration API and abstract interfaces
 to back that API. Packages in the Go ecosystem can depend on this package,
