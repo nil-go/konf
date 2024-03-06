@@ -22,6 +22,9 @@ linters-settings:
     always: true
   misspell:
     locale: US
+    ignore-words:
+      - konf
+      - statuser
   nonamedreturns:
     report-error-in-defer: true
   paralleltest:

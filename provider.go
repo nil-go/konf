@@ -27,6 +27,13 @@ type Watcher interface {
 	Watch(ctx context.Context, onChange func(map[string]any)) error
 }
 
+// Statuser is the interface that wraps the Status method.
+//
+// Status enables providers report the status of configuration watching.
+type Statuser interface {
+	Status(onStatus func(changed bool, err error))
+}
+
 // Exists tests if the given path exist in the configuration.
 //
 // It's used by the loader to check if the configuration has been set by other loaders.

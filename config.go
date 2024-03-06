@@ -27,9 +27,10 @@ type Config struct {
 	nocopy internal.NoCopy[Config]
 
 	// Options.
-	logger    *slog.Logger
-	converter convert.Converter
 	delimiter string
+	converter convert.Converter
+	logger    *slog.Logger
+	onStatus  func(loader Loader, changed bool, err error)
 
 	// Loaded configuration.
 	values    map[string]any

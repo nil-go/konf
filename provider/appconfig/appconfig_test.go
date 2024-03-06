@@ -4,12 +4,10 @@
 package appconfig_test
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
-	"log/slog"
-	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -197,7 +195,7 @@ func TestAppConfig_Watch(t *testing.T) {
 		) (middleware.FinalizeOutput, middleware.Metadata, error)
 		unmarshal func([]byte, any) error
 		expected  map[string]any
-		log       string
+		err       string
 	}{
 		{
 			description: "latest configuration",
@@ -272,10 +270,7 @@ func TestAppConfig_Watch(t *testing.T) {
 					return middleware.FinalizeOutput{}, middleware.Metadata{}, nil
 				}
 			},
-			log: `level=WARN msg="Error when reloading from AWS AppConfig"` +
-				` application=app environment=env profile=profiler` +
-				` error="get latest configuration: operation error AppConfigData: GetLatestConfiguration,` +
-				` get latest configuration error"` + "\n",
+			err: "get latest configuration: operation error AppConfigData: GetLatestConfiguration, get latest configuration error",
 		},
 		{
 			description: "unmarshal error",
@@ -305,8 +300,7 @@ func TestAppConfig_Watch(t *testing.T) {
 			unmarshal: func([]byte, any) error {
 				return errors.New("unmarshal error")
 			},
-			log: `level=WARN msg="Error when reloading from AWS AppConfig"` +
-				` application=app environment=env profile=profiler error="unmarshal: unmarshal error"` + "\n",
+			err: "unmarshal: unmarshal error",
 		},
 	}
 
@@ -316,7 +310,7 @@ func TestAppConfig_Watch(t *testing.T) {
 		t.Run(testcase.description, func(t *testing.T) {
 			t.Parallel()
 
-			cfg, err := config.LoadDefaultConfig(
+			cfg, cerr := config.LoadDefaultConfig(
 				context.Background(),
 				config.WithAPIOptions([]func(*middleware.Stack) error{
 					func(stack *middleware.Stack) error {
@@ -330,16 +324,21 @@ func TestAppConfig_Watch(t *testing.T) {
 					},
 				}),
 			)
-			assert.NoError(t, err)
+			assert.NoError(t, cerr)
 
-			buf := &buffer{}
+			var err atomic.Pointer[error]
 			loader := appconfig.New(
 				"app", "env", "profiler",
 				appconfig.WithAWSConfig(cfg),
 				appconfig.WithPollInterval(10*time.Millisecond),
-				appconfig.WithLogHandler(logHandler(buf)),
 				appconfig.WithUnmarshal(testcase.unmarshal),
 			)
+			loader.Status(func(_ bool, e error) {
+				if e != nil {
+					err.Store(&e)
+				}
+			})
+
 			values := make(chan map[string]any)
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
@@ -348,10 +347,10 @@ func TestAppConfig_Watch(t *testing.T) {
 			go func() {
 				close(started)
 
-				err := loader.Watch(ctx, func(changed map[string]any) {
+				e := loader.Watch(ctx, func(changed map[string]any) {
 					values <- changed
 				})
-				assert.NoError(t, err)
+				assert.NoError(t, e)
 			}()
 			<-started
 
@@ -360,7 +359,11 @@ func TestAppConfig_Watch(t *testing.T) {
 			case val := <-values:
 				assert.Equal(t, testcase.expected, val)
 			default:
-				assert.Equal(t, testcase.log, buf.String())
+				if testcase.err == "" {
+					assert.Equal(t, nil, err.Load())
+				} else {
+					assert.EqualError(t, *err.Load(), testcase.err)
+				}
 			}
 		})
 	}
@@ -371,42 +374,4 @@ func TestAppConfig_String(t *testing.T) {
 
 	loader := appconfig.New("app", "env", "profile")
 	assert.Equal(t, "appConfig:app-env-profile", loader.String())
-}
-
-func logHandler(buf *buffer) *slog.TextHandler {
-	return slog.NewTextHandler(buf, &slog.HandlerOptions{
-		ReplaceAttr: func(groups []string, attr slog.Attr) slog.Attr {
-			if len(groups) == 0 && attr.Key == slog.TimeKey {
-				return slog.Attr{}
-			}
-
-			return attr
-		},
-	})
-}
-
-type buffer struct {
-	b bytes.Buffer
-	m sync.RWMutex
-}
-
-func (b *buffer) Read(p []byte) (int, error) {
-	b.m.RLock()
-	defer b.m.RUnlock()
-
-	return b.b.Read(p)
-}
-
-func (b *buffer) Write(p []byte) (int, error) {
-	b.m.Lock()
-	defer b.m.Unlock()
-
-	return b.b.Write(p)
-}
-
-func (b *buffer) String() string {
-	b.m.RLock()
-	defer b.m.RUnlock()
-
-	return b.b.String()
 }

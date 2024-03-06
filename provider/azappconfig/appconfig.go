@@ -9,7 +9,6 @@ package azappconfig
 import (
 	"context"
 	"fmt"
-	"log/slog"
 	"maps"
 	"reflect"
 	"strings"
@@ -29,13 +28,13 @@ import (
 type AppConfig struct {
 	splitter     func(string) []string
 	pollInterval time.Duration
-	logger       *slog.Logger
 
-	client *clientProxy
+	onStatus func(bool, error)
+	client   *clientProxy
 }
 
 // New creates an AppConfig with the given endpoint and Option(s).
-func New(endpoint string, opts ...Option) AppConfig {
+func New(endpoint string, opts ...Option) *AppConfig {
 	option := &options{
 		client: &clientProxy{
 			// Place holder for the default credential.
@@ -52,16 +51,16 @@ func New(endpoint string, opts ...Option) AppConfig {
 	}
 	option.client.timeout = option.pollInterval / 2 //nolint:gomnd
 
-	return AppConfig(*option)
+	return (*AppConfig)(option)
 }
 
-func (a AppConfig) Load() (map[string]any, error) {
+func (a *AppConfig) Load() (map[string]any, error) {
 	values, _, err := a.load(context.Background())
 
 	return values, err
 }
 
-func (a AppConfig) Watch(ctx context.Context, onChange func(map[string]any)) error {
+func (a *AppConfig) Watch(ctx context.Context, onChange func(map[string]any)) error {
 	pollInterval := time.Minute
 	if a.pollInterval > 0 {
 		pollInterval = a.pollInterval
@@ -73,24 +72,9 @@ func (a AppConfig) Watch(ctx context.Context, onChange func(map[string]any)) err
 		select {
 		case <-ticker.C:
 			values, changed, err := a.load(ctx)
-			if err != nil {
-				logger := a.logger
-				if a.logger == nil {
-					logger = slog.Default()
-				}
-
-				logger.LogAttrs(
-					ctx, slog.LevelWarn,
-					"Error when reloading from Azure App Configuration",
-					slog.String("endpoint", a.client.endpoint),
-					slog.String("keyFilter", a.client.keyFilter),
-					slog.String("labelFilter", a.client.labelFilter),
-					slog.Any("error", err),
-				)
-
-				continue
+			if a.onStatus != nil {
+				a.onStatus(changed, err)
 			}
-
 			if changed {
 				onChange(values)
 			}
@@ -100,7 +84,7 @@ func (a AppConfig) Watch(ctx context.Context, onChange func(map[string]any)) err
 	}
 }
 
-func (a AppConfig) load(ctx context.Context) (map[string]any, bool, error) {
+func (a *AppConfig) load(ctx context.Context) (map[string]any, bool, error) {
 	resp, changed, err := a.client.load(ctx)
 	if !changed || err != nil {
 		return nil, false, err
@@ -123,7 +107,11 @@ func (a AppConfig) load(ctx context.Context) (map[string]any, bool, error) {
 	return values, true, nil
 }
 
-func (a AppConfig) String() string {
+func (a *AppConfig) Status(onStatus func(bool, error)) {
+	a.onStatus = onStatus
+}
+
+func (a *AppConfig) String() string {
 	return "azAppConfig:" + a.client.endpoint
 }
 

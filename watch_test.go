@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"sync"
 	"testing"
@@ -111,6 +112,35 @@ func TestConfig_Watch_twice(t *testing.T) {
 	assert.Equal(t, expected, buf.String())
 }
 
+func TestConfig_Watch_status(t *testing.T) {
+	t.Parallel()
+
+	buf := &buffer{}
+	config := konf.New(
+		konf.WithLogHandler(logHandler(buf)),
+		konf.WithOnStatus(func(loader konf.Loader, _ bool, err error) {
+			assert.Equal(t, "status", fmt.Sprintf("%s", loader))
+			assert.EqualError(t, err, "watch error")
+		}),
+	)
+	assert.NoError(t, config.Load(&statusWatcher{}))
+
+	stopped := make(chan struct{})
+	ctx, cancel := context.WithCancel(context.Background())
+	defer func() {
+		cancel()
+		<-stopped
+	}()
+	go func() {
+		defer close(stopped)
+		assert.NoError(t, config.Watch(ctx))
+	}()
+	time.Sleep(100 * time.Millisecond) // Wait for watch to start
+
+	expected := "level=WARN msg=\"Error when watching configuration changes.\" loader=status error=\"watch error\"\n"
+	assert.Equal(t, expected, buf.String())
+}
+
 func TestConfig_Watch_panic(t *testing.T) {
 	t.Parallel()
 
@@ -199,6 +229,28 @@ func (errorWatcher) Watch(context.Context, func(map[string]any)) error {
 
 func (errorWatcher) String() string {
 	return "error"
+}
+
+type statusWatcher struct {
+	onStatus func(bool, error)
+}
+
+func (*statusWatcher) Load() (map[string]any, error) {
+	return nil, nil //nolint:nilnil
+}
+
+func (s *statusWatcher) Watch(context.Context, func(map[string]any)) error {
+	s.onStatus(false, errors.New("watch error"))
+
+	return nil
+}
+
+func (s *statusWatcher) Status(onStatus func(bool, error)) {
+	s.onStatus = onStatus
+}
+
+func (*statusWatcher) String() string {
+	return "status"
 }
 
 func logHandler(buf *buffer) *slog.TextHandler {
