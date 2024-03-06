@@ -64,28 +64,28 @@ func (c Converter) convert(name string, from any, toVal reflect.Value) error { /
 	}
 
 	toVal = reflect.Indirect(toVal)
-	switch toVal.Kind() {
-	case reflect.Bool:
+	switch {
+	case toVal.Kind() == reflect.Bool:
 		return c.convertBool(name, fromVal, toVal)
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+	case toVal.CanInt():
 		return c.convertInt(name, fromVal, toVal)
-	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+	case toVal.CanUint():
 		return c.convertUint(name, fromVal, toVal)
-	case reflect.Float32, reflect.Float64:
+	case toVal.CanFloat():
 		return c.convertFloat(name, fromVal, toVal)
-	case reflect.Complex64, reflect.Complex128:
+	case toVal.CanComplex():
 		return c.convertComplex(name, fromVal, toVal)
-	case reflect.Array:
+	case toVal.Kind() == reflect.Array:
 		return c.convertArray(name, fromVal, toVal)
-	case reflect.Map:
+	case toVal.Kind() == reflect.Map:
 		return c.convertMap(name, fromVal, toVal)
-	case reflect.Pointer:
+	case toVal.Kind() == reflect.Pointer:
 		return c.convertPointer(name, fromVal, toVal)
-	case reflect.Slice:
+	case toVal.Kind() == reflect.Slice:
 		return c.convertSlice(name, fromVal, toVal)
-	case reflect.String:
+	case toVal.Kind() == reflect.String:
 		return c.convertString(name, fromVal, toVal)
-	case reflect.Struct:
+	case toVal.Kind() == reflect.Struct:
 		return c.convertStruct(name, fromVal, toVal)
 	default:
 		// If it reached here then it weren't able to convert it.
