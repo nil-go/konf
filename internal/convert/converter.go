@@ -319,7 +319,7 @@ func (c Converter) convertArray(name string, fromVal, toVal reflect.Value) error
 
 		fallthrough
 	default:
-		// All other types we try to convert to the array type
+		// All other types it tries to convert to the array type
 		// and "lift" it into it. i.e. a string becomes a string array.
 		// Just re-try this function with data as a slice.
 		return c.convertArray(name, reflect.ValueOf([]any{fromVal.Interface()}), toVal)
@@ -425,7 +425,7 @@ func (c Converter) convertSlice(name string, fromVal, toVal reflect.Value) error
 
 		fallthrough
 	default:
-		// All other types we try to convert to the slice type
+		// All other types it tries to convert to the slice type
 		// and "lift" it into it. i.e. a string becomes a string slice.
 		// Just re-try this function with data as a slice.
 		return c.convertSlice(name, reflect.ValueOf([]any{fromVal.Interface()}), toVal)
@@ -479,7 +479,7 @@ func (c Converter) convertStruct(name string, fromVal, toVal reflect.Value) erro
 		}
 
 		fromKeys := fromVal.MapKeys()
-		// This slice will keep track of all the structs we'll be decoding.
+		// This slice will keep track of all the structs it'll be decoding.
 		// There can be more than one struct if there are embedded structs
 		// that are squashed.
 		structs := make([]reflect.Value, 0, 5) //nolint:gomnd
@@ -495,12 +495,12 @@ func (c Converter) convertStruct(name string, fromVal, toVal reflect.Value) erro
 				fieldType := structType.Field(i)
 				fieldVal := structVal.Field(i)
 				if !fieldVal.CanSet() {
-					// If we can't set the field, then it is unexported or something,
-					// and we just continue onwards.
+					// If it can't set the field, then it is unexported or something,
+					// and it just continue onwards.
 					continue
 				}
 
-				// We always parse the tags cause we're looking for other tags too
+				// It always parse the tags cause it's looking for other tags too
 				fileName, tag, _ := strings.Cut(fieldType.Tag.Get(c.tagName), ",")
 				if fileName == "" {
 					fileName = fieldType.Name
