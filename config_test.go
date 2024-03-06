@@ -155,9 +155,11 @@ func TestConfig_Unmarshal(t *testing.T) {
 				},
 			},
 			assert: func(config *konf.Config) {
-				var value time.Duration
-				assert.NoError(t, config.Unmarshal("config.nest", &value))
-				assert.Equal(t, time.Second, value)
+				var value struct {
+					N time.Duration `konf:"nest"`
+				}
+				assert.NoError(t, config.Unmarshal("config", &value))
+				assert.Equal(t, time.Second, value.N)
 			},
 		},
 		{
@@ -185,16 +187,16 @@ func TestConfig_Unmarshal(t *testing.T) {
 			loaders: []konf.Loader{
 				mapLoader{
 					"config": map[string]any{
-						"nest": "string",
+						"nest": "1s",
 					},
 				},
 			},
 			assert: func(config *konf.Config) {
 				var value struct {
-					N string `test:"nest"`
+					N time.Duration `test:"nest"`
 				}
 				assert.NoError(t, config.Unmarshal("config", &value))
-				assert.Equal(t, "string", value.N)
+				assert.Equal(t, time.Second, value.N)
 			},
 		},
 		{

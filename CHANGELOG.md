@@ -7,6 +7,12 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.8.1] - 2024-03-06
+
+### Fixed
+
+- Config uses default tag name of decode hooks even only one of them is set (#204).
+
 ## [0.8.0] - 2024-03-06
 
 ### Added

@@ -25,7 +25,7 @@ func WithDelimiter(delimiter string) Option {
 // For example, with the default tag name `konf`, it would look for `konf` tags on struct fields.
 func WithTagName(tagName string) Option {
 	return func(options *options) {
-		options.convertOpts = append(options.convertOpts, convert.WithTagName(tagName))
+		options.tagName = tagName
 	}
 }
 
@@ -39,7 +39,7 @@ func WithTagName(tagName string) Option {
 // and string to encoding.TextUnmarshaler.
 func WithDecodeHook[F, T any, FN func(F) (T, error) | func(F, T) error](hook FN) Option {
 	return func(options *options) {
-		options.convertOpts = append(options.convertOpts, convert.WithHook[F, T](hook))
+		options.hooks = append(options.hooks, convert.WithHook[F, T](hook))
 	}
 }
 
@@ -67,6 +67,7 @@ type (
 	options struct {
 		Config
 
-		convertOpts []convert.Option
+		tagName string
+		hooks   []convert.Option
 	}
 )
