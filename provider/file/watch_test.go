@@ -25,13 +25,23 @@ func TestFile_Watch(t *testing.T) {
 		{
 			description: "write",
 			action: func(path string) error {
-				return os.WriteFile(path, []byte(`{"p": {"k": "c"}}`), 0o600)
+				err := os.WriteFile(path, []byte(`{"p": {"k": "c"}}`), 0o600)
+				time.Sleep(time.Second) // wait for the file to be written
+
+				return err
 			},
 			expected: map[string]any{"p": map[string]any{"k": "c"}},
 		},
 		{
 			description: "remove",
-			action:      os.Remove,
+			action: func(path string) error {
+				err := os.Remove(path)
+				for _, e := os.Stat(path); os.IsExist(e); _, err = os.Stat(path) { //nolint:revive
+					// wait for the file to be removed
+				}
+
+				return err
+			},
 		},
 	}
 
@@ -43,7 +53,9 @@ func TestFile_Watch(t *testing.T) {
 
 			tmpFile := filepath.Join(t.TempDir(), "watch.json")
 			assert.NoError(t, os.WriteFile(tmpFile, []byte(`{"p": {"k": "v"}}`), 0o600))
-			time.Sleep(100 * time.Millisecond) // wait for the file to be written
+			for _, err := os.Stat(tmpFile); os.IsNotExist(err); _, err = os.Stat(tmpFile) { //nolint:revive
+				// wait for the file to be written
+			}
 
 			values := make(chan map[string]any)
 
@@ -62,7 +74,6 @@ func TestFile_Watch(t *testing.T) {
 			time.Sleep(time.Second) // wait for the watcher to start
 
 			assert.NoError(t, testcase.action(tmpFile))
-			time.Sleep(time.Second) // wait for the watcher to pick up the change from action
 			assert.Equal(t, testcase.expected, <-values)
 		})
 	}
