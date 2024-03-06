@@ -54,7 +54,7 @@ func WithLogHandler(handler slog.Handler) Option {
 	}
 }
 
-// WithOnStatus provides the callback for monitoring status of configuration watching.
+// WithOnStatus provides the callback for monitoring status of configuration loading/watching.
 func WithOnStatus(onStatus func(loader Loader, changed bool, err error)) Option {
 	return func(options *options) {
 		options.onStatus = onStatus

@@ -102,21 +102,6 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 	for i := range c.providers {
 		provider := &c.providers[i] // Use pointer for later modification.
 
-		if statuser, ok := provider.loader.(Statuser); ok {
-			statuser.Status(func(changed bool, err error) {
-				if err != nil {
-					c.logger.Warn(
-						"Error when watching configuration changes.",
-						slog.Any("loader", provider.loader),
-						slog.Any("error", err),
-					)
-				}
-				if c.onStatus != nil {
-					c.onStatus(provider.loader, changed, err)
-				}
-			})
-		}
-
 		if watcher, ok := provider.loader.(Watcher); ok {
 			waitGroup.Add(1)
 			go func() {

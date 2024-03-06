@@ -9,7 +9,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
-- Statuser interface for providers report status of configuration watching (#199).
+- Statuser interface for providers report status of configuration loading/watching (#199).
 
 ### Changed
 
