@@ -139,7 +139,7 @@ func TestConfig_Watch_status(t *testing.T) {
 	}()
 	time.Sleep(100 * time.Millisecond) // Wait for watch to start
 
-	expected := "level=WARN msg=\"Error when watching configuration changes.\" loader=status error=\"watch error\"\n"
+	expected := "level=WARN msg=\"Error when loading configuration.\" loader=status error=\"watch error\"\n"
 	assert.Equal(t, expected, buf.String())
 	assert.EqualError(t, *err.Load(), "watch error")
 }

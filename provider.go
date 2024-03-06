@@ -29,7 +29,7 @@ type Watcher interface {
 
 // Statuser is the interface that wraps the Status method.
 //
-// Status enables providers report the status of configuration watching.
+// Status enables providers report the status of configuration loading/watching.
 type Statuser interface {
 	Status(onStatus func(changed bool, err error))
 }

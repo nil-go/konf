@@ -68,6 +68,21 @@ func (c *Config) Load(loader Loader) error {
 		c.values = make(map[string]any)
 	}
 
+	if statuser, ok := loader.(Statuser); ok {
+		statuser.Status(func(changed bool, err error) {
+			if err != nil {
+				c.logger.Warn(
+					"Error when loading configuration.",
+					slog.Any("loader", loader),
+					slog.Any("error", err),
+				)
+			}
+			if c.onStatus != nil {
+				c.onStatus(loader, changed, err)
+			}
+		})
+	}
+
 	values, err := loader.Load()
 	if err != nil {
 		return fmt.Errorf("load configuration: %w", err)
