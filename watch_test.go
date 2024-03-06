@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"log/slog"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -115,12 +116,13 @@ func TestConfig_Watch_twice(t *testing.T) {
 func TestConfig_Watch_status(t *testing.T) {
 	t.Parallel()
 
+	var err atomic.Pointer[error]
 	buf := &buffer{}
 	config := konf.New(
 		konf.WithLogHandler(logHandler(buf)),
-		konf.WithOnStatus(func(loader konf.Loader, _ bool, err error) {
+		konf.WithOnStatus(func(loader konf.Loader, _ bool, e error) {
 			assert.Equal(t, "status", fmt.Sprintf("%s", loader))
-			assert.EqualError(t, err, "watch error")
+			err.Store(&e)
 		}),
 	)
 	assert.NoError(t, config.Load(&statusWatcher{}))
@@ -139,6 +141,7 @@ func TestConfig_Watch_status(t *testing.T) {
 
 	expected := "level=WARN msg=\"Error when watching configuration changes.\" loader=status error=\"watch error\"\n"
 	assert.Equal(t, expected, buf.String())
+	assert.EqualError(t, *err.Load(), "watch error")
 }
 
 func TestConfig_Watch_panic(t *testing.T) {
