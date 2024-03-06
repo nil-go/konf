@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"sync"
 	"testing"
@@ -115,7 +116,13 @@ func TestConfig_Watch_status(t *testing.T) {
 	t.Parallel()
 
 	buf := &buffer{}
-	config := konf.New(konf.WithLogHandler(logHandler(buf)))
+	config := konf.New(
+		konf.WithLogHandler(logHandler(buf)),
+		konf.WithOnStatus(func(loader konf.Loader, _ bool, err error) {
+			assert.Equal(t, "status", fmt.Sprintf("%s", loader))
+			assert.EqualError(t, err, "watch error")
+		}),
+	)
 	assert.NoError(t, config.Load(&statusWatcher{}))
 
 	stopped := make(chan struct{})
