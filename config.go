@@ -4,16 +4,18 @@
 package konf
 
 import (
+	"encoding"
 	"fmt"
 	"log/slog"
+	"reflect"
 	"slices"
 	"strings"
 	"sync"
 	"sync/atomic"
-
-	"github.com/go-viper/mapstructure/v2"
+	"time"
 
 	"github.com/nil-go/konf/internal"
+	"github.com/nil-go/konf/internal/convert"
 	"github.com/nil-go/konf/internal/credential"
 	"github.com/nil-go/konf/internal/maps"
 )
@@ -25,10 +27,9 @@ type Config struct {
 	nocopy internal.NoCopy[Config]
 
 	// Options.
-	logger     *slog.Logger
-	decodeHook mapstructure.DecodeHookFunc
-	tagName    string
-	delimiter  string
+	logger    *slog.Logger
+	converter convert.Converter
+	delimiter string
 
 	// Loaded configuration.
 	values    map[string]any
@@ -46,8 +47,9 @@ func New(opts ...Option) *Config {
 	for _, opt := range opts {
 		opt(option)
 	}
+	option.converter = convert.New(option.convertOpts...)
 
-	return (*Config)(option)
+	return &(option.Config)
 }
 
 // Load loads configuration from the given loader.
@@ -92,27 +94,12 @@ func (c *Config) Unmarshal(path string, target any) error {
 
 	c.nocopy.Check()
 
-	decodeHook := c.decodeHook
-	if decodeHook == nil {
-		decodeHook = defaultDecodeHook
-	}
-	tagName := c.tagName
-	if tagName == "" {
-		tagName = "konf"
-	}
-	decoder, err := mapstructure.NewDecoder(
-		&mapstructure.DecoderConfig{
-			Result:           target,
-			WeaklyTypedInput: true,
-			DecodeHook:       decodeHook,
-			TagName:          tagName,
-		},
-	)
-	if err != nil {
-		return fmt.Errorf("new decoder: %w", err)
+	converter := c.converter
+	if reflect.ValueOf(converter).IsZero() {
+		converter = defaultConverter
 	}
 
-	if err := decoder.Decode(maps.Sub(c.values, c.split(path))); err != nil {
+	if err := converter.Convert(maps.Sub(c.values, c.split(path)), target); err != nil {
 		return fmt.Errorf("decode: %w", err)
 	}
 
@@ -200,8 +187,13 @@ type provider struct {
 	values map[string]any
 }
 
-var defaultDecodeHook = mapstructure.ComposeDecodeHookFunc( //nolint:gochecknoglobals
-	mapstructure.StringToTimeDurationHookFunc(),
-	mapstructure.StringToSliceHookFunc(","),
-	mapstructure.TextUnmarshallerHookFunc(),
+var defaultConverter = convert.New( //nolint:gochecknoglobals
+	convert.WithTagName("konf"),
+	convert.WithHook[string, time.Duration](time.ParseDuration),
+	convert.WithHook[string, []string](func(f string) ([]string, error) {
+		return strings.Split(f, ","), nil
+	}),
+	convert.WithHook[string, encoding.TextUnmarshaler](func(f string, t encoding.TextUnmarshaler) error {
+		return fmt.Errorf("hook TextUnmarshaler:%w", t.UnmarshalText([]byte(f)))
+	}),
 )
