@@ -7,6 +7,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- [Breaking] Replace mapstructure with simpler built-in converter (#198).
+
 ## [0.7.0] - 2024-02-29
 
 ### Changed

@@ -569,9 +569,9 @@ func TestConverter(t *testing.T) { //nolint:maintidx
 		},
 		{
 			description: "non-empty map to array",
-			from:        map[string]string{"k": "v"},
-			to:          pointer([1]myStruct{}),
-			expected:    pointer([1]myStruct{{K: "v"}}),
+			from:        map[string]string{"outerField": "v"},
+			to:          pointer([1]OuterStruct{}),
+			expected:    pointer([1]OuterStruct{{OuterField: "v"}}),
 		},
 		{
 			description: "int to array",
@@ -704,9 +704,9 @@ func TestConverter(t *testing.T) { //nolint:maintidx
 		},
 		{
 			description: "non-empty map to slice",
-			from:        map[string]string{"k": "v"},
-			to:          pointer([]myStruct{}),
-			expected:    pointer([]myStruct{{K: "v"}}),
+			from:        map[string]string{"outerField": "v"},
+			to:          pointer([]OuterStruct{}),
+			expected:    pointer([]OuterStruct{{OuterField: "v"}}),
 		},
 		{
 			description: "int to slice",
@@ -789,9 +789,46 @@ func TestConverter(t *testing.T) { //nolint:maintidx
 		},
 		// To struct.
 		{
+			description: "map to struct",
+			from: map[string]any{
+				"outerField":   "outer",
+				"privateField": "private",
+				"innerField":   "squash",
+				"inner":        map[string]any{"innerField": "inner"},
+			},
+			to: pointer(OuterStruct{}),
+			expected: pointer(OuterStruct{
+				OuterField:  "outer",
+				InnerStruct: InnerStruct{InnerField: "squash"},
+				Inner:       &InnerStruct{InnerField: "inner"},
+			}),
+		},
+		{
+			description: "convert error  on field",
+			from:        map[string]int{"InnerField": -42},
+			to: pointer(struct {
+				InnerField uint
+			}{}),
+			err: "cannot parse 'InnerField', -42 overflows uint",
+		},
+		{
+			description: "squash on field",
+			from:        map[string]string{},
+			to: pointer(struct {
+				InnerField string `konf:",squash"`
+			}{}),
+			err: "InnerField: unsupported type for squash: string",
+		},
+		{
+			description: "unsupported key type to struct",
+			from:        map[int]string{},
+			to:          pointer(OuterStruct{}),
+			err:         "'' needs a map with string keys, has 'int' keys",
+		},
+		{
 			description: "unsupported type to struct",
 			from:        "str",
-			to:          pointer(map[string]string(nil)),
+			to:          pointer(OuterStruct{}),
 			err:         "'' expected a map, got 'string'",
 		},
 		// unsupported.
@@ -822,14 +859,15 @@ func TestConverter(t *testing.T) { //nolint:maintidx
 	}
 
 	converter := convert.New(
-		convert.WithHookFunc(func(any, any) error {
+		convert.WithTagName("konf"),
+		convert.WithHook[any, any](func(any, any) error {
 			return errors.ErrUnsupported
 		}),
-		convert.WithHook(time.ParseDuration),
-		convert.WithHook(func(f string) ([]string, error) {
+		convert.WithHook[string, time.Duration](time.ParseDuration),
+		convert.WithHook[string, []string](func(f string) ([]string, error) {
 			return strings.Split(f, ","), nil
 		}),
-		convert.WithHookFunc(func(f string, t encoding.TextUnmarshaler) error {
+		convert.WithHook[string, encoding.TextUnmarshaler](func(f string, t encoding.TextUnmarshaler) error {
 			return t.UnmarshalText([]byte(f))
 		}),
 	)
@@ -872,6 +910,16 @@ func (e *Enum) UnmarshalText(text []byte) error {
 	return nil
 }
 
-type myStruct struct {
-	K string
-}
+type (
+	OuterStruct struct {
+		OuterField   string
+		privateField string //nolint:unused
+
+		InnerStruct `konf:",squash"`
+		Inner       *InnerStruct
+	}
+
+	InnerStruct struct {
+		InnerField string
+	}
+)

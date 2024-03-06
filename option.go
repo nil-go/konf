@@ -3,7 +3,11 @@
 
 package konf
 
-import "log/slog"
+import (
+	"log/slog"
+
+	"github.com/nil-go/konf/internal/convert"
+)
 
 // WithDelimiter provides the delimiter used when specifying config paths.
 // The delimiter is used to separate keys in the path.
@@ -21,17 +25,21 @@ func WithDelimiter(delimiter string) Option {
 // For example, with the default tag name `konf`, it would look for `konf` tags on struct fields.
 func WithTagName(tagName string) Option {
 	return func(options *options) {
-		options.tagName = tagName
+		options.convertOpts = append(options.convertOpts, convert.WithTagName(tagName))
 	}
 }
 
 // WithDecodeHook provides the decode hook for decoding.
-// The decode hook is a function that can transform or customize how values are decoded.
+// The decode hook is a function that can customize how configuration are decoded.
 //
-// By default, it composes StringToTimeDurationHookFunc, StringToSliceHookFunc(",") and TextUnmarshallerHookFunc.
-func WithDecodeHook(decodeHook DecodeHook) Option {
+// It can be either `func(F) (T, error)` which returns the converted value,
+// or `func(F, T) error` which sets the converted value inline.
+//
+// By default, it composes string to time.Duration, string to []string split by `,`
+// and string to encoding.TextUnmarshaler.
+func WithDecodeHook[F, T any, FN func(F) (T, error) | func(F, T) error](hook FN) Option {
 	return func(options *options) {
-		options.decodeHook = decodeHook
+		options.convertOpts = append(options.convertOpts, convert.WithHook[F, T](hook))
 	}
 }
 
@@ -49,7 +57,9 @@ func WithLogHandler(handler slog.Handler) Option {
 type (
 	// Option configures a Config with specific options.
 	Option  func(*options)
-	options Config
+	options struct {
+		Config
 
-	DecodeHook any
+		convertOpts []convert.Option
+	}
 )

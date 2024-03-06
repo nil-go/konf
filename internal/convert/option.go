@@ -8,17 +8,32 @@ import (
 	"reflect"
 )
 
-// WithTagName provides the tag name that reads for field names.
-// The tag name is used when decoding configuration into structs.
-//
-// For example, with the default tag name `konf`, it would look for `konf` tags on struct fields.
 func WithTagName(tagName string) Option {
 	return func(options *options) {
 		options.tagName = tagName
 	}
 }
 
-func WithHookFunc[F, T any](hookFunc func(F, T) error) Option {
+func WithHook[F, T any, FN func(F) (T, error) | func(F, T) error](hook FN) Option {
+	switch hookFunc := any(hook).(type) {
+	case func(F) (T, error):
+		return withHookFunc(func(f F, t *T) error {
+			r, err := hookFunc(f)
+			if err != nil {
+				return err
+			}
+			*t = r
+
+			return nil
+		})
+	case func(F, T) error:
+		return withHookFunc[F, T](hookFunc)
+	default:
+		return func(*options) {}
+	}
+}
+
+func withHookFunc[F, T any](hookFunc func(F, T) error) Option {
 	return func(options *options) {
 		if hookFunc == nil {
 			return
@@ -41,18 +56,6 @@ func WithHookFunc[F, T any](hookFunc func(F, T) error) Option {
 			},
 		})
 	}
-}
-
-func WithHook[F, T any](hookFunc func(F) (T, error)) Option {
-	return WithHookFunc(func(f F, t *T) error {
-		r, err := hookFunc(f)
-		if err != nil {
-			return err
-		}
-		*t = r
-
-		return nil
-	})
 }
 
 type (

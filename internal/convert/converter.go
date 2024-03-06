@@ -478,10 +478,6 @@ func (c Converter) convertStruct(name string, fromVal, toVal reflect.Value) erro
 			)
 		}
 
-		tagName := c.tagName
-		if tagName == "" {
-			tagName = "konf"
-		}
 		fromKeys := fromVal.MapKeys()
 		// This slice will keep track of all the structs we'll be decoding.
 		// There can be more than one struct if there are embedded structs
@@ -504,13 +500,8 @@ func (c Converter) convertStruct(name string, fromVal, toVal reflect.Value) erro
 					continue
 				}
 
-				if fieldVal.Kind() == reflect.Pointer && fieldVal.Elem().Kind() == reflect.Struct {
-					// Handle embedded struct pointers as embedded structs.
-					fieldVal = fieldVal.Elem()
-				}
-
 				// We always parse the tags cause we're looking for other tags too
-				fileName, tag, _ := strings.Cut(fieldType.Tag.Get(tagName), ",")
+				fileName, tag, _ := strings.Cut(fieldType.Tag.Get(c.tagName), ",")
 				if fileName == "" {
 					fileName = fieldType.Name
 				}

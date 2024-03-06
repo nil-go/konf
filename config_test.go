@@ -7,8 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-viper/mapstructure/v2"
-
 	"github.com/nil-go/konf"
 	"github.com/nil-go/konf/internal/assert"
 	"github.com/nil-go/konf/provider/env"
@@ -130,9 +128,24 @@ func TestConfig_Unmarshal(t *testing.T) {
 			},
 		},
 		{
+			description: "decode hook",
+			loaders: []konf.Loader{
+				mapLoader{
+					"config": map[string]any{
+						"nest": "1s",
+					},
+				},
+			},
+			assert: func(config *konf.Config) {
+				var value time.Duration
+				assert.NoError(t, config.Unmarshal("config.nest", &value))
+				assert.Equal(t, time.Second, value)
+			},
+		},
+		{
 			description: "customized decode hook",
 			opts: []konf.Option{
-				konf.WithDecodeHook(mapstructure.StringToTimeDurationHookFunc()),
+				konf.WithDecodeHook[string, time.Duration](time.ParseDuration),
 			},
 			loaders: []konf.Loader{
 				mapLoader{
@@ -145,6 +158,23 @@ func TestConfig_Unmarshal(t *testing.T) {
 				var value time.Duration
 				assert.NoError(t, config.Unmarshal("config.nest", &value))
 				assert.Equal(t, time.Second, value)
+			},
+		},
+		{
+			description: "tag name",
+			loaders: []konf.Loader{
+				mapLoader{
+					"config": map[string]any{
+						"nest": "string",
+					},
+				},
+			},
+			assert: func(config *konf.Config) {
+				var value struct {
+					N string `konf:"nest"`
+				}
+				assert.NoError(t, config.Unmarshal("config", &value))
+				assert.Equal(t, "string", value.N)
 			},
 		},
 		{
