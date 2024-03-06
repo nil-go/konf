@@ -7,6 +7,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.8.0] - 2024-03-06
+
 ### Added
 
 - Statuser interface for providers report status of configuration loading/watching (#199).
