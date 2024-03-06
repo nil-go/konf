@@ -5,7 +5,6 @@
 package secretmanager
 
 import (
-	"log/slog"
 	"time"
 
 	"google.golang.org/api/option"
@@ -54,19 +53,6 @@ func WithPollInterval(interval time.Duration) Option {
 	return &optionFunc{
 		fn: func(options *options) {
 			options.pollInterval = interval
-		},
-	}
-}
-
-// WithLogHandler provides the slog.Handler for logs from watch.
-//
-// By default, it uses handler from slog.Default().
-func WithLogHandler(handler slog.Handler) Option {
-	return &optionFunc{
-		fn: func(options *options) {
-			if handler != nil {
-				options.logger = slog.New(handler)
-			}
 		},
 	}
 }

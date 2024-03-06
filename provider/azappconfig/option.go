@@ -4,7 +4,6 @@
 package azappconfig
 
 import (
-	"log/slog"
 	"time"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
@@ -54,17 +53,6 @@ func WithKeySplitter(splitter func(string) []string) Option {
 func WithPollInterval(interval time.Duration) Option {
 	return func(options *options) {
 		options.pollInterval = interval
-	}
-}
-
-// WithLogHandler provides the slog.Handler for logs from watch.
-//
-// By default, it uses handler from slog.Default().
-func WithLogHandler(handler slog.Handler) Option {
-	return func(options *options) {
-		if handler != nil {
-			options.logger = slog.New(handler)
-		}
 	}
 }
 

@@ -5,33 +5,27 @@ package file
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"log/slog"
 	"path/filepath"
 	"time"
 
 	"github.com/fsnotify/fsnotify"
 )
 
-//nolint:cyclop,funlen
-func (f File) Watch(ctx context.Context, onChange func(map[string]any)) error {
-	logger := f.logger
-	if logger == nil {
-		logger = slog.Default()
-	}
+func (f *File) Status(onStatus func(bool, error)) {
+	f.onStatus = onStatus
+}
 
+//nolint:cyclop,funlen
+func (f *File) Watch(ctx context.Context, onChange func(map[string]any)) (err error) { //nolint:gocognit,nonamedreturns
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		return fmt.Errorf("create file watcher for %s: %w", f.path, err)
 	}
 	defer func() {
 		if e := watcher.Close(); e != nil {
-			logger.LogAttrs(
-				ctx, slog.LevelWarn,
-				"Error when closing file watcher.",
-				slog.String("file", f.path),
-				slog.Any("error", e),
-			)
+			err = errors.Join(err, e)
 		}
 	}()
 
@@ -74,34 +68,22 @@ func (f File) Watch(ctx context.Context, onChange func(map[string]any)) error {
 
 			switch {
 			case event.Has(fsnotify.Remove):
-				logger.LogAttrs(
-					ctx, slog.LevelWarn,
-					"Config file has been removed.",
-					slog.String("file", f.path),
-				)
+				if f.onStatus != nil {
+					f.onStatus(true, nil)
+				}
 				onChange(nil)
 			case event.Has(fsnotify.Create) || event.Has(fsnotify.Write):
 				values, err := f.Load()
-				if err != nil {
-					logger.LogAttrs(
-						ctx, slog.LevelWarn,
-						"Error when reloading config file",
-						slog.String("file", f.path),
-						slog.Any("error", err),
-					)
-
-					continue
+				if f.onStatus != nil {
+					f.onStatus(true, err)
 				}
 				onChange(values)
 			}
 
 		case err := <-watcher.Errors:
-			logger.LogAttrs(
-				ctx, slog.LevelWarn,
-				"Error when watching file",
-				slog.String("file", f.path),
-				slog.Any("error", err),
-			)
+			if f.onStatus != nil {
+				f.onStatus(false, err)
+			}
 
 		case <-ctx.Done():
 			return nil

@@ -90,6 +90,12 @@ Here are other value(loader)s:
 
 Even more, the `Config.Explain` blurs sensitive information (e.g. password, secret, api keys).
 
+## Observability
+
+For watching the changes of configuration, it uses `slog.Default()` for logging. You can change the logger
+via option `konf.WithLogHandler`. Furthermore, you also can register onStatus via option `konf.WithOnStatus`
+to monitor the status of configuration watching, e.g. recording metrics.
+
 ## Configuration Providers
 
 There are providers for the following configuration sources:

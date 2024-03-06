@@ -10,7 +10,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log/slog"
 	"maps"
 	"strings"
 	"sync"
@@ -33,13 +32,13 @@ import (
 type SecretManager struct {
 	pollInterval time.Duration
 	splitter     func(string) []string
-	logger       *slog.Logger
 
-	client *clientProxy
+	onStatus func(bool, error)
+	client   *clientProxy
 }
 
 // New creates a SecretManager with the given endpoint and Option(s).
-func New(opts ...Option) SecretManager {
+func New(opts ...Option) *SecretManager {
 	option := &options{
 		client: &clientProxy{},
 	}
@@ -52,19 +51,19 @@ func New(opts ...Option) SecretManager {
 		}
 	}
 
-	return SecretManager(*option)
+	return (*SecretManager)(option)
 }
 
-func (a SecretManager) Load() (map[string]any, error) {
-	values, _, err := a.load(context.Background())
+func (m *SecretManager) Load() (map[string]any, error) {
+	values, _, err := m.load(context.Background())
 
 	return values, err
 }
 
-func (a SecretManager) Watch(ctx context.Context, onChange func(map[string]any)) error {
+func (m *SecretManager) Watch(ctx context.Context, onChange func(map[string]any)) error {
 	pollInterval := time.Minute
-	if a.pollInterval > 0 {
-		pollInterval = a.pollInterval
+	if m.pollInterval > 0 {
+		pollInterval = m.pollInterval
 	}
 	ticker := time.NewTicker(pollInterval)
 	defer ticker.Stop()
@@ -72,24 +71,10 @@ func (a SecretManager) Watch(ctx context.Context, onChange func(map[string]any))
 	for {
 		select {
 		case <-ticker.C:
-			values, changed, err := a.load(ctx)
-			if err != nil {
-				logger := slog.Default()
-				if a.logger != nil {
-					logger = a.logger
-				}
-
-				logger.LogAttrs(
-					ctx, slog.LevelWarn,
-					"Error when reloading from GCP Secret Manager",
-					slog.String("project", a.client.project),
-					slog.String("filter", a.client.filter),
-					slog.Any("error", err),
-				)
-
-				continue
+			values, changed, err := m.load(ctx)
+			if m.onStatus != nil {
+				m.onStatus(changed, err)
 			}
-
 			if changed {
 				onChange(values)
 			}
@@ -99,13 +84,13 @@ func (a SecretManager) Watch(ctx context.Context, onChange func(map[string]any))
 	}
 }
 
-func (a SecretManager) load(ctx context.Context) (map[string]any, bool, error) {
-	resp, changed, err := a.client.load(ctx)
+func (m *SecretManager) load(ctx context.Context) (map[string]any, bool, error) {
+	resp, changed, err := m.client.load(ctx)
 	if !changed || err != nil {
 		return nil, false, err
 	}
 
-	splitter := a.splitter
+	splitter := m.splitter
 	if splitter == nil {
 		splitter = func(s string) []string {
 			return strings.Split(s, "-")
@@ -125,8 +110,12 @@ func (a SecretManager) load(ctx context.Context) (map[string]any, bool, error) {
 	return values, true, nil
 }
 
-func (a SecretManager) String() string {
-	return "secretManager:" + a.client.project
+func (m *SecretManager) Status(onStatus func(bool, error)) {
+	m.onStatus = onStatus
+}
+
+func (m *SecretManager) String() string {
+	return "secretManager:" + m.client.project
 }
 
 type clientProxy struct {

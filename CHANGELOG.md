@@ -7,9 +7,17 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- Statuser interface for providers report status of configuration watching (#199).
+
 ### Changed
 
 - [Breaking] Replace mapstructure with simpler built-in converter (#198).
+
+### Removed
+
+- [Breaking] Remove WithLogHandler in providers in favor of Statuser interface (#199).
 
 ## [0.7.0] - 2024-02-29
 

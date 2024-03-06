@@ -13,7 +13,6 @@ package file
 import (
 	"encoding/json"
 	"fmt"
-	"log/slog"
 	"os"
 )
 
@@ -23,11 +22,12 @@ import (
 type File struct {
 	path      string
 	unmarshal func([]byte, any) error
-	logger    *slog.Logger
+
+	onStatus func(bool, error)
 }
 
 // New creates a File with the given path and Option(s).
-func New(path string, opts ...Option) File {
+func New(path string, opts ...Option) *File {
 	option := &options{
 		path: path,
 	}
@@ -35,10 +35,10 @@ func New(path string, opts ...Option) File {
 		opt(option)
 	}
 
-	return File(*option)
+	return (*File)(option)
 }
 
-func (f File) Load() (map[string]any, error) {
+func (f *File) Load() (map[string]any, error) {
 	bytes, err := os.ReadFile(f.path)
 	if err != nil {
 		return nil, fmt.Errorf("read file: %w", err)
@@ -56,6 +56,6 @@ func (f File) Load() (map[string]any, error) {
 	return out, nil
 }
 
-func (f File) String() string {
+func (f *File) String() string {
 	return "file:" + f.path
 }

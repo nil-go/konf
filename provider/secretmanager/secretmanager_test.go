@@ -6,15 +6,12 @@
 package secretmanager_test
 
 import (
-	"bytes"
 	"context"
 	"errors"
-	"log/slog"
 	"net"
 	"os"
 	"path"
 	"strings"
-	"sync"
 	"testing"
 	"time"
 
@@ -158,7 +155,7 @@ func TestSecretManager_Watch(t *testing.T) {
 		opts        []option.ClientOption
 		service     pb.SecretManagerServiceServer
 		expected    map[string]any
-		log         string
+		err         string
 	}{
 		{
 			description: "success",
@@ -178,14 +175,12 @@ func TestSecretManager_Watch(t *testing.T) {
 		{
 			description: "list secrets error",
 			service:     &faultySecretManagerService{method: "ListSecrets"},
-			log: `level=WARN msg="Error when reloading from GCP Secret Manager" project=test filter=""` +
-				` error="list secrets on test: rpc error: code = Unknown desc = list secrets error"` + "\n",
+			err:         "list secrets on test: rpc error: code = Unknown desc = list secrets error",
 		},
 		{
 			description: "access secret error",
 			service:     &faultySecretManagerService{method: "AccessSecretVersion"},
-			log: `level=WARN msg="Error when reloading from GCP Secret Manager" project=test filter=""` +
-				` error="access secret p-k: rpc error: code = Unknown desc = access secret error"` + "\n",
+			err:         "access secret p-k: rpc error: code = Unknown desc = access secret error",
 		},
 	}
 
@@ -198,14 +193,16 @@ func TestSecretManager_Watch(t *testing.T) {
 			conn, closer := grpcServer(t, testcase.service)
 			defer closer()
 
-			buf := &buffer{}
 			loader := secretmanager.New(append(
 				testcase.opts,
 				secretmanager.WithProject("test"),
 				option.WithGRPCConn(conn),
-				secretmanager.WithLogHandler(logHandler(buf)),
 				secretmanager.WithPollInterval(10*time.Millisecond),
 			)...)
+			var err error
+			loader.Status(func(_ bool, e error) {
+				err = e
+			})
 
 			values := make(chan map[string]any)
 			ctx, cancel := context.WithCancel(context.Background())
@@ -214,10 +211,10 @@ func TestSecretManager_Watch(t *testing.T) {
 			go func() {
 				close(started)
 
-				err := loader.Watch(ctx, func(changed map[string]any) {
+				e := loader.Watch(ctx, func(changed map[string]any) {
 					values <- changed
 				})
-				assert.NoError(t, err)
+				assert.NoError(t, e)
 			}()
 			<-started
 
@@ -226,7 +223,7 @@ func TestSecretManager_Watch(t *testing.T) {
 			case val := <-values:
 				assert.Equal(t, testcase.expected, val)
 			default:
-				assert.Equal(t, testcase.log, buf.String())
+				assert.EqualError(t, err, testcase.err)
 			}
 		})
 	}
@@ -334,42 +331,4 @@ func (f *faultySecretManagerService) AccessSecretVersion(
 	}
 
 	return &pb.AccessSecretVersionResponse{}, nil
-}
-
-func logHandler(buf *buffer) *slog.TextHandler {
-	return slog.NewTextHandler(buf, &slog.HandlerOptions{
-		ReplaceAttr: func(groups []string, attr slog.Attr) slog.Attr {
-			if len(groups) == 0 && attr.Key == slog.TimeKey {
-				return slog.Attr{}
-			}
-
-			return attr
-		},
-	})
-}
-
-type buffer struct {
-	b bytes.Buffer
-	m sync.RWMutex
-}
-
-func (b *buffer) Read(p []byte) (int, error) {
-	b.m.RLock()
-	defer b.m.RUnlock()
-
-	return b.b.Read(p)
-}
-
-func (b *buffer) Write(p []byte) (int, error) {
-	b.m.Lock()
-	defer b.m.Unlock()
-
-	return b.b.Write(p)
-}
-
-func (b *buffer) String() string {
-	b.m.RLock()
-	defer b.m.RUnlock()
-
-	return b.b.String()
 }

@@ -4,15 +4,12 @@
 package azappconfig_test
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
-	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"strings"
-	"sync"
 	"testing"
 	"time"
 
@@ -136,7 +133,7 @@ func TestAppConfig_Watch(t *testing.T) {
 		description string
 		opts        []azappconfig.Option
 		expected    map[string]any
-		log         string
+		err         string
 	}{
 		{
 			description: "success",
@@ -152,13 +149,15 @@ func TestAppConfig_Watch(t *testing.T) {
 			opts: []azappconfig.Option{
 				azappconfig.WithLabelFilter("error"),
 			},
-			log: `level=WARN msg="Error when reloading from Azure App Configuration" endpoint=%s` +
-				` keyFilter="" labelFilter=error error="next page of list settings: GET %s/kv\n` +
-				`--------------------------------------------------------------------------------\n` +
-				`RESPONSE 400: 400 Bad Request\nERROR CODE UNAVAILABLE\n` +
-				`--------------------------------------------------------------------------------\n` +
-				`list settings error\n\n--------------------------------------------------------------------------------\n"` +
-				"\n",
+			err: `next page of list settings: GET %s/kv
+--------------------------------------------------------------------------------
+RESPONSE 400: 400 Bad Request
+ERROR CODE UNAVAILABLE
+--------------------------------------------------------------------------------
+list settings error
+
+--------------------------------------------------------------------------------
+`,
 		},
 	}
 
@@ -171,16 +170,19 @@ func TestAppConfig_Watch(t *testing.T) {
 			server := httpServer()
 			defer server.Close()
 
-			buf := &buffer{}
 			loader := azappconfig.New(
 				server.URL,
 				append(
 					testcase.opts,
-					azappconfig.WithLogHandler(logHandler(buf)),
 					azappconfig.WithCredential(nil),
 					azappconfig.WithPollInterval(10*time.Millisecond),
 				)...,
 			)
+			var err error
+			loader.Status(func(_ bool, e error) {
+				err = e
+			})
+
 			values := make(chan map[string]any)
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
@@ -189,10 +191,10 @@ func TestAppConfig_Watch(t *testing.T) {
 			go func() {
 				close(started)
 
-				err := loader.Watch(ctx, func(changed map[string]any) {
+				e := loader.Watch(ctx, func(changed map[string]any) {
 					values <- changed
 				})
-				assert.NoError(t, err)
+				assert.NoError(t, e)
 			}()
 			<-started
 
@@ -201,7 +203,7 @@ func TestAppConfig_Watch(t *testing.T) {
 			case val := <-values:
 				assert.Equal(t, testcase.expected, val)
 			default:
-				assert.Equal(t, fmt.Sprintf(testcase.log, server.URL, server.URL), buf.String())
+				assert.EqualError(t, err, fmt.Sprintf(testcase.err, server.URL))
 			}
 		})
 	}
@@ -212,18 +214,6 @@ func TestAppConfig_String(t *testing.T) {
 
 	loader := azappconfig.New("https://appconfig.azconfig.io")
 	assert.Equal(t, "azAppConfig:https://appconfig.azconfig.io", loader.String())
-}
-
-func logHandler(buf *buffer) *slog.TextHandler {
-	return slog.NewTextHandler(buf, &slog.HandlerOptions{
-		ReplaceAttr: func(groups []string, attr slog.Attr) slog.Attr {
-			if len(groups) == 0 && attr.Key == slog.TimeKey {
-				return slog.Attr{}
-			}
-
-			return attr
-		},
-	})
 }
 
 func httpServer() *httptest.Server {
@@ -276,30 +266,4 @@ func httpServer() *httptest.Server {
 	})
 
 	return httptest.NewServer(handler)
-}
-
-type buffer struct {
-	b bytes.Buffer
-	m sync.RWMutex
-}
-
-func (b *buffer) Read(p []byte) (int, error) {
-	b.m.RLock()
-	defer b.m.RUnlock()
-
-	return b.b.Read(p)
-}
-
-func (b *buffer) Write(p []byte) (int, error) {
-	b.m.Lock()
-	defer b.m.Unlock()
-
-	return b.b.Write(p)
-}
-
-func (b *buffer) String() string {
-	b.m.RLock()
-	defer b.m.RUnlock()
-
-	return b.b.String()
 }

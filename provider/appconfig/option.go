@@ -4,7 +4,6 @@
 package appconfig
 
 import (
-	"log/slog"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -35,17 +34,6 @@ func WithPollInterval(interval time.Duration) Option {
 func WithUnmarshal(unmarshal func([]byte, any) error) Option {
 	return func(options *options) {
 		options.unmarshal = unmarshal
-	}
-}
-
-// WithLogHandler provides the slog.Handler for logs from watch.
-//
-// By default, it uses handler from slog.Default().
-func WithLogHandler(handler slog.Handler) Option {
-	return func(options *options) {
-		if handler != nil {
-			options.logger = slog.New(handler)
-		}
 	}
 }
 
