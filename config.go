@@ -4,6 +4,7 @@
 package konf
 
 import (
+	"context"
 	"encoding"
 	"fmt"
 	"log/slog"
@@ -85,7 +86,8 @@ func (c *Config) Load(loader Loader) error {
 	if statuser, ok := loader.(Statuser); ok {
 		statuser.Status(func(changed bool, err error) {
 			if err != nil {
-				c.logger.Warn(
+				c.log(context.Background(),
+					slog.LevelWarn,
 					"Error when loading configuration.",
 					slog.Any("loader", loader),
 					slog.Any("error", err),
@@ -132,6 +134,14 @@ func (c *Config) Unmarshal(path string, target any) error {
 	}
 
 	return nil
+}
+
+func (c *Config) log(ctx context.Context, level slog.Level, message string, attrs ...slog.Attr) {
+	logger := c.logger
+	if c.logger == nil {
+		logger = slog.Default()
+	}
+	logger.LogAttrs(ctx, level, message, attrs...)
 }
 
 func (c *Config) sub(values map[string]any, path string) any {

@@ -102,5 +102,5 @@ func TestExplain(t *testing.T) {
 Here are other value(loader)s:
   - env(map)
 
-`, config.Explain("config"))
+`, konf.Explain("config"))
 }
