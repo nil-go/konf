@@ -95,6 +95,20 @@ func TestConfig_Unmarshal(t *testing.T) {
 			},
 		},
 		{
+			description: "config for struct (case sensitive)",
+			opts:        []konf.Option{konf.WithCaseSensitive()},
+			loaders:     []konf.Loader{mapLoader{"ConfigValue": "struct"}},
+			assert: func(config *konf.Config) {
+				var value struct {
+					ConfigValue string
+					Configvalue string
+				}
+				assert.NoError(t, config.Unmarshal("", &value))
+				assert.Equal(t, "struct", value.ConfigValue)
+				assert.Equal(t, "", value.Configvalue)
+			},
+		},
+		{
 			description: "default delimiter",
 			loaders: []konf.Loader{
 				mapLoader{

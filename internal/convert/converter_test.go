@@ -22,6 +22,7 @@ func TestConverter(t *testing.T) { //nolint:maintidx
 
 	testcases := []struct {
 		description string
+		opts        []convert.Option
 		from        any
 		to          any
 		expected    any
@@ -64,46 +65,83 @@ func TestConverter(t *testing.T) { //nolint:maintidx
 		},
 		// Hook.
 		{
-			description: "string to duration",
-			from:        "2s",
-			to:          pointer(time.Duration(0)),
-			expected:    pointer(2 * time.Second),
+			description: "string to []string",
+			opts: []convert.Option{
+				convert.WithHook[string, []string](func(f string) ([]string, error) {
+					return strings.Split(f, ","), nil
+				}),
+			},
+			from:     "a,b,c",
+			to:       pointer([]string(nil)),
+			expected: pointer([]string{"a", "b", "c"}),
 		},
 		{
-			description: "string to []string",
-			from:        "a,b,c",
-			to:          pointer([]string(nil)),
-			expected:    pointer([]string{"a", "b", "c"}),
+			description: "string to duration",
+			opts: []convert.Option{
+				convert.WithHook[string, time.Duration](time.ParseDuration),
+			},
+			from:     "2s",
+			to:       pointer(time.Duration(0)),
+			expected: pointer(2 * time.Second),
+		},
+		{
+			description: "string to duration (with unsupported hook)",
+			opts: []convert.Option{
+				convert.WithHook[any, any](func(any, any) error {
+					return errors.ErrUnsupported
+				}),
+				convert.WithHook[string, time.Duration](time.ParseDuration),
+			},
+			from:     "2s",
+			to:       pointer(time.Duration(0)),
+			expected: pointer(2 * time.Second),
 		},
 		{
 			description: "string to duration (in array)",
-			from:        [1]string{"2s"},
-			to:          pointer([1]time.Duration{0}),
-			expected:    pointer([1]time.Duration{2 * time.Second}),
+			opts: []convert.Option{
+				convert.WithHook[string, time.Duration](time.ParseDuration),
+			},
+			from:     [1]string{"2s"},
+			to:       pointer([1]time.Duration{0}),
+			expected: pointer([1]time.Duration{2 * time.Second}),
 		},
 		{
 			description: "string to duration (pointer in array)",
-			from:        [1]string{"2s"},
-			to:          pointer([1]*time.Duration{nil}),
-			expected:    pointer([1]*time.Duration{pointer(2 * time.Second)}),
+			opts: []convert.Option{
+				convert.WithHook[string, time.Duration](time.ParseDuration),
+			},
+			from:     [1]string{"2s"},
+			to:       pointer([1]*time.Duration{nil}),
+			expected: pointer([1]*time.Duration{pointer(2 * time.Second)}),
 		},
 		{
 			description: "string to duration (in slice)",
-			from:        []string{"2s"},
-			to:          pointer([]time.Duration(nil)),
-			expected:    pointer([]time.Duration{2 * time.Second}),
+			opts: []convert.Option{
+				convert.WithHook[string, time.Duration](time.ParseDuration),
+			},
+			from:     []string{"2s"},
+			to:       pointer([]time.Duration(nil)),
+			expected: pointer([]time.Duration{2 * time.Second}),
 		},
 		{
 			description: "string to duration (pointer in slice)",
-			from:        []string{"2s"},
-			to:          pointer([]*time.Duration(nil)),
-			expected:    pointer([]*time.Duration{pointer(2 * time.Second)}),
+			opts: []convert.Option{
+				convert.WithHook[string, time.Duration](time.ParseDuration),
+			},
+			from:     []string{"2s"},
+			to:       pointer([]*time.Duration(nil)),
+			expected: pointer([]*time.Duration{pointer(2 * time.Second)}),
 		},
 		{
 			description: "text unmarshaler",
-			from:        "sky",
-			to:          pointer(Unknown),
-			expected:    pointer(Sky),
+			opts: []convert.Option{
+				convert.WithHook[string, encoding.TextUnmarshaler](func(f string, t encoding.TextUnmarshaler) error {
+					return t.UnmarshalText([]byte(f))
+				}),
+			},
+			from:     "sky",
+			to:       pointer(Unknown),
+			expected: pointer(Sky),
 		},
 		// To bool.
 		{
@@ -569,7 +607,7 @@ func TestConverter(t *testing.T) { //nolint:maintidx
 		},
 		{
 			description: "non-empty map to array",
-			from:        map[string]string{"outerField": "v"},
+			from:        map[string]string{"OuterField": "v"},
 			to:          pointer([1]OuterStruct{}),
 			expected:    pointer([1]OuterStruct{{OuterField: "v"}}),
 		},
@@ -704,7 +742,7 @@ func TestConverter(t *testing.T) { //nolint:maintidx
 		},
 		{
 			description: "non-empty map to slice",
-			from:        map[string]string{"outerField": "v"},
+			from:        map[string]string{"OuterField": "v"},
 			to:          pointer([]OuterStruct{}),
 			expected:    pointer([]OuterStruct{{OuterField: "v"}}),
 		},
@@ -790,12 +828,18 @@ func TestConverter(t *testing.T) { //nolint:maintidx
 		// To struct.
 		{
 			description: "map to struct",
+			opts: []convert.Option{
+				convert.WithTagName("konf"),
+				convert.WithHook[string, encoding.TextUnmarshaler](func(f string, t encoding.TextUnmarshaler) error {
+					return t.UnmarshalText([]byte(f))
+				}),
+			},
 			from: map[string]any{
-				"enum":         "sky",
-				"outerField":   "outer",
-				"privateField": "private",
-				"innerField":   "squash",
-				"inner":        map[string]any{"innerField": "inner"},
+				"Enum":         "sky",
+				"OuterField":   "outer",
+				"PrivateField": "private",
+				"InnerField":   "squash",
+				"Inner":        map[string]any{"InnerField": "inner"},
 			},
 			to: pointer(OuterStruct{}),
 			expected: pointer(OuterStruct{
@@ -804,6 +848,22 @@ func TestConverter(t *testing.T) { //nolint:maintidx
 				InnerStruct: InnerStruct{InnerField: "squash"},
 				Inner:       &InnerStruct{InnerField: "inner"},
 			}),
+		},
+		{
+			description: "map to struct (with keyMap)",
+			opts: []convert.Option{
+				convert.WithKeyMapper(strings.ToLower),
+			},
+			from: map[string]string{"innerfield": "inner"},
+			to: pointer(struct {
+				InnerField string
+			}{}),
+			expected: pointer(
+				struct {
+					InnerField string
+				}{
+					InnerField: "inner",
+				}),
 		},
 		{
 			description: "convert error  on field",
@@ -815,7 +875,10 @@ func TestConverter(t *testing.T) { //nolint:maintidx
 		},
 		{
 			description: "squash on field",
-			from:        map[string]string{},
+			opts: []convert.Option{
+				convert.WithTagName("konf"),
+			},
+			from: map[string]string{},
 			to: pointer(struct {
 				InnerField string `konf:",squash"`
 			}{}),
@@ -860,25 +923,16 @@ func TestConverter(t *testing.T) { //nolint:maintidx
 		},
 	}
 
-	converter := convert.New(
-		convert.WithTagName("konf"),
-		convert.WithHook[any, any](func(any, any) error {
-			return errors.ErrUnsupported
-		}),
-		convert.WithHook[string, time.Duration](time.ParseDuration),
-		convert.WithHook[string, []string](func(f string) ([]string, error) {
-			return strings.Split(f, ","), nil
-		}),
-		convert.WithHook[string, encoding.TextUnmarshaler](func(f string, t encoding.TextUnmarshaler) error {
-			return t.UnmarshalText([]byte(f))
-		}),
-	)
 	for _, testcase := range testcases {
 		testcase := testcase
 
 		t.Run(testcase.description, func(t *testing.T) {
 			t.Parallel()
 
+			var converter convert.Converter
+			if len(testcase.opts) > 0 {
+				converter = convert.New(testcase.opts...)
+			}
 			err := converter.Convert(testcase.from, testcase.to)
 			if err != nil {
 				assert.EqualError(t, err, testcase.err)

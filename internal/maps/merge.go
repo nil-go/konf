@@ -3,17 +3,11 @@
 
 package maps
 
-import "strings"
-
 // Merge recursively merges the src map into the dst map.
 // Key conflicts are resolved by preferring src,
 // or recursively descending, if both values from src and dst are map.
-// All keys in dst map are lower case.
 func Merge(dst, src map[string]any) {
 	for key, srcVal := range src {
-		// Ensure key is lower case since the path is case-insensitive.
-		key = strings.ToLower(key)
-
 		// Direct override if the srcVal is not map[string]any.
 		srcMap, srcOk := srcVal.(map[string]any)
 		if !srcOk {
