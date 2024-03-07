@@ -48,7 +48,16 @@ func New(opts ...Option) *Config {
 	for _, opt := range opts {
 		opt(option)
 	}
-	option.converter = convert.New(option.convertOpts...)
+
+	if len(option.hooks) == 0 {
+		option.hooks = defaultHooks
+	}
+	if option.tagName == "" {
+		option.hooks = append(option.hooks, defaultTagName)
+	} else {
+		option.hooks = append(option.hooks, convert.WithTagName(option.tagName))
+	}
+	option.converter = convert.New(option.hooks...)
 
 	return &(option.Config)
 }
@@ -203,13 +212,19 @@ type provider struct {
 	values map[string]any
 }
 
-var defaultConverter = convert.New( //nolint:gochecknoglobals
-	convert.WithTagName("konf"),
-	convert.WithHook[string, time.Duration](time.ParseDuration),
-	convert.WithHook[string, []string](func(f string) ([]string, error) {
-		return strings.Split(f, ","), nil
-	}),
-	convert.WithHook[string, encoding.TextUnmarshaler](func(f string, t encoding.TextUnmarshaler) error {
-		return fmt.Errorf("hook TextUnmarshaler:%w", t.UnmarshalText([]byte(f)))
-	}),
+//nolint:gochecknoglobals
+var (
+	defaultTagName = convert.WithTagName("konf")
+	defaultHooks   = []convert.Option{
+		convert.WithHook[string, time.Duration](time.ParseDuration),
+		convert.WithHook[string, []string](func(f string) ([]string, error) {
+			return strings.Split(f, ","), nil
+		}),
+		convert.WithHook[string, encoding.TextUnmarshaler](func(f string, t encoding.TextUnmarshaler) error {
+			return t.UnmarshalText([]byte(f)) //nolint:wrapcheck
+		}),
+	}
+	defaultConverter = convert.New(
+		append(defaultHooks, defaultTagName)...,
+	)
 )

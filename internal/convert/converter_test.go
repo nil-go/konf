@@ -791,6 +791,7 @@ func TestConverter(t *testing.T) { //nolint:maintidx
 		{
 			description: "map to struct",
 			from: map[string]any{
+				"enum":         "sky",
 				"outerField":   "outer",
 				"privateField": "private",
 				"innerField":   "squash",
@@ -798,6 +799,7 @@ func TestConverter(t *testing.T) { //nolint:maintidx
 			},
 			to: pointer(OuterStruct{}),
 			expected: pointer(OuterStruct{
+				Enum:        Sky,
 				OuterField:  "outer",
 				InnerStruct: InnerStruct{InnerField: "squash"},
 				Inner:       &InnerStruct{InnerField: "inner"},
@@ -912,6 +914,7 @@ func (e *Enum) UnmarshalText(text []byte) error {
 
 type (
 	OuterStruct struct {
+		Enum         Enum
 		OuterField   string
 		privateField string //nolint:unused
 

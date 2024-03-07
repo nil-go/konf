@@ -6,7 +6,7 @@ package file_test
 import (
 	"context"
 	"os"
-	"path/filepath"
+	"path"
 	"testing"
 	"time"
 
@@ -26,7 +26,7 @@ func TestFile_Watch(t *testing.T) {
 			description: "write",
 			action: func(path string) error {
 				err := os.WriteFile(path, []byte(`{"p": {"k": "c"}}`), 0o600)
-				time.Sleep(time.Second) // wait for the file to be written
+				time.Sleep(100 * time.Millisecond) // wait for the file to be written
 
 				return err
 			},
@@ -51,7 +51,9 @@ func TestFile_Watch(t *testing.T) {
 		t.Run(testcase.description, func(t *testing.T) {
 			t.Parallel()
 
-			tmpFile := filepath.Join(t.TempDir(), "watch.json")
+			temp, err := os.MkdirTemp("", "*") // t.TempDir() causes deadlock on macos.
+			assert.NoError(t, err)
+			tmpFile := path.Join(temp, "watch.json")
 			assert.NoError(t, os.WriteFile(tmpFile, []byte(`{"p": {"k": "v"}}`), 0o600))
 			for _, err := os.Stat(tmpFile); os.IsNotExist(err); _, err = os.Stat(tmpFile) { //nolint:revive
 				// wait for the file to be written
@@ -71,7 +73,7 @@ func TestFile_Watch(t *testing.T) {
 				assert.NoError(t, err)
 			}()
 			<-started
-			time.Sleep(time.Second) // wait for the watcher to start
+			time.Sleep(100 * time.Millisecond) // wait for the watcher to start
 
 			assert.NoError(t, testcase.action(tmpFile))
 			assert.Equal(t, testcase.expected, <-values)
