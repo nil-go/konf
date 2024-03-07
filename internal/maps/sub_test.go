@@ -57,7 +57,7 @@ func TestSub(t *testing.T) {
 		},
 		{
 			description: "upper case keys",
-			values:      map[string]any{"a": 1},
+			values:      map[string]any{"A": 1},
 			keys:        []string{"A"},
 			expected:    1,
 		},

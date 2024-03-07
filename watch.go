@@ -10,7 +10,6 @@ import (
 	"log/slog"
 	"reflect"
 	"slices"
-	"strings"
 	"sync"
 	"time"
 
@@ -108,11 +107,8 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 				defer waitGroup.Done()
 
 				onChange := func(values map[string]any) {
-					// Merged to empty map to convert to lower case.
-					newValues := make(map[string]any)
-					maps.Merge(newValues, values)
-
 					oldValues := provider.values
+					newValues := c.transformKeys(values)
 					provider.values = newValues
 
 					// Find the onChanges should be triggered.
@@ -122,9 +118,8 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 
 						var callbacks []func(*Config)
 						for path, onChanges := range c.onChanges {
-							keys := c.split(path)
-							oldVal := maps.Sub(oldValues, keys)
-							newVal := maps.Sub(newValues, keys)
+							oldVal := c.sub(oldValues, path)
+							newVal := c.sub(newValues, path)
 							if !reflect.DeepEqual(oldVal, newVal) {
 								callbacks = append(callbacks, onChanges...)
 							}
@@ -161,7 +156,7 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 // OnChange registers a callback function that is executed
 // when the value of any given path in the Config changes.
 // It requires Config.Watch has been called first.
-// The paths are case-insensitive.
+// The paths are case-insensitive unless konf.WithCaseSensitive is set.
 //
 // The register function must be non-blocking and usually completes instantly.
 // If it requires a long time to complete, it should be executed in a separate goroutine.
@@ -185,7 +180,9 @@ func (c *Config) OnChange(onChange func(*Config), paths ...string) {
 		c.onChanges = make(map[string][]func(*Config))
 	}
 	for _, path := range paths {
-		path = strings.ToLower(path)
+		if !c.caseSensitive {
+			path = toLower(path)
+		}
 		c.onChanges[path] = append(c.onChanges[path], onChange)
 	}
 }

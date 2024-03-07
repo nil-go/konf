@@ -13,6 +13,7 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+	"unicode"
 
 	"github.com/nil-go/konf/internal"
 	"github.com/nil-go/konf/internal/convert"
@@ -27,10 +28,11 @@ type Config struct {
 	nocopy internal.NoCopy[Config]
 
 	// Options.
-	delimiter string
-	converter convert.Converter
-	logger    *slog.Logger
-	onStatus  func(loader Loader, changed bool, err error)
+	caseSensitive bool
+	delimiter     string
+	logger        *slog.Logger
+	onStatus      func(loader Loader, changed bool, err error)
+	converter     convert.Converter
 
 	// Loaded configuration.
 	values    map[string]any
@@ -56,6 +58,9 @@ func New(opts ...Option) *Config {
 		option.hooks = append(option.hooks, defaultTagName)
 	} else {
 		option.hooks = append(option.hooks, convert.WithTagName(option.tagName))
+	}
+	if !option.caseSensitive {
+		option.hooks = append(option.hooks, defaultKeyMap)
 	}
 	option.converter = convert.New(option.hooks...)
 
@@ -96,22 +101,20 @@ func (c *Config) Load(loader Loader) error {
 	if err != nil {
 		return fmt.Errorf("load configuration: %w", err)
 	}
-	maps.Merge(c.values, values)
 
-	// Merged to empty map to convert to lower case.
-	providerValues := make(map[string]any)
-	maps.Merge(providerValues, values)
-	c.providers = append(c.providers, provider{
+	prd := provider{
 		loader: loader,
-		values: providerValues,
-	})
+		values: c.transformKeys(values),
+	}
+	c.providers = append(c.providers, prd)
+	maps.Merge(c.values, prd.values)
 
 	return nil
 }
 
 // Unmarshal reads configuration under the given path from the Config
 // and decodes it into the given object pointed to by target.
-// The path is case-insensitive.
+// The path is case-insensitive unless konf.WithCaseSensitive is set.
 func (c *Config) Unmarshal(path string, target any) error {
 	if c == nil {
 		return nil
@@ -124,25 +127,40 @@ func (c *Config) Unmarshal(path string, target any) error {
 		converter = defaultConverter
 	}
 
-	if err := converter.Convert(maps.Sub(c.values, c.split(path)), target); err != nil {
+	if err := converter.Convert(c.sub(c.values, path), target); err != nil {
 		return fmt.Errorf("decode: %w", err)
 	}
 
 	return nil
 }
 
-func (c *Config) split(key string) []string {
+func (c *Config) sub(values map[string]any, path string) any {
 	delimiter := c.delimiter
 	if delimiter == "" {
 		delimiter = "."
 	}
+	if !c.caseSensitive {
+		path = toLower(path)
+	}
 
-	return strings.Split(key, delimiter)
+	return maps.Sub(values, strings.Split(path, delimiter))
+}
+
+func (c *Config) transformKeys(m map[string]any) map[string]any {
+	if c.caseSensitive {
+		return m
+	}
+
+	return maps.TransformKeys(m, toLower)
+}
+
+func toLower(s string) string {
+	return strings.Map(unicode.ToLower, s)
 }
 
 // Explain provides information about how Config resolve each value
 // from loaders for the given path. It blur sensitive information.
-// The path is case-insensitive.
+// The path is case-insensitive unless konf.WithCaseSensitive is set.
 func (c *Config) Explain(path string) string {
 	if c == nil {
 		return path + " has no configuration.\n\n"
@@ -151,7 +169,7 @@ func (c *Config) Explain(path string) string {
 	c.nocopy.Check()
 
 	explanation := &strings.Builder{}
-	c.explain(explanation, path, maps.Sub(c.values, c.split(path)))
+	c.explain(explanation, path, c.sub(c.values, path))
 
 	return explanation.String()
 }
@@ -176,7 +194,7 @@ func (c *Config) explain(explanation *strings.Builder, path string, value any) {
 	}
 	var loaders []loaderValue
 	for _, provider := range c.providers {
-		if v := maps.Sub(provider.values, c.split(path)); v != nil {
+		if v := c.sub(provider.values, path); v != nil {
 			loaders = append(loaders, loaderValue{provider.loader, v})
 		}
 	}
@@ -215,6 +233,7 @@ type provider struct {
 //nolint:gochecknoglobals
 var (
 	defaultTagName = convert.WithTagName("konf")
+	defaultKeyMap  = convert.WithKeyMapper(toLower)
 	defaultHooks   = []convert.Option{
 		convert.WithHook[string, time.Duration](time.ParseDuration),
 		convert.WithHook[string, []string](func(f string) ([]string, error) {
@@ -225,6 +244,6 @@ var (
 		}),
 	}
 	defaultConverter = convert.New(
-		append(defaultHooks, defaultTagName)...,
+		append(defaultHooks, defaultTagName, defaultKeyMap)...,
 	)
 )

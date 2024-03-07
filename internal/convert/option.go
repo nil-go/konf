@@ -14,6 +14,12 @@ func WithTagName(tagName string) Option {
 	}
 }
 
+func WithKeyMapper(keyMap func(string) string) Option {
+	return func(options *options) {
+		options.keyMap = keyMap
+	}
+}
+
 func WithHook[F, T any, FN func(F) (T, error) | func(F, T) error](hook FN) Option {
 	switch hookFunc := any(hook).(type) {
 	case func(F) (T, error):

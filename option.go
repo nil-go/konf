@@ -61,6 +61,13 @@ func WithOnStatus(onStatus func(loader Loader, changed bool, err error)) Option 
 	}
 }
 
+// WithCaseSensitive enables the case sensitivity of the configuration keys.
+func WithCaseSensitive() Option {
+	return func(options *options) {
+		options.caseSensitive = true
+	}
+}
+
 type (
 	// Option configures a Config with specific options.
 	Option  func(*options)

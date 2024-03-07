@@ -44,12 +44,6 @@ func TestMerge(t *testing.T) {
 			expected:    map[string]any{"a": 0},
 		},
 		{
-			description: "key conflict (upper case)",
-			src:         map[string]any{"A": 0},
-			dst:         map[string]any{"a": 1},
-			expected:    map[string]any{"a": 0},
-		},
-		{
 			description: "no key conflict (nest map)",
 			src:         map[string]any{"a": map[string]any{"y": 2}},
 			dst:         map[string]any{"a": map[string]any{"x": 1}},
@@ -76,8 +70,8 @@ func TestMerge(t *testing.T) {
 		{
 			description: "mix case",
 			src:         map[string]any{"a": map[string]any{"X": 2}},
-			dst:         map[string]any{},
-			expected:    map[string]any{"a": map[string]any{"x": 2}},
+			dst:         map[string]any{"a": map[string]any{"x": 3}},
+			expected:    map[string]any{"a": map[string]any{"x": 3, "X": 2}},
 		},
 	}
 

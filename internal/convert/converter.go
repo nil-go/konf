@@ -14,6 +14,7 @@ import (
 type Converter struct {
 	hooks   []hook
 	tagName string
+	keyMap  func(string) string
 }
 
 func New(opts ...Option) Converter {
@@ -482,7 +483,6 @@ func (c Converter) convertStruct(name string, fromVal, toVal reflect.Value) erro
 		structs := make([]reflect.Value, 0, 5) //nolint:gomnd
 		structs = append(structs, toVal)
 
-		fromKeys := fromVal.MapKeys()
 		var errs []error
 		for len(structs) > 0 {
 			structVal := structs[0]
@@ -499,9 +499,9 @@ func (c Converter) convertStruct(name string, fromVal, toVal reflect.Value) erro
 				}
 
 				// It always parse the tags cause it's looking for other tags too
-				fileName, tag, _ := strings.Cut(fieldType.Tag.Get(c.tagName), ",")
-				if fileName == "" {
-					fileName = fieldType.Name
+				fieldName, tag, _ := strings.Cut(fieldType.Tag.Get(c.tagName), ",")
+				if fieldName == "" {
+					fieldName = fieldType.Name
 				}
 				if tag == "squash" {
 					if fieldVal.Kind() != reflect.Struct {
@@ -516,27 +516,20 @@ func (c Converter) convertStruct(name string, fromVal, toVal reflect.Value) erro
 					continue
 				}
 
-				elemVal := fromVal.MapIndex(reflect.ValueOf(fileName))
-				if !elemVal.IsValid() {
-					// Do a slower search by iterating over each key and
-					// doing case-insensitive search.
-					for _, fromKey := range fromKeys {
-						if strings.EqualFold(fromKey.String(), fileName) {
-							elemVal = fromVal.MapIndex(fromKey)
-
-							break
-						}
-					}
+				keyName := fieldName
+				if c.keyMap != nil {
+					keyName = c.keyMap(keyName)
 				}
+				elemVal := fromVal.MapIndex(reflect.ValueOf(keyName))
 				if !elemVal.IsValid() {
 					// There was no matching key in the map for the value in the struct.
 					continue
 				}
 
 				if name != "" {
-					fileName = name + "." + fileName
+					fieldName = name + "." + fieldName
 				}
-				if err := c.convert(fileName, elemVal.Interface(), pointer(fieldVal)); err != nil {
+				if err := c.convert(fieldName, elemVal.Interface(), pointer(fieldVal)); err != nil {
 					errs = append(errs, err)
 				}
 			}

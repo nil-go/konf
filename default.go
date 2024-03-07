@@ -14,7 +14,7 @@ import (
 
 // Get retrieves the value under the given path from the default Config.
 // It returns the zero value of the expected type if there is an error.
-// The path is case-insensitive.
+// The path is case-insensitive unless konf.WithCaseSensitive is set.
 func Get[T any](path string) T { //nolint:ireturn
 	var value T
 	if err := Unmarshal(path, &value); err != nil {
@@ -37,14 +37,14 @@ func Get[T any](path string) T { //nolint:ireturn
 
 // Unmarshal reads configuration under the given path from the default Config
 // and decodes it into the given object pointed to by target.
-// The path is case-insensitive.
+// The path is case-insensitive unless konf.WithCaseSensitive is set.
 func Unmarshal(path string, target any) error {
 	return defaultConfig.Load().Unmarshal(path, target)
 }
 
 // OnChange registers a callback function that is executed
 // when the value of any given path in the default Config changes.
-// The paths are case-insensitive.
+// The paths are case-insensitive unless konf.WithCaseSensitive is set.
 //
 // The register function must be non-blocking and usually completes instantly.
 // If it requires a long time to complete, it should be executed in a separate goroutine.
@@ -56,7 +56,7 @@ func OnChange(onChange func(), paths ...string) {
 
 // Explain provides information about how default Config resolve each value
 // from loaders for the given path. It blur sensitive information.
-// The path is case-insensitive.
+// The path is case-insensitive unless konf.WithCaseSensitive is set.
 func Explain(path string) string {
 	return defaultConfig.Load().Explain(path)
 }

@@ -61,12 +61,18 @@ configuration source(s). They read configuration in terms of functions in packag
 
 ```
     func (app *appObject) Run() {
-        // Read the server configuration.
-        type serverConfig struct {
+        // Server configuration with default values.
+        serverConfig := struct {
             Host string
             Port int
+        }{
+            Host: "localhost",
+            Port: "8080",
         }
-        cfg := konf.Get[serverConfig]("server")
+        // Read the server configuration.
+        if err := konf.Unmarshal("server", &serverConfig);  err != nil {
+            // Handle error here.
+        }
 
         // Register callbacks while server configuration changes.
         konf.OnChange(func() {
