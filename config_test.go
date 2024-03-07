@@ -132,14 +132,16 @@ func TestConfig_Unmarshal(t *testing.T) {
 			loaders: []konf.Loader{
 				mapLoader{
 					"config": map[string]any{
-						"nest": "1s",
+						"nest": "sky",
 					},
 				},
 			},
 			assert: func(config *konf.Config) {
-				var value time.Duration
-				assert.NoError(t, config.Unmarshal("config.nest", &value))
-				assert.Equal(t, time.Second, value)
+				var value struct {
+					N Enum `konf:"nest"`
+				}
+				assert.NoError(t, config.Unmarshal("config", &value))
+				assert.Equal(t, Sky, value.N)
 			},
 		},
 		{
@@ -187,16 +189,16 @@ func TestConfig_Unmarshal(t *testing.T) {
 			loaders: []konf.Loader{
 				mapLoader{
 					"config": map[string]any{
-						"nest": "1s",
+						"nest": "a,b,c",
 					},
 				},
 			},
 			assert: func(config *konf.Config) {
 				var value struct {
-					N time.Duration `test:"nest"`
+					N []string `test:"nest"`
 				}
 				assert.NoError(t, config.Unmarshal("config", &value))
-				assert.Equal(t, time.Second, value.N)
+				assert.Equal(t, []string{"a", "b", "c"}, value.N)
 			},
 		},
 		{
@@ -320,4 +322,22 @@ Here are other value(loader)s:
 			assert.Equal(t, testcase.expected, config.Explain(testcase.path))
 		})
 	}
+}
+
+type Enum int
+
+const (
+	Unknown Enum = iota
+	Sky
+)
+
+func (e *Enum) UnmarshalText(text []byte) error {
+	switch string(text) {
+	case "sky":
+		*e = Sky
+	default:
+		*e = Unknown
+	}
+
+	return nil
 }
