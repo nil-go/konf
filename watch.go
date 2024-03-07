@@ -32,13 +32,8 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 		return nil
 	}
 
-	logger := c.logger
-	if logger == nil {
-		logger = slog.Default()
-	}
-
 	if watched := c.watched.Swap(true); watched {
-		logger.LogAttrs(ctx, slog.LevelWarn, "Config has been watched, call Watch again has no effects.")
+		c.log(ctx, slog.LevelWarn, "Config has been watched, call Watch again has no effects.")
 
 		return nil
 	}
@@ -61,7 +56,7 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 					maps.Merge(values, w.values)
 				}
 				c.values = values
-				logger.LogAttrs(ctx, slog.LevelDebug, "Configuration has been updated with change.")
+				c.log(ctx, slog.LevelDebug, "Configuration has been updated with change.")
 
 				if len(onChanges) > 0 {
 					func() {
@@ -79,10 +74,10 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 						defer tcancel()
 						select {
 						case <-done:
-							logger.LogAttrs(ctx, slog.LevelDebug, "Configuration has been applied to onChanges.")
+							c.log(ctx, slog.LevelDebug, "Configuration has been applied to onChanges.")
 						case <-ctx.Done():
 							if errors.Is(ctx.Err(), context.DeadlineExceeded) {
-								logger.LogAttrs(
+								c.log(
 									ctx, slog.LevelWarn,
 									"Configuration has not been fully applied to onChanges due to timeout."+
 										" Please check if the onChanges is blocking or takes too long to complete.",
@@ -129,15 +124,14 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 					}
 					onChangesChannel <- onChanges()
 
-					logger.LogAttrs(
-						context.Background(),
+					c.log(context.Background(),
 						slog.LevelInfo,
 						"Configuration has been changed.",
 						slog.Any("loader", watcher),
 					)
 				}
 
-				logger.LogAttrs(ctx, slog.LevelDebug, "Watching configuration change.", slog.Any("loader", watcher))
+				c.log(ctx, slog.LevelDebug, "Watching configuration change.", slog.Any("loader", watcher))
 				if err := watcher.Watch(ctx, onChange); err != nil {
 					cancel(fmt.Errorf("watch configuration change on %v: %w", watcher, err))
 				}
