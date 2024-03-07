@@ -9,6 +9,7 @@ import (
 
 	"github.com/nil-go/konf"
 	"github.com/nil-go/konf/internal/assert"
+	"github.com/nil-go/konf/provider/env"
 )
 
 func TestUnmarshal(t *testing.T) {
@@ -81,4 +82,25 @@ func TestOnChange(t *testing.T) {
 	}, "config")
 	watcher.change("changed")
 	assert.Equal(t, "changed", <-newValue)
+}
+
+func TestExplain(t *testing.T) {
+	var config konf.Config
+	err := config.Load(env.New())
+	assert.NoError(t, err)
+	err = config.Load(mapLoader{
+		"config": map[string]any{"nest": "env"},
+	})
+	assert.NoError(t, err)
+	err = config.Load(mapLoader{
+		"config": map[string]any{"nest": "map"},
+	})
+	assert.NoError(t, err)
+	konf.SetDefault(&config)
+
+	assert.Equal(t, `config.nest has value[map] that is loaded by loader[map].
+Here are other value(loader)s:
+  - env(map)
+
+`, config.Explain("config"))
 }
