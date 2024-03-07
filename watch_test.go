@@ -19,6 +19,11 @@ import (
 	"github.com/nil-go/konf/provider/env"
 )
 
+func TestOnChange_nil(*testing.T) {
+	var config konf.Config
+	config.OnChange(nil) // It should not block
+}
+
 func TestConfig_Watch(t *testing.T) {
 	t.Parallel()
 
