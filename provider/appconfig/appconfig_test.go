@@ -5,7 +5,6 @@ package appconfig_test
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"sync/atomic"
 	"testing"
@@ -79,7 +78,6 @@ func TestAppConfig_Load(t *testing.T) {
 					return middleware.FinalizeOutput{}, middleware.Metadata{}, nil
 				}
 			},
-			unmarshal: json.Unmarshal,
 			expected: map[string]any{
 				"k": "v",
 			},
@@ -98,8 +96,7 @@ func TestAppConfig_Load(t *testing.T) {
 					return middleware.FinalizeOutput{}, middleware.Metadata{}, nil
 				}
 			},
-			unmarshal: json.Unmarshal,
-			err:       "start configuration session: operation error AppConfigData: StartConfigurationSession, start session error",
+			err: "start configuration session: operation error AppConfigData: StartConfigurationSession, start session error",
 		},
 		{
 			description: "get configuration error",

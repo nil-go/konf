@@ -147,7 +147,6 @@ func (p *clientProxy) load(ctx context.Context) (map[string]string, bool, error)
 			return nil, false, fmt.Errorf("create Azure app configuration client: %w", err)
 		}
 	}
-	p.timeout = max(p.timeout, 10*time.Second) //nolint:gomnd
 
 	selector := azappconfig.SettingSelector{
 		Fields: []azappconfig.SettingFields{
@@ -169,7 +168,7 @@ func (p *clientProxy) load(ctx context.Context) (map[string]string, bool, error)
 		eTags  = make(map[string]azcore.ETag)
 
 		nextPage = func(ctx context.Context) error {
-			ctx, cancel := context.WithTimeout(ctx, p.timeout)
+			ctx, cancel := context.WithTimeout(ctx, max(p.timeout, 10*time.Second)) //nolint:gomnd
 			defer cancel()
 
 			page, err := pager.NextPage(ctx)

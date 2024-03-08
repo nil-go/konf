@@ -135,10 +135,8 @@ func (p *clientProxy) load(ctx context.Context) ([]byte, bool, error) {
 		}
 		p.client = appconfigdata.NewFromConfig(p.config)
 	}
-	p.pollInterval = max(p.pollInterval, time.Second)
-	p.timeout = max(p.timeout, 10*time.Second) //nolint:gomnd
 
-	ctx, cancel := context.WithTimeout(ctx, p.timeout)
+	ctx, cancel := context.WithTimeout(ctx, max(p.timeout, 10*time.Second)) //nolint:gomnd
 	defer cancel()
 
 	if p.token.Load() == nil {
@@ -146,7 +144,7 @@ func (p *clientProxy) load(ctx context.Context) ([]byte, bool, error) {
 			ApplicationIdentifier:                aws.String(p.application),
 			ConfigurationProfileIdentifier:       aws.String(p.profile),
 			EnvironmentIdentifier:                aws.String(p.environment),
-			RequiredMinimumPollIntervalInSeconds: aws.Int32(int32(p.pollInterval.Seconds())),
+			RequiredMinimumPollIntervalInSeconds: aws.Int32(int32(max(p.pollInterval, time.Second).Seconds())),
 		})
 		if err != nil {
 			return nil, false, fmt.Errorf("start configuration session: %w", err)

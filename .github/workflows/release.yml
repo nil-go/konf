@@ -50,7 +50,12 @@ jobs:
         if: steps.create-release.outcome == 'success'
         with:
           script: |
-            const modules = [ 'provider/file', 'provider/pflag', 'provider/appconfig', 'provider/azappconfig', 'provider/secretmanager', 'provider/gcs' ]
+            const modules = [
+              'provider/file', 'provider/pflag',
+              'provider/appconfig', 'provider/s3',
+              'provider/azappconfig',
+              'provider/secretmanager', 'provider/gcs'
+            ]
             for (const module of modules) {
               github.rest.git.createRef({
                 owner: context.repo.owner,

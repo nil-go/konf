@@ -11,6 +11,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - Add konf.WithCaseSensitive to support case-sensitive path match (#205).
 - Add GCP Cloud Storage Loader (#210).
+- Add AWS S3 Loader (#214).
 
 ## [0.8.1] - 2024-03-06
 
