@@ -5,7 +5,6 @@ package s3_test
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"io"
 	"strings"
@@ -182,7 +181,6 @@ func testcases() []struct {
 					return middleware.FinalizeOutput{}, middleware.Metadata{}, nil
 				}
 			},
-			unmarshal: json.Unmarshal,
 			expected: map[string]any{
 				"k": "v",
 			},
@@ -234,5 +232,8 @@ func TestS3_String(t *testing.T) {
 	t.Parallel()
 
 	loader := ks3.New("bucket", "/key")
+	assert.Equal(t, "s3:bucket/key", loader.String())
+
+	loader = ks3.New("bucket", "key")
 	assert.Equal(t, "s3:bucket/key", loader.String())
 }

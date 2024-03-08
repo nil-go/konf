@@ -43,6 +43,7 @@ updates:
       aws-sdk-go:
         patterns:
           - github.com/aws/aws-sdk-go-v2*
+          - github.com/aws/smithy-go
 
   - package-ecosystem: gomod
     directory: /provider/azappconfig
@@ -54,6 +55,7 @@ updates:
       azure-sdk-for-go:
         patterns:
           - github.com/Azure/azure-sdk-for-go/sdk/*
+          - github.com/aws/smithy-go
 
   - package-ecosystem: gomod
     directory: /provider/secretmanager

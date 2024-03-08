@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"io"
 	"reflect"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -33,6 +34,10 @@ type S3 struct {
 
 // New creates an S3 with the given bucket, key and Option(s).
 func New(bucket, key string, opts ...Option) *S3 {
+	if !strings.HasPrefix(key, "/") {
+		key = "/" + key
+	}
+
 	option := &options{
 		client: &clientProxy{
 			bucket: bucket,
