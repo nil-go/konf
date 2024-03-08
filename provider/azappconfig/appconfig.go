@@ -45,10 +45,6 @@ func New(endpoint string, opts ...Option) *AppConfig {
 	for _, opt := range opts {
 		opt(option)
 	}
-
-	if option.splitter == nil {
-		option.splitter = func(s string) []string { return strings.Split(s, "/") }
-	}
 	option.client.timeout = option.pollInterval / 2 //nolint:gomnd
 
 	return (*AppConfig)(option)
@@ -92,7 +88,7 @@ func (a *AppConfig) load(ctx context.Context) (map[string]any, bool, error) {
 
 	splitter := a.splitter
 	if splitter == nil {
-		splitter = func(s string) []string { return strings.Split(s, "-") }
+		splitter = func(s string) []string { return strings.Split(s, "/") }
 	}
 	values := make(map[string]any)
 	for key, value := range resp {
