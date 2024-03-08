@@ -143,6 +143,9 @@ func TestSecretManager_Load(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 				assert.Equal(t, testcase.expected, values)
+				values, err = loader.Load()
+				assert.NoError(t, err)
+				assert.Equal(t, nil, values)
 			}
 		})
 	}
@@ -286,7 +289,7 @@ func (s *secretManagerService) ListSecrets(
 
 	resp := &pb.ListSecretsResponse{TotalSize: int32(len(s.values))}
 	for name := range s.values {
-		resp.Secrets = append(resp.Secrets, &pb.Secret{Name: name})
+		resp.Secrets = append(resp.Secrets, &pb.Secret{Name: name, Etag: name + "42"})
 	}
 
 	return resp, nil
@@ -322,7 +325,7 @@ func (f *faultySecretManagerService) ListSecrets(
 		return nil, errors.New("list secrets error")
 	}
 
-	return &pb.ListSecretsResponse{Secrets: []*pb.Secret{{Name: "projects/test/secrets/p-k"}}}, nil
+	return &pb.ListSecretsResponse{Secrets: []*pb.Secret{{Name: "projects/test/secrets/p-k", Etag: "pk42"}}}, nil
 }
 
 func (f *faultySecretManagerService) AccessSecretVersion(

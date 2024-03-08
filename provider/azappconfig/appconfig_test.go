@@ -122,6 +122,9 @@ func TestAppConfig_Load(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 				assert.Equal(t, testcase.expected, values)
+				values, err = loader.Load()
+				assert.NoError(t, err)
+				assert.Equal(t, nil, values)
 			}
 		})
 	}
@@ -233,7 +236,7 @@ func httpServer() *httptest.Server {
 				{
 					"key":   "q_k",
 					"value": "v",
-					"etag":  "",
+					"etag":  "qk42",
 				},
 			}
 		case request.URL.Query().Get("key") != "":
@@ -241,7 +244,7 @@ func httpServer() *httptest.Server {
 				{
 					"key":   "p/k",
 					"value": "v",
-					"etag":  "",
+					"etag":  "pk42",
 				},
 			}
 		default:
@@ -249,12 +252,12 @@ func httpServer() *httptest.Server {
 				{
 					"key":   "p/k",
 					"value": "v",
-					"etag":  "",
+					"etag":  "pk42",
 				},
 				{
 					"key":   "p/d",
 					"value": ".",
-					"etag":  "",
+					"etag":  "pd42",
 				},
 			}
 		}
