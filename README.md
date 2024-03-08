@@ -125,6 +125,7 @@ There are providers for the following configuration sources:
 - [`appconfig`](provider/appconfig) loads configuration from [AWS AppConfig](https://aws.amazon.com/systems-manager/features/appconfig/).
 - [`azappconfig`](provider/azappconfig) loads configuration from [Azure App Configuration](https://azure.microsoft.com/en-us/products/app-configuration).
 - [`secretmanager`](provider/secretmanager) loads configuration from [GCP Secret Manager](https://cloud.google.com/security/products/secret-manager).
+- [`gcs`](provider/gcs) loads configuration from [GCP Cloud Storage](https://cloud.google.com/storage).
 
 ## Custom Configuration Providers
 
