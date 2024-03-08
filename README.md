@@ -1,4 +1,4 @@
-# A minimalist configuration API for Go
+# The simplest config loader API for Go
 
 ![Go Version](https://img.shields.io/github/go-mod/go-version/nil-go/konf)
 [![Go Reference](https://pkg.go.dev/badge/github.com/nil-go/konf.svg)](https://pkg.go.dev/github.com/nil-go/konf)
@@ -8,19 +8,16 @@
 [![Coverage](https://codecov.io/gh/nil-go/konf/branch/main/graph/badge.svg)](https://codecov.io/gh/nil-go/konf)
 
 konf offers an(other) opinion on how Go programs can read configuration without
-becoming coupled to a particular configuration source. It contains two APIs with two
-different sets of users.
+becoming coupled to a particular configuration source.
 
-The `Config` type is intended for application authors. It provides a relatively
-small API which can be used everywhere you want to read configuration.
-It defers the actual configuration loading to the `Loader` interface.
+## Features
 
-The `Loader` and `Watcher` interface is intended for configuration source library implementers.
-They are pure interfaces which can be implemented to provide the actual configuration.
-
-This decoupling allows application developers to write code in terms of `*konf.Config`
-while the configuration source(s) is managed "up stack" (e.g. in or near `main()`).
-Application developers can then switch configuration sources(s) as necessary.
+- [konf.Unmarshal](#usage) for reading configuration to any type of object.
+- [konf.OnChange](#usage) for registering callbacks while configuration changes.
+- [konf.Explain](#understand-the-configuration) for understanding where the configuration is loaded from.
+- [Various providers](#configuration-providers) for loading configuration from major clouds, AWS, Azure, and GCP.
+- [Zero dependencies](go.mod) in core module which supports loading configuration
+from environment variables,flags, and embed file system.
 
 ## Usage
 
@@ -82,6 +79,20 @@ configuration source(s). They read configuration in terms of functions in packag
         // ... use cfg in app code ...
     }
 ```
+
+## Design
+
+It contains two APIs with two different sets of users:
+
+- The `Config` type is intended for application authors. It provides a relatively
+small API which can be used everywhere you want to read configuration.
+It defers the actual configuration loading to the `Loader` interface.
+- The `Loader` and `Watcher` interface is intended for configuration source library implementers.
+They are pure interfaces which can be implemented to provide the actual configuration.
+
+This decoupling allows application developers to write code in terms of `*konf.Config`
+while the configuration source(s) is managed "up stack" (e.g. in or near `main()`).
+Application developers can then switch configuration sources(s) as necessary.
 
 ## Understand the configuration
 
