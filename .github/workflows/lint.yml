@@ -18,6 +18,7 @@ jobs:
           - 'provider/appconfig'
           - 'provider/s3'
           - 'provider/azappconfig'
+          - 'provider/azblob'
           - 'provider/secretmanager'
           - 'provider/gcs'
     name: Lint

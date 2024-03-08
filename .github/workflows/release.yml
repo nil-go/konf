@@ -53,7 +53,7 @@ jobs:
             const modules = [
               'provider/file', 'provider/pflag',
               'provider/appconfig', 'provider/s3',
-              'provider/azappconfig',
+              'provider/azappconfig', 'provider/azblob',
               'provider/secretmanager', 'provider/gcs'
             ]
             for (const module of modules) {

@@ -58,6 +58,18 @@ updates:
           - github.com/aws/smithy-go
 
   - package-ecosystem: gomod
+    directory: /provider/azblob
+    labels:
+      - Skip-Changelog
+    schedule:
+      interval: weekly
+    groups:
+      azure-sdk-for-go:
+        patterns:
+          - github.com/Azure/azure-sdk-for-go/sdk/*
+          - github.com/aws/smithy-go
+
+  - package-ecosystem: gomod
     directory: /provider/secretmanager
     labels:
       - Skip-Changelog
