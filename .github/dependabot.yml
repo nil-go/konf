@@ -31,7 +31,18 @@ updates:
     groups:
       aws-sdk-go:
         patterns:
-          - github.com/aws/aws-sdk-go-v2/*
+          - github.com/aws/aws-sdk-go-v2*
+
+  - package-ecosystem: gomod
+    directory: /provider/s3
+    labels:
+      - Skip-Changelog
+    schedule:
+      interval: weekly
+    groups:
+      aws-sdk-go:
+        patterns:
+          - github.com/aws/aws-sdk-go-v2*
 
   - package-ecosystem: gomod
     directory: /provider/azappconfig

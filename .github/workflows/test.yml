@@ -11,7 +11,7 @@ jobs:
   test:
     strategy:
       matrix:
-        module: [ '', 'provider/file', 'provider/pflag', 'provider/appconfig', 'provider/azappconfig', 'provider/secretmanager', 'provider/gcs' ]
+        module: [ '', 'provider/file', 'provider/pflag', 'provider/appconfig', 'provider/s3', 'provider/azappconfig', 'provider/secretmanager', 'provider/gcs' ]
         go-version: [ 'stable', 'oldstable' ]
     name: Test
     runs-on: ubuntu-latest
