@@ -16,6 +16,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/appconfigdata"
 	"github.com/aws/smithy-go/middleware"
+	"github.com/aws/smithy-go/transport/http"
 
 	"github.com/nil-go/konf/provider/appconfig"
 	"github.com/nil-go/konf/provider/appconfig/internal/assert"
@@ -48,7 +49,7 @@ func TestAppConfig_Load(t *testing.T) {
 			description: "appconfig",
 			middleware: func(
 				ctx context.Context,
-				_ middleware.FinalizeInput,
+				input middleware.FinalizeInput,
 				_ middleware.FinalizeHandler,
 			) (middleware.FinalizeOutput, middleware.Metadata, error) {
 				switch awsMiddleware.GetOperationName(ctx) {
@@ -59,6 +60,15 @@ func TestAppConfig_Load(t *testing.T) {
 						},
 					}, middleware.Metadata{}, nil
 				case "GetLatestConfiguration":
+					if ct := input.Request.(*http.Request).URL.Query().Get("configuration_token"); ct == "next-token" {
+						return middleware.FinalizeOutput{
+							Result: &appconfigdata.GetLatestConfigurationOutput{
+								Configuration:              []byte{},
+								NextPollConfigurationToken: aws.String("next-token"),
+							},
+						}, middleware.Metadata{}, nil
+					}
+
 					return middleware.FinalizeOutput{
 						Result: &appconfigdata.GetLatestConfigurationOutput{
 							Configuration:              []byte(`{"k":"v"}`),
@@ -178,6 +188,9 @@ func TestAppConfig_Load(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 				assert.Equal(t, testcase.expected, values)
+				values, err = loader.Load()
+				assert.NoError(t, err)
+				assert.Equal(t, nil, values)
 			}
 		})
 	}
