@@ -189,7 +189,7 @@ func TestGCS_String(t *testing.T) {
 	t.Parallel()
 
 	loader := gcs.New("gs://bucket/file")
-	assert.Equal(t, "gcs:bucket/file", loader.String())
+	assert.Equal(t, "gs://bucket/file", loader.String())
 }
 
 type roundTripFunc func(*http.Request) *http.Response

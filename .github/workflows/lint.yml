@@ -21,6 +21,7 @@ jobs:
           - 'provider/azblob'
           - 'provider/secretmanager'
           - 'provider/gcs'
+          - 'examples/aws'
           - 'examples/azure'
           - 'examples/gcp'
     name: Lint

@@ -108,7 +108,7 @@ func (a *AppConfig) Status(onStatus func(bool, error)) {
 }
 
 func (a *AppConfig) String() string {
-	return "azconfig:" + a.client.endpoint
+	return a.client.endpoint
 }
 
 type clientProxy struct {

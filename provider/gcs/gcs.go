@@ -108,7 +108,7 @@ func (g *GCS) Status(onStatus func(bool, error)) {
 }
 
 func (g *GCS) String() string {
-	return "gcs:" + g.client.bucket + "/" + g.client.object
+	return "gs://" + g.client.bucket + "/" + g.client.object
 }
 
 type clientProxy struct {
