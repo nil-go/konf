@@ -22,7 +22,7 @@ jobs:
           cache-dependency-path: "**/go.sum"
       - uses: "google-github-actions/auth@v2"
         with:
-          workload_identity_provider: "projects/670732780572/locations/global/workloadIdentityPools/github/providers/konf"
+          workload_identity_provider: "${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}"
       - name: Test
         run: go test -shuffle=on -v ./...
         working-directory: "examples/gcp"
