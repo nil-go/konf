@@ -219,7 +219,7 @@ func TestAppConfig_String(t *testing.T) {
 	t.Parallel()
 
 	loader := azappconfig.New("https://appconfig.azconfig.io")
-	assert.Equal(t, "azAppConfig:https://appconfig.azconfig.io", loader.String())
+	assert.Equal(t, "azconfig:https://appconfig.azconfig.io", loader.String())
 }
 
 func httpServer() *httptest.Server {

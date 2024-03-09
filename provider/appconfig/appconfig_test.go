@@ -383,5 +383,5 @@ func TestAppConfig_String(t *testing.T) {
 	t.Parallel()
 
 	loader := appconfig.New("app", "env", "profile")
-	assert.Equal(t, "appConfig:app-env-profile", loader.String())
+	assert.Equal(t, "appconfig:app-env-profile", loader.String())
 }

@@ -1,7 +1,7 @@
 // Copyright (c) 2024 The konf authors
 // Use of this source code is governed by a MIT license found in the LICENSE file.
 
-package gcp_test
+package azure_test
 
 import (
 	"context"
@@ -11,10 +11,10 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"github.com/nil-go/konf"
+	"github.com/nil-go/konf/provider/azappconfig"
+	"github.com/nil-go/konf/provider/azblob"
 	"github.com/nil-go/konf/provider/env"
 	"github.com/nil-go/konf/provider/fs"
-	"github.com/nil-go/konf/provider/gcs"
-	"github.com/nil-go/konf/provider/secretmanager"
 )
 
 func Example() {
@@ -45,11 +45,11 @@ func Example() {
 	fmt.Println()
 	fmt.Println(konf.Explain("konf.source"))
 	// Output:
-	// Secret Manager
+	// App Configuration
 	//
-	// konf.source has value[Secret Manager] that is loaded by loader[secretManager:konf-test].
+	// konf.source has value[App Configuration] that is loaded by loader[azconfig:https://konftest.azconfig.io].
 	// Here are other value(loader)s:
-	//   - GCS(gcs:konf-test/config.yaml)
+	//   - Blob Storage(azblob:https://konftest.blob.core.windows.net/konf-test/config.yaml)
 	//   - Embedded FS(fs:config/config.yaml)
 }
 
@@ -65,12 +65,15 @@ func loadConfig() {
 		panic(err) // handle error
 	}
 
-	// Load configuration from GCP Cloud Storage.
-	if err := config.Load(gcs.New("gs://konf-test/config.yaml", gcs.WithUnmarshal(yaml.Unmarshal))); err != nil {
+	// Load configuration from Azure Blob Storage.
+	if err := config.Load(azblob.New(
+		"https://konftest.blob.core.windows.net", "konf-test", "config.yaml",
+		azblob.WithUnmarshal(yaml.Unmarshal),
+	)); err != nil {
 		panic(err) // handle error
 	}
-	// Load configuration from GCP Secret Manager.
-	if err := config.Load(secretmanager.New(secretmanager.WithProject("konf-test"))); err != nil {
+	// Load configuration from Azure App Configuration.
+	if err := config.Load(azappconfig.New("https://konftest.azconfig.io")); err != nil {
 		panic(err) // handle error
 	}
 

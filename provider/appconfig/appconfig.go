@@ -105,7 +105,7 @@ func (a *AppConfig) Status(onStatus func(bool, error)) {
 }
 
 func (a *AppConfig) String() string {
-	return "appConfig:" + a.client.application + "-" + a.client.environment + "-" + a.client.profile
+	return "appconfig:" + a.client.application + "-" + a.client.environment + "-" + a.client.profile
 }
 
 type clientProxy struct {
