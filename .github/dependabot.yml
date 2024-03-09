@@ -95,6 +95,17 @@ updates:
           - cloud.google.com/go/*
           - google.golang.org/api
 
+  - package-ecosystem: gomod
+    directory: /examples/gcp
+    labels:
+      - Skip-Changelog
+    schedule:
+      interval: weekly
+    groups:
+      github.com/nil-go/konf:
+        patterns:
+          - github.com/nil-go/konf*
+
   - package-ecosystem: github-actions
     directory: /
     labels:
