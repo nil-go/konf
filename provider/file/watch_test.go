@@ -15,8 +15,6 @@ import (
 )
 
 func TestFile_Watch(t *testing.T) {
-	t.Parallel()
-
 	testcases := []struct {
 		description string
 		action      func(string) error
@@ -49,11 +47,7 @@ func TestFile_Watch(t *testing.T) {
 		testcase := testcase
 
 		t.Run(testcase.description, func(t *testing.T) {
-			t.Parallel()
-
-			temp, err := os.MkdirTemp("", "*") // t.TempDir() causes deadlock on macos.
-			assert.NoError(t, err)
-			tmpFile := path.Join(temp, "watch.json")
+			tmpFile := path.Join(t.TempDir(), "watch.json")
 			assert.NoError(t, os.WriteFile(tmpFile, []byte(`{"p": {"k": "v"}}`), 0o600))
 			for _, e := os.Stat(tmpFile); os.IsNotExist(e); _, e = os.Stat(tmpFile) { //nolint:revive
 				// wait for the file to be written
