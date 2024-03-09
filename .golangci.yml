@@ -14,6 +14,8 @@ linters-settings:
       Use of this source code is governed by a MIT license found in the LICENSE file.
   goimports:
     local-prefixes: github.com/nil-go/konf
+  gomoddirectives:
+    replace-local: true
   govet:
     check-shadowing: true
   inamedparam:

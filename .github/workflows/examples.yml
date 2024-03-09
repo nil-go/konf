@@ -1,0 +1,29 @@
+name: Examples
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  id-token: write
+
+jobs:
+  examples-gcp:
+    name: Examples GCP
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "stable"
+          cache-dependency-path: "**/go.sum"
+      - uses: "google-github-actions/auth@v2"
+        with:
+          service_account: "github@konf-test.iam.gserviceaccount.com"
+          workload_identity_provider: "projects/670732780572/locations/global/workloadIdentityPools/github/providers/konf"
+      - name: Test
+        run: go test -shuffle=on -v ./...
+        working-directory: "examples/gcp"
