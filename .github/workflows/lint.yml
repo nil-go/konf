@@ -21,6 +21,7 @@ jobs:
           - 'provider/azblob'
           - 'provider/secretmanager'
           - 'provider/gcs'
+          - 'examples/azure'
           - 'examples/gcp'
     name: Lint
     runs-on: ubuntu-latest
