@@ -27,8 +27,7 @@ import (
 //
 // To create a new AppConfig, call [New].
 type AppConfig struct {
-	unmarshal    func([]byte, any) error
-	pollInterval time.Duration
+	unmarshal func([]byte, any) error
 
 	onStatus func(bool, error)
 	client   *clientProxy
@@ -46,8 +45,6 @@ func New(application, environment, profile string, opts ...Option) *AppConfig {
 	for _, opt := range opts {
 		opt(option)
 	}
-	option.client.pollInterval = option.pollInterval / 2 //nolint:gomnd
-	option.client.timeout = option.pollInterval / 2      //nolint:gomnd
 
 	return (*AppConfig)(option)
 }
@@ -59,16 +56,12 @@ func (a *AppConfig) Load() (map[string]any, error) {
 }
 
 func (a *AppConfig) Watch(ctx context.Context, onChange func(map[string]any)) error {
-	pollInterval := time.Minute
-	if a.pollInterval > 0 {
-		pollInterval = a.pollInterval
-	}
-	ticker := time.NewTicker(pollInterval)
-	defer ticker.Stop()
+	timer := time.NewTimer(a.client.nextPollDuration())
+	defer timer.Stop()
 
 	for {
 		select {
-		case <-ticker.C:
+		case <-timer.C:
 			values, changed, err := a.load(ctx)
 			if a.onStatus != nil {
 				a.onStatus(changed, err)
@@ -76,6 +69,7 @@ func (a *AppConfig) Watch(ctx context.Context, onChange func(map[string]any)) er
 			if changed {
 				onChange(values)
 			}
+			timer.Reset(a.client.nextPollDuration())
 		case <-ctx.Done():
 			return nil
 		}
@@ -117,8 +111,9 @@ type clientProxy struct {
 
 	client *appconfigdata.Client
 
-	timeout time.Duration
-	token   atomic.Pointer[string]
+	timeout       time.Duration
+	nextPollToken atomic.Pointer[string]
+	nextPollTime  atomic.Pointer[time.Time]
 }
 
 func (p *clientProxy) load(ctx context.Context) ([]byte, bool, error) {
@@ -139,7 +134,7 @@ func (p *clientProxy) load(ctx context.Context) ([]byte, bool, error) {
 	ctx, cancel := context.WithTimeout(ctx, max(p.timeout, 10*time.Second)) //nolint:gomnd
 	defer cancel()
 
-	if p.token.Load() == nil {
+	if p.nextPollToken.Load() == nil {
 		session, err := p.client.StartConfigurationSession(ctx, &appconfigdata.StartConfigurationSessionInput{
 			ApplicationIdentifier:                aws.String(p.application),
 			ConfigurationProfileIdentifier:       aws.String(p.profile),
@@ -149,17 +144,27 @@ func (p *clientProxy) load(ctx context.Context) ([]byte, bool, error) {
 		if err != nil {
 			return nil, false, fmt.Errorf("start configuration session: %w", err)
 		}
-		p.token.Store(session.InitialConfigurationToken)
+		p.nextPollToken.Store(session.InitialConfigurationToken)
 	}
 
 	resp, err := p.client.GetLatestConfiguration(ctx,
-		&appconfigdata.GetLatestConfigurationInput{ConfigurationToken: p.token.Load()},
+		&appconfigdata.GetLatestConfigurationInput{ConfigurationToken: p.nextPollToken.Load()},
 	)
 	if err != nil {
 		return nil, false, fmt.Errorf("get latest configuration: %w", err)
 	}
-	p.token.Store(resp.NextPollConfigurationToken)
+	p.nextPollToken.Store(resp.NextPollConfigurationToken)
+	nextPollTime := time.Now().Add(time.Duration(resp.NextPollIntervalInSeconds) * time.Second)
+	p.nextPollTime.Store(&nextPollTime)
 
 	// It may return empty configuration data if the client already has the latest version.
 	return resp.Configuration, len(resp.Configuration) > 0, nil
+}
+
+func (p *clientProxy) nextPollDuration() time.Duration {
+	if nextPollTime := p.nextPollTime.Load(); nextPollTime != nil && nextPollTime.After(time.Now()) {
+		return time.Until(*nextPollTime)
+	}
+
+	return p.pollInterval
 }

@@ -55,15 +55,16 @@ func TestAppConfig_Load(t *testing.T) {
 				case "StartConfigurationSession":
 					return middleware.FinalizeOutput{
 						Result: &appconfigdata.StartConfigurationSessionOutput{
-							InitialConfigurationToken: aws.String("initial-token"),
+							InitialConfigurationToken: aws.String("initial-nextPollToken"),
 						},
 					}, middleware.Metadata{}, nil
 				case "GetLatestConfiguration":
-					if ct := input.Request.(*http.Request).URL.Query().Get("configuration_token"); ct == "next-token" {
+					if ct := input.Request.(*http.Request).URL.Query().Get("configuration_token"); ct == "next-nextPollToken" {
 						return middleware.FinalizeOutput{
 							Result: &appconfigdata.GetLatestConfigurationOutput{
 								Configuration:              []byte{},
-								NextPollConfigurationToken: aws.String("next-token"),
+								NextPollConfigurationToken: aws.String("next-nextPollToken"),
+								NextPollIntervalInSeconds:  60,
 							},
 						}, middleware.Metadata{}, nil
 					}
@@ -71,7 +72,7 @@ func TestAppConfig_Load(t *testing.T) {
 					return middleware.FinalizeOutput{
 						Result: &appconfigdata.GetLatestConfigurationOutput{
 							Configuration:              []byte(`{"k":"v"}`),
-							NextPollConfigurationToken: aws.String("next-token"),
+							NextPollConfigurationToken: aws.String("next-nextPollToken"),
 						},
 					}, middleware.Metadata{}, nil
 				default:
@@ -109,7 +110,7 @@ func TestAppConfig_Load(t *testing.T) {
 				case "StartConfigurationSession":
 					return middleware.FinalizeOutput{
 						Result: &appconfigdata.StartConfigurationSessionOutput{
-							InitialConfigurationToken: aws.String("initial-token"),
+							InitialConfigurationToken: aws.String("initial-nextPollToken"),
 						},
 					}, middleware.Metadata{}, nil
 				case "GetLatestConfiguration":
@@ -131,14 +132,15 @@ func TestAppConfig_Load(t *testing.T) {
 				case "StartConfigurationSession":
 					return middleware.FinalizeOutput{
 						Result: &appconfigdata.StartConfigurationSessionOutput{
-							InitialConfigurationToken: aws.String("initial-token"),
+							InitialConfigurationToken: aws.String("initial-nextPollToken"),
 						},
 					}, middleware.Metadata{}, nil
 				case "GetLatestConfiguration":
 					return middleware.FinalizeOutput{
 						Result: &appconfigdata.GetLatestConfigurationOutput{
 							Configuration:              []byte(`{"k":"v"}`),
-							NextPollConfigurationToken: aws.String("next-token"),
+							NextPollConfigurationToken: aws.String("next-nextPollToken"),
+							NextPollIntervalInSeconds:  60,
 						},
 					}, middleware.Metadata{}, nil
 				default:
@@ -218,14 +220,15 @@ func TestAppConfig_Watch(t *testing.T) {
 				case "StartConfigurationSession":
 					return middleware.FinalizeOutput{
 						Result: &appconfigdata.StartConfigurationSessionOutput{
-							InitialConfigurationToken: aws.String("initial-token"),
+							InitialConfigurationToken: aws.String("initial-nextPollToken"),
 						},
 					}, middleware.Metadata{}, nil
 				case "GetLatestConfiguration":
 					return middleware.FinalizeOutput{
 						Result: &appconfigdata.GetLatestConfigurationOutput{
 							Configuration:              []byte(`{"k":"v"}`),
-							NextPollConfigurationToken: aws.String("next-token"),
+							NextPollConfigurationToken: aws.String("next-nextPollToken"),
+							NextPollIntervalInSeconds:  1,
 						},
 					}, middleware.Metadata{}, nil
 				default:
@@ -245,14 +248,15 @@ func TestAppConfig_Watch(t *testing.T) {
 				case "StartConfigurationSession":
 					return middleware.FinalizeOutput{
 						Result: &appconfigdata.StartConfigurationSessionOutput{
-							InitialConfigurationToken: aws.String("initial-token"),
+							InitialConfigurationToken: aws.String("initial-nextPollToken"),
 						},
 					}, middleware.Metadata{}, nil
 				case "GetLatestConfiguration":
 					return middleware.FinalizeOutput{
 						Result: &appconfigdata.GetLatestConfigurationOutput{
 							Configuration:              []byte{},
-							NextPollConfigurationToken: aws.String("next-token"),
+							NextPollConfigurationToken: aws.String("next-nextPollToken"),
+							NextPollIntervalInSeconds:  1,
 						},
 					}, middleware.Metadata{}, nil
 				default:
@@ -271,7 +275,7 @@ func TestAppConfig_Watch(t *testing.T) {
 				case "StartConfigurationSession":
 					return middleware.FinalizeOutput{
 						Result: &appconfigdata.StartConfigurationSessionOutput{
-							InitialConfigurationToken: aws.String("initial-token"),
+							InitialConfigurationToken: aws.String("initial-nextPollToken"),
 						},
 					}, middleware.Metadata{}, nil
 				case "GetLatestConfiguration":
@@ -293,14 +297,14 @@ func TestAppConfig_Watch(t *testing.T) {
 				case "StartConfigurationSession":
 					return middleware.FinalizeOutput{
 						Result: &appconfigdata.StartConfigurationSessionOutput{
-							InitialConfigurationToken: aws.String("initial-token"),
+							InitialConfigurationToken: aws.String("initial-nextPollToken"),
 						},
 					}, middleware.Metadata{}, nil
 				case "GetLatestConfiguration":
 					return middleware.FinalizeOutput{
 						Result: &appconfigdata.GetLatestConfigurationOutput{
 							Configuration:              []byte(`{"k":"v"}`),
-							NextPollConfigurationToken: aws.String("next-token"),
+							NextPollConfigurationToken: aws.String("next-nextPollToken"),
 						},
 					}, middleware.Metadata{}, nil
 				default:
@@ -336,23 +340,24 @@ func TestAppConfig_Watch(t *testing.T) {
 			)
 			assert.NoError(t, cerr)
 
-			var err atomic.Pointer[error]
 			loader := appconfig.New(
 				"app", "env", "profiler",
 				appconfig.WithAWSConfig(cfg),
-				appconfig.WithPollInterval(10*time.Millisecond),
 				appconfig.WithUnmarshal(testcase.unmarshal),
 			)
+			_, _ = loader.Load()
+
+			var err atomic.Pointer[error]
 			loader.Status(func(_ bool, e error) {
 				if e != nil {
 					err.Store(&e)
 				}
 			})
 
-			values := make(chan map[string]any)
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 
+			values := make(chan map[string]any)
 			started := make(chan struct{})
 			go func() {
 				close(started)
@@ -364,7 +369,7 @@ func TestAppConfig_Watch(t *testing.T) {
 			}()
 			<-started
 
-			time.Sleep(15 * time.Millisecond) // wait for the first tick, but not the second
+			time.Sleep(time.Second) // wait for the first tick, but not the second
 			select {
 			case val := <-values:
 				assert.Equal(t, testcase.expected, val)

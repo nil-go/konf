@@ -19,11 +19,12 @@ func WithAWSConfig(config aws.Config) Option {
 }
 
 // WithPollInterval provides the interval for polling the configuration.
+// The minimum interval required by AWS AppConfig SDK is 15 seconds.
 //
 // The default interval is 1 minute.
 func WithPollInterval(interval time.Duration) Option {
 	return func(options *options) {
-		options.pollInterval = interval
+		options.client.pollInterval = interval
 	}
 }
 
