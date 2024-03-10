@@ -3,9 +3,9 @@ module github.com/nil-go/konf/examples/aws
 go 1.22
 
 require (
-	github.com/nil-go/konf v0.8.1
-	github.com/nil-go/konf/provider/appconfig v0.0.0-00010101000000-000000000000
-	github.com/nil-go/konf/provider/s3 v0.0.0-20240309225631-d6f225ff8a0e
+	github.com/nil-go/konf v0.9.1
+	github.com/nil-go/konf/provider/appconfig v0.9.1
+	github.com/nil-go/konf/provider/s3 v0.9.1
 	gopkg.in/yaml.v3 v3.0.1
 )
 

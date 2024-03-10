@@ -3,9 +3,9 @@ module github.com/nil-go/konf/examples/gcp
 go 1.22
 
 require (
-	github.com/nil-go/konf v0.8.1
-	github.com/nil-go/konf/provider/gcs v0.8.1
-	github.com/nil-go/konf/provider/secretmanager v0.8.1
+	github.com/nil-go/konf v0.9.1
+	github.com/nil-go/konf/provider/gcs v0.9.1
+	github.com/nil-go/konf/provider/secretmanager v0.9.1
 	gopkg.in/yaml.v3 v3.0.1
 )
 
