@@ -144,7 +144,7 @@ func (p *clientProxy) load(ctx context.Context) ([]byte, bool, error) {
 			ApplicationIdentifier:                aws.String(p.application),
 			ConfigurationProfileIdentifier:       aws.String(p.profile),
 			EnvironmentIdentifier:                aws.String(p.environment),
-			RequiredMinimumPollIntervalInSeconds: aws.Int32(int32(max(p.pollInterval, time.Second).Seconds())),
+			RequiredMinimumPollIntervalInSeconds: aws.Int32(int32(max(p.pollInterval, 15*time.Second).Seconds())), //nolint:gomnd
 		})
 		if err != nil {
 			return nil, false, fmt.Errorf("start configuration session: %w", err)
