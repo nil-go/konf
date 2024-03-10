@@ -116,19 +116,21 @@ to monitor the status of configuration loading/watching, e.g. recording metrics.
 
 ## Configuration Providers
 
-There are providers for the following configuration sources:
+There are providers for the following configuration sources.
 
-- [`env`](provider/env) loads configuration from environment variables.
-- [`fs`](provider/fs) loads configuration from fs.FS.
-- [`file`](provider/file) loads configuration from a file.
-- [`flag`](provider/flag) loads configuration from flags.
-- [`pflag`](provider/pflag) loads configuration from [spf13/pflag](https://github.com/spf13/pflag).
-- [`appconfig`](provider/appconfig) loads configuration from [AWS AppConfig](https://aws.amazon.com/systems-manager/features/appconfig/).
-- [`s3`](provider/s3) loads configuration from [AWS S3](https://aws.amazon.com/s3).
-- [`azappconfig`](provider/azappconfig) loads configuration from [Azure App Configuration](https://azure.microsoft.com/en-us/products/app-configuration).
-- [`azblob`](provider/azblob) loads configuration from [Azure Blob Storage](https://azure.microsoft.com/en-us/products/storage/blobs).
-- [`secretmanager`](provider/secretmanager) loads configuration from [GCP Secret Manager](https://cloud.google.com/security/products/secret-manager).
-- [`gcs`](provider/gcs) loads configuration from [GCP Cloud Storage](https://cloud.google.com/storage).
+| Loader                                    | Load From                                                                               | Watch Changes |
+|:------------------------------------------|:----------------------------------------------------------------------------------------|:-------------:|
+| [`env`](provider/env)                     | environment variables                                                                   |               |
+| [`fs`](provider/fs)                       | [fs.FS](https://pkg.go.dev/io/fs)                                                       |               |
+| [`file`](provider/file)                   | file                                                                                    |       ✓       |
+| [`flag`](provider/flag)                   | [flag](https://pkg.go.dev/flag)                                                         |               |
+| [`pflag`](provider/pflag)                 | [spf13/pflag](https://github.com/spf13/pflag)                                           |               |
+| [`appconfig`](provider/appconfig)         | [AWS AppConfig](https://aws.amazon.com/systems-manager/features/appconfig/)             |       ✓       |
+| [`s3`](provider/s3)                       | [AWS S3](https://aws.amazon.com/s3)                                                     |       ✓       |
+| [`azappconfig`](provider/azappconfig)     | [Azure App Configuration](https://azure.microsoft.com/en-us/products/app-configuration) |       ✓       |
+| [`azblob`](provider/azblob)               | [Azure Blob Storage](https://azure.microsoft.com/en-us/products/storage/blobs)          |       ✓       |
+| [`secretmanager`](provider/secretmanager) | [GCP Secret Manager](https://cloud.google.com/security/products/secret-manager)         |       ✓       |
+| [`gcs`](provider/gcs)                     | [GCP Cloud Storage](https://cloud.google.com/storage)                                   |       ✓       |
 
 ## Custom Configuration Providers
 
