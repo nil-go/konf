@@ -115,11 +115,7 @@ func isZeroValue(flg *flag.Flag) bool {
 }
 
 func (f Flag) String() string {
-	if f.prefix == "" {
-		return "flag"
-	}
-
-	return "flag:" + f.prefix
+	return "flag:" + f.prefix + "*"
 }
 
 type konf interface {

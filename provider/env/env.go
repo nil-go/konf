@@ -61,9 +61,5 @@ func (e Env) Load() (map[string]any, error) {
 }
 
 func (e Env) String() string {
-	if e.prefix == "" {
-		return "env"
-	}
-
-	return "env:" + e.prefix
+	return "env:" + e.prefix + "*"
 }
