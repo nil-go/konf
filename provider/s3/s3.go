@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"path"
 	"reflect"
 	"strings"
 	"sync/atomic"
@@ -32,11 +33,11 @@ type S3 struct {
 	client   *clientProxy
 }
 
-// New creates an S3 with the given bucket, key and Option(s).
-func New(bucket, key string, opts ...Option) *S3 {
-	if !strings.HasPrefix(key, "/") {
-		key = "/" + key
-	}
+// New creates an S3 with the given uri and Option(s).
+func New(uri string, opts ...Option) *S3 {
+	uri = strings.TrimPrefix(uri, "s3:")
+	uri = strings.TrimLeft(uri, "/")
+	bucket, key, _ := strings.Cut(uri, "/")
 
 	option := &options{
 		client: &clientProxy{
@@ -105,7 +106,7 @@ func (a *S3) Status(onStatus func(bool, error)) {
 }
 
 func (a *S3) String() string {
-	return "s3:" + a.client.bucket + a.client.key
+	return "s3://" + path.Join(a.client.bucket, a.client.key)
 }
 
 type clientProxy struct {

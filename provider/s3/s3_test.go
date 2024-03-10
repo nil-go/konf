@@ -57,7 +57,7 @@ func TestS3_Load(t *testing.T) {
 			assert.NoError(t, err)
 
 			loader := ks3.New(
-				"bucket", "/key",
+				"bucket/key",
 				ks3.WithAWSConfig(cfg),
 				ks3.WithUnmarshal(testcase.unmarshal),
 			)
@@ -99,7 +99,7 @@ func TestS3_Watch(t *testing.T) {
 
 			var err atomic.Pointer[error]
 			loader := ks3.New(
-				"bucket", "/key",
+				"bucket/key",
 				ks3.WithAWSConfig(cfg),
 				ks3.WithPollInterval(10*time.Millisecond),
 				ks3.WithUnmarshal(testcase.unmarshal),
@@ -231,9 +231,9 @@ func testcases() []struct {
 func TestS3_String(t *testing.T) {
 	t.Parallel()
 
-	loader := ks3.New("bucket", "/key")
-	assert.Equal(t, "s3:bucket/key", loader.String())
+	loader := ks3.New("bucket/key")
+	assert.Equal(t, "s3://bucket/key", loader.String())
 
-	loader = ks3.New("bucket", "key")
-	assert.Equal(t, "s3:bucket/key", loader.String())
+	loader = ks3.New("s3://bucket/key")
+	assert.Equal(t, "s3://bucket/key", loader.String())
 }

@@ -47,9 +47,9 @@ func Example() {
 	// Output:
 	// Secret Manager
 	//
-	// konf.source has value[Secret Manager] that is loaded by loader[secretManager:konf-test].
+	// konf.source has value[Secret Manager] that is loaded by loader[SecretManager:konf-test].
 	// Here are other value(loader)s:
-	//   - GCS(gcs:konf-test/config.yaml)
+	//   - GCS(gs://konf-test/config.yaml)
 	//   - Embedded FS(fs:config/config.yaml)
 }
 

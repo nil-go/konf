@@ -104,7 +104,7 @@ func (a *Blob) Status(onStatus func(bool, error)) {
 }
 
 func (a *Blob) String() string {
-	return "azblob:" + a.client.endpoint + "/" + a.client.container + "/" + a.client.blob
+	return a.client.endpoint + "/" + a.client.container + "/" + a.client.blob
 }
 
 type clientProxy struct {

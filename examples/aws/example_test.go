@@ -1,7 +1,7 @@
 // Copyright (c) 2024 The konf authors
 // Use of this source code is governed by a MIT license found in the LICENSE file.
 
-package azure_test
+package aws_test
 
 import (
 	"context"
@@ -11,10 +11,10 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"github.com/nil-go/konf"
-	"github.com/nil-go/konf/provider/azappconfig"
-	"github.com/nil-go/konf/provider/azblob"
+	"github.com/nil-go/konf/provider/appconfig"
 	"github.com/nil-go/konf/provider/env"
 	"github.com/nil-go/konf/provider/fs"
+	"github.com/nil-go/konf/provider/s3"
 )
 
 func Example() {
@@ -45,11 +45,11 @@ func Example() {
 	fmt.Println()
 	fmt.Println(konf.Explain("konf.source"))
 	// Output:
-	// App Configuration
+	// AppConfig
 	//
-	// konf.source has value[App Configuration] that is loaded by loader[https://konftest.azconfig.io].
+	// konf.source has value[AppConfig] that is loaded by loader[AppConfig:konf/test/config.yaml].
 	// Here are other value(loader)s:
-	//   - Blob Storage(https://konftest.blob.core.windows.net/konf-test/config.yaml)
+	//   - S3(s3://konf-test/config.yaml)
 	//   - Embedded FS(fs:config/config.yaml)
 }
 
@@ -65,15 +65,12 @@ func loadConfig() {
 		panic(err) // handle error
 	}
 
-	// Load configuration from Azure Blob Storage.
-	if err := config.Load(azblob.New(
-		"https://konftest.blob.core.windows.net", "konf-test", "config.yaml",
-		azblob.WithUnmarshal(yaml.Unmarshal),
-	)); err != nil {
+	// Load configuration from AWS S3.
+	if err := config.Load(s3.New("s3://konf-test/config.yaml", s3.WithUnmarshal(yaml.Unmarshal))); err != nil {
 		panic(err) // handle error
 	}
-	// Load configuration from Azure App Configuration.
-	if err := config.Load(azappconfig.New("https://konftest.azconfig.io")); err != nil {
+	// Load configuration from AWS AppConfig.
+	if err := config.Load(appconfig.New("konf", "test", "config.yaml")); err != nil {
 		panic(err) // handle error
 	}
 

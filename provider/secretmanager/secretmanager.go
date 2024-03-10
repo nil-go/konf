@@ -115,7 +115,7 @@ func (m *SecretManager) Status(onStatus func(bool, error)) {
 }
 
 func (m *SecretManager) String() string {
-	return "secretManager:" + m.client.project
+	return "SecretManager:" + m.client.project
 }
 
 type clientProxy struct {

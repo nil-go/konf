@@ -200,5 +200,5 @@ func TestBlob_String(t *testing.T) {
 	t.Parallel()
 
 	loader := azblob.New("https://azblob.io", "container", "blob")
-	assert.Equal(t, "azblob:https://azblob.io/container/blob", loader.String())
+	assert.Equal(t, "https://azblob.io/container/blob", loader.String())
 }
