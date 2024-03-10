@@ -7,6 +7,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.9.0] - 2024-03-10
+
 ### Added
 
 - Add konf.WithCaseSensitive to support case-sensitive path match (#205).
