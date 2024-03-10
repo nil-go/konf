@@ -47,10 +47,10 @@ func Example() {
 	// Output:
 	// AppConfig
 	//
-	// konf.source has value[AppConfig] that is loaded by loader[AppConfig:konf/test/config.yaml].
+	// konf.source has value[AppConfig] that is loaded by loader[appconfig://konf/config.yaml].
 	// Here are other value(loader)s:
 	//   - S3(s3://konf-test/config.yaml)
-	//   - Embedded FS(fs:config/config.yaml)
+	//   - Embedded FS(fs:///config/config.yaml)
 }
 
 func loadConfig() {

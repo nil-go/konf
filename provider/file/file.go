@@ -14,6 +14,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 )
 
 // File is a Provider that loads configuration from a OS file.
@@ -57,5 +58,10 @@ func (f *File) Load() (map[string]any, error) {
 }
 
 func (f *File) String() string {
-	return "file:" + f.path
+	path, err := filepath.Abs(f.path)
+	if err != nil {
+		path = "file:///" + f.path
+	}
+
+	return "file://" + path
 }

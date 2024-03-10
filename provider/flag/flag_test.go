@@ -126,11 +126,11 @@ func TestFlag_String(t *testing.T) {
 		{
 			description: "with prefix",
 			prefix:      "P_",
-			expected:    "flag:P_",
+			expected:    "flag:P_*",
 		},
 		{
 			description: "no prefix",
-			expected:    "flag",
+			expected:    "flag:*",
 		},
 	}
 

@@ -50,7 +50,7 @@ func Example() {
 	// konf.source has value[App Configuration] that is loaded by loader[https://konftest.azconfig.io].
 	// Here are other value(loader)s:
 	//   - Blob Storage(https://konftest.blob.core.windows.net/konf-test/config.yaml)
-	//   - Embedded FS(fs:config/config.yaml)
+	//   - Embedded FS(fs:///config/config.yaml)
 }
 
 func loadConfig() {
