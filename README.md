@@ -15,7 +15,8 @@ becoming coupled to a particular configuration source.
 - [konf.Unmarshal](#usage) for reading configuration to any type of object.
 - [konf.OnChange](#usage) for registering callbacks while configuration changes.
 - [konf.Explain](#understand-the-configuration) for understanding where the configuration is loaded from.
-- [Various providers](#configuration-providers) for loading configuration from major clouds, AWS, Azure, and GCP.
+- [Various providers](#configuration-providers) for loading configuration from major clouds,
+  [AWS](examples/aws), [Azure](examples/azure), and [GCP](examples/gcp).
 - [Zero dependencies](go.mod) in core module which supports loading configuration
 from environment variables,flags, and embed file system.
 
