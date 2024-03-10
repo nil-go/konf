@@ -96,11 +96,11 @@ func TestEnv_String(t *testing.T) {
 		{
 			description: "with prefix",
 			prefix:      "P_",
-			expected:    "env:P_",
+			expected:    "env:P_*",
 		},
 		{
 			description: "no prefix",
-			expected:    "env",
+			expected:    "env:*",
 		},
 	}
 

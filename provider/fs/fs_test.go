@@ -110,5 +110,5 @@ func TestFS_Load(t *testing.T) {
 func TestFS_String(t *testing.T) {
 	t.Parallel()
 
-	assert.Equal(t, "fs:config.json", kfs.New(fstest.MapFS{}, "config.json").String())
+	assert.Equal(t, "fs:///config.json", kfs.New(fstest.MapFS{}, "config.json").String())
 }

@@ -269,7 +269,7 @@ func TestSecretManager_String(t *testing.T) {
 	t.Parallel()
 
 	loader := secretmanager.New(secretmanager.WithProject("test"))
-	assert.Equal(t, "SecretManager:test", loader.String())
+	assert.Equal(t, "secret-manager://test", loader.String())
 }
 
 type secretManagerService struct {

@@ -210,11 +210,7 @@ func flagVal(set *pflag.FlagSet, flag *pflag.Flag) (any, error) {
 }
 
 func (f PFlag) String() string {
-	if f.prefix == "" {
-		return "pflag"
-	}
-
-	return "pflag:" + f.prefix
+	return "pflag:" + f.prefix + "*"
 }
 
 type konf interface {

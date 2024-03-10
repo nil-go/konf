@@ -63,5 +63,5 @@ func (f FS) Load() (map[string]any, error) {
 }
 
 func (f FS) String() string {
-	return "fs:" + f.path
+	return "fs:///" + f.path
 }

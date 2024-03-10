@@ -5,6 +5,7 @@ package file_test
 
 import (
 	"errors"
+	"path/filepath"
 	"testing"
 
 	"github.com/nil-go/konf/provider/file"
@@ -76,5 +77,7 @@ func TestFile_Load(t *testing.T) {
 func TestFile_String(t *testing.T) {
 	t.Parallel()
 
-	assert.Equal(t, "file:config.json", file.New("config.json").String())
+	path, err := filepath.Abs("config.json")
+	assert.NoError(t, err)
+	assert.Equal(t, "file://"+path, file.New("config.json").String())
 }
