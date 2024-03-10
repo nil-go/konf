@@ -12,7 +12,12 @@ import (
 
 func TestConfig_Exists(t *testing.T) {
 	var config konf.Config
-	assert.NoError(t, config.Load(mapLoader{"config": "string"}))
-	assert.True(t, config.Exists([]string{"config"}))
+	assert.NoError(t, config.Load(mapLoader{"config": map[string]any{"a": "string"}}))
+	assert.True(t, config.Exists([]string{"config", "a"}))
+	assert.True(t, !config.Exists([]string{"other"}))
+
+	config = *konf.New(konf.WithDelimiter("/"))
+	assert.NoError(t, config.Load(mapLoader{"config": map[string]any{"a": "string"}}))
+	assert.True(t, config.Exists([]string{"config", "a"}))
 	assert.True(t, !config.Exists([]string{"other"}))
 }
