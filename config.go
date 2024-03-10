@@ -145,15 +145,19 @@ func (c *Config) log(ctx context.Context, level slog.Level, message string, attr
 }
 
 func (c *Config) sub(values map[string]any, path string) any {
-	delimiter := c.delimiter
-	if delimiter == "" {
-		delimiter = "."
-	}
 	if !c.caseSensitive {
 		path = toLower(path)
 	}
 
-	return maps.Sub(values, strings.Split(path, delimiter))
+	return maps.Sub(values, strings.Split(path, c.delim()))
+}
+
+func (c *Config) delim() string {
+	if c.delimiter == "" {
+		return "."
+	}
+
+	return c.delimiter
 }
 
 func (c *Config) transformKeys(m map[string]any) map[string]any {
@@ -185,14 +189,9 @@ func (c *Config) Explain(path string) string {
 }
 
 func (c *Config) explain(explanation *strings.Builder, path string, value any) {
-	delimiter := c.delimiter
-	if delimiter == "" {
-		delimiter = "."
-	}
-
 	if values, ok := value.(map[string]any); ok {
 		for k, v := range values {
-			c.explain(explanation, path+delimiter+k, v)
+			c.explain(explanation, path+c.delim()+k, v)
 		}
 
 		return
