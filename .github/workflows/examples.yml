@@ -11,6 +11,23 @@ permissions:
   id-token: write
 
 jobs:
+  examples-aws:
+    name: Examples AWS
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "stable"
+          cache-dependency-path: "**/go.sum"
+      - name: configure aws credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          role-to-assume: arn:aws:iam::851725503283:role/github
+          aws-region: us-west-1
+      - name: Test
+        run: go test -shuffle=on -v ./...
+        working-directory: "examples/aws"
   examples-azure:
     name: Examples Azure
     runs-on: ubuntu-latest

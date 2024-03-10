@@ -70,7 +70,10 @@ func loadConfig() {
 		panic(err) // handle error
 	}
 	// Load configuration from AWS AppConfig.
-	if err := config.Load(appconfig.New("konf", "test", "config.yaml")); err != nil {
+	if err := config.Load(appconfig.New(
+		"konf", "test", "config.yaml",
+		appconfig.WithUnmarshal(yaml.Unmarshal),
+	)); err != nil {
 		panic(err) // handle error
 	}
 
