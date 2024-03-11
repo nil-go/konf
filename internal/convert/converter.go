@@ -9,6 +9,8 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+
+	"github.com/nil-go/konf/internal"
 )
 
 type Converter struct {
@@ -413,7 +415,8 @@ func (c Converter) convertSlice(name string, fromVal, toVal reflect.Value) error
 
 		return errors.Join(errs...)
 	case fromVal.Kind() == reflect.String && toVal.Type().Elem().Kind() == reflect.Uint8:
-		toVal.SetBytes([]byte(fromVal.String()))
+		s := fromVal.String()
+		toVal.SetBytes(internal.String2ByteSlice(s))
 	case fromVal.Kind() == reflect.Map:
 		// Empty maps turn into empty arrays
 		if fromVal.Len() == 0 {
@@ -454,9 +457,10 @@ func (c Converter) convertString(name string, fromVal, toVal reflect.Value) erro
 	case fromVal.Kind() == reflect.Array && fromVal.Type().Elem().Kind() == reflect.Uint8:
 		bytes := make([]uint8, fromVal.Len()) //nolint:makezero
 		reflect.Copy(reflect.ValueOf(bytes), fromVal)
-		toVal.SetString(string(bytes))
+		toVal.SetString(internal.ByteSlice2String(bytes))
 	case fromVal.Kind() == reflect.Slice && fromVal.Type().Elem().Kind() == reflect.Uint8:
-		toVal.SetString(string(fromVal.Bytes()))
+		bytes := fromVal.Bytes()
+		toVal.SetString(internal.ByteSlice2String(bytes))
 	default:
 		return fmt.Errorf( //nolint:goerr113
 			"'%s' expected type '%s', got unconvertible type '%s', value: '%v'",

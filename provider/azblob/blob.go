@@ -128,13 +128,12 @@ func (p *clientProxy) load(ctx context.Context) ([]byte, bool, error) { //nolint
 	if p.client == nil {
 		if token, ok := p.credential.(*azidentity.DefaultAzureCredential); ok && reflect.ValueOf(*token).IsZero() {
 			var err error
-			credentialOptions := &azidentity.DefaultAzureCredentialOptions{}
-			if p.credential, err = azidentity.NewDefaultAzureCredential(credentialOptions); err != nil {
+			if p.credential, err = azidentity.NewDefaultAzureCredential(nil); err != nil {
 				return nil, false, fmt.Errorf("load default Azure credential: %w", err)
 			}
 		}
 
-		client, err := azblob.NewClient(p.endpoint, p.credential, &azblob.ClientOptions{})
+		client, err := azblob.NewClient(p.endpoint, p.credential, nil)
 		if err != nil {
 			return nil, false, fmt.Errorf("create Azure blob client: %w", err)
 		}
