@@ -19,7 +19,9 @@ import (
 
 func Example() {
 	// At the beginning of the application, load configuration from different sources.
-	loadConfig()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	loadConfig(ctx)
 
 	// ... 2,000 lines of code ...
 
@@ -53,7 +55,7 @@ func Example() {
 	//   - Embedded FS(fs:///config/config.yaml)
 }
 
-func loadConfig() {
+func loadConfig(ctx context.Context) {
 	var config konf.Config
 
 	// Load configuration from embed file system.
@@ -78,8 +80,6 @@ func loadConfig() {
 	}
 
 	// Watch the changes of configuration.
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
 	go func() {
 		if err := config.Watch(ctx); err != nil {
 			panic(err) // handle error
