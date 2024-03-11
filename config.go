@@ -249,7 +249,7 @@ var (
 			return strings.Split(f, ","), nil
 		}),
 		convert.WithHook[string, encoding.TextUnmarshaler](func(f string, t encoding.TextUnmarshaler) error {
-			return t.UnmarshalText([]byte(f)) //nolint:wrapcheck
+			return t.UnmarshalText(internal.String2ByteSlice(f)) //nolint:wrapcheck
 		}),
 	}
 	defaultConverter = convert.New(

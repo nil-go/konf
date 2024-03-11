@@ -6,7 +6,8 @@ package credential
 import (
 	"fmt"
 	"regexp"
-	"unsafe"
+
+	"github.com/nil-go/konf/internal"
 )
 
 func Blur(name string, value any) string {
@@ -19,7 +20,7 @@ func Blur(name string, value any) string {
 	case string:
 		formatted = v
 	case []byte:
-		formatted = unsafe.String(unsafe.SliceData(v), len(v))
+		formatted = internal.ByteSlice2String(v)
 	default:
 		formatted = fmt.Sprint(value)
 	}
