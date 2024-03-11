@@ -19,6 +19,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob"
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob/blob"
+	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob/bloberror"
 )
 
 // Blob is a Provider that loads configuration from Azure Blob Storage.
@@ -157,6 +158,9 @@ func (p *clientProxy) load(ctx context.Context) ([]byte, bool, error) { //nolint
 		_ = resp.Body.Close()
 	}()
 
+	if resp.ErrorCode != nil && *resp.ErrorCode == string(bloberror.ConditionNotMet) {
+		return nil, false, nil
+	}
 	if eTag := p.eTag.Load(); eTag != nil && eTag.Equals(*resp.ETag) {
 		return nil, false, nil
 	}

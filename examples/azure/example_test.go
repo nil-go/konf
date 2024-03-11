@@ -7,6 +7,7 @@ import (
 	"context"
 	"embed"
 	"fmt"
+	"time"
 
 	"gopkg.in/yaml.v3"
 
@@ -43,11 +44,18 @@ func Example() {
 	})
 
 	// This should not be part of the application. It's just for verification.
-	fmt.Println(config.Source)
+	time.Sleep(20 * time.Second) // Wait for at lease two watch polls.
+
+	fmt.Println()
+	fmt.Println("konf.source:", config.Source)
 	fmt.Println()
 	fmt.Println(konf.Explain("konf.source"))
 	// Output:
-	// App Configuration
+	//
+	// load executed: loader=https://konftest.blob.core.windows.net/konf-test/config.yaml, changed=false, error=<nil>
+	// load executed: loader=https://konftest.azconfig.io, changed=false, error=<nil>
+	//
+	// konf.source: App Configuration
 	//
 	// konf.source has value[App Configuration] that is loaded by loader[https://konftest.azconfig.io].
 	// Here are other value(loader)s:
@@ -56,7 +64,9 @@ func Example() {
 }
 
 func loadConfig(ctx context.Context) {
-	var config konf.Config
+	config := konf.New(konf.WithOnStatus(func(loader konf.Loader, changed bool, err error) {
+		fmt.Printf("load executed: loader=%v, changed=%v, error=%v\n", loader, changed, err)
+	}))
 
 	// Load configuration from embed file system.
 	if err := config.Load(fs.New(configFS, "config/config.yaml", fs.WithUnmarshal(yaml.Unmarshal))); err != nil {
@@ -71,11 +81,15 @@ func loadConfig(ctx context.Context) {
 	if err := config.Load(azblob.New(
 		"https://konftest.blob.core.windows.net", "konf-test", "config.yaml",
 		azblob.WithUnmarshal(yaml.Unmarshal),
+		azblob.WithPollInterval(15*time.Second),
 	)); err != nil {
 		panic(err) // handle error
 	}
 	// Load configuration from Azure App Configuration.
-	if err := config.Load(azappconfig.New("https://konftest.azconfig.io")); err != nil {
+	if err := config.Load(azappconfig.New(
+		"https://konftest.azconfig.io",
+		azappconfig.WithPollInterval(15*time.Second),
+	)); err != nil {
 		panic(err) // handle error
 	}
 
@@ -86,7 +100,7 @@ func loadConfig(ctx context.Context) {
 		}
 	}()
 
-	konf.SetDefault(&config)
+	konf.SetDefault(config)
 }
 
 //go:embed config

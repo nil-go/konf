@@ -9,13 +9,16 @@ package gcs
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
+	"net/http"
 	"strings"
 	"sync/atomic"
 	"time"
 
 	"cloud.google.com/go/storage"
+	"google.golang.org/api/googleapi"
 	"google.golang.org/api/option"
 )
 
@@ -138,6 +141,11 @@ func (p *clientProxy) load(ctx context.Context) ([]byte, bool, error) {
 	}
 	reader, err := object.NewReader(ctx)
 	if err != nil {
+		var ge *googleapi.Error
+		if errors.As(err, &ge) && ge.Code == http.StatusNotModified {
+			return nil, false, nil
+		}
+
 		return nil, false, fmt.Errorf("create object reader: %w", err)
 	}
 	defer func() { _ = reader.Close() }()

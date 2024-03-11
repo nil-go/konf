@@ -9,6 +9,7 @@ package s3
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"path"
@@ -20,6 +21,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/aws/smithy-go"
 )
 
 // S3 is a Provider that loads configuration from AWS S3.
@@ -144,6 +146,11 @@ func (p *clientProxy) load(ctx context.Context) ([]byte, bool, error) {
 		IfNoneMatch: p.eTag.Load(),
 	})
 	if err != nil {
+		var ae smithy.APIError
+		if errors.As(err, &ae) && ae.ErrorCode() == "NotModified" {
+			return nil, false, nil
+		}
+
 		return nil, false, fmt.Errorf("get object: %w", err)
 	}
 	defer func() {
