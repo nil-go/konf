@@ -111,7 +111,6 @@ type clientProxy struct {
 
 	client *appconfigdata.Client
 
-	timeout       time.Duration
 	nextPollToken atomic.Pointer[string]
 	nextPollTime  atomic.Pointer[time.Time]
 }
@@ -130,8 +129,10 @@ func (p *clientProxy) load(ctx context.Context) ([]byte, bool, error) {
 		}
 		p.client = appconfigdata.NewFromConfig(p.config)
 	}
+	// The minimum interval required by AWS AppConfig SDK is 15 seconds.
+	p.pollInterval = max(p.pollInterval, 15*time.Second) //nolint:gomnd
 
-	ctx, cancel := context.WithTimeout(ctx, max(p.timeout, 10*time.Second)) //nolint:gomnd
+	ctx, cancel := context.WithTimeout(ctx, p.pollInterval)
 	defer cancel()
 
 	if p.nextPollToken.Load() == nil {
@@ -139,7 +140,7 @@ func (p *clientProxy) load(ctx context.Context) ([]byte, bool, error) {
 			ApplicationIdentifier:                aws.String(p.application),
 			ConfigurationProfileIdentifier:       aws.String(p.profile),
 			EnvironmentIdentifier:                aws.String(p.environment),
-			RequiredMinimumPollIntervalInSeconds: aws.Int32(int32(max(p.pollInterval, 15*time.Second).Seconds())), //nolint:gomnd
+			RequiredMinimumPollIntervalInSeconds: aws.Int32(int32(p.pollInterval.Seconds())),
 		})
 		if err != nil {
 			return nil, false, fmt.Errorf("start configuration session: %w", err)
@@ -162,8 +163,10 @@ func (p *clientProxy) load(ctx context.Context) ([]byte, bool, error) {
 }
 
 func (p *clientProxy) nextPollDuration() time.Duration {
-	if nextPollTime := p.nextPollTime.Load(); nextPollTime != nil && nextPollTime.After(time.Now()) {
-		return time.Until(*nextPollTime)
+	if nextPollTime := p.nextPollTime.Load(); nextPollTime != nil {
+		if duration := time.Until(*nextPollTime); duration > 0 {
+			return duration
+		}
 	}
 
 	return p.pollInterval
