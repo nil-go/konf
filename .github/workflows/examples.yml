@@ -21,7 +21,7 @@ jobs:
           go-version: "stable"
           cache-dependency-path: "**/go.sum"
       - name: configure aws credentials
-        uses: aws-actions/configure-aws-credentials@v3
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::851725503283:role/github
           aws-region: us-west-1
