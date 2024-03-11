@@ -7,6 +7,12 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.9.2] - 2024-03-10
+
+### Fixed
+
+- Return no chang if s3/azblob/gcs returns 304 (not modified) (#233).
+
 ## [0.9.1] - 2024-03-10
 
 ### Fixed
