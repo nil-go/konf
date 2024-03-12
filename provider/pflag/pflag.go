@@ -91,7 +91,8 @@ func (f PFlag) Load() (map[string]any, error) { //nolint:cyclop
 				return
 			}
 
-			val, _ := flagVal(set, flag) // Ignore error as it uses whatever returned.
+			// Ignore error: It uses whatever returned.
+			val, _ := flagVal(set, flag)
 			maps.Insert(values, keys, val)
 		},
 	)

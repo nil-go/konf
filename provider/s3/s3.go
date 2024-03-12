@@ -154,6 +154,7 @@ func (p *clientProxy) load(ctx context.Context) ([]byte, bool, error) {
 		return nil, false, fmt.Errorf("get object: %w", err)
 	}
 	defer func() {
+		// Ignore error: it could do nothing on this error.
 		_ = resp.Body.Close()
 	}()
 
