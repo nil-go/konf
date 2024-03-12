@@ -148,7 +148,10 @@ func (p *clientProxy) load(ctx context.Context) ([]byte, bool, error) {
 
 		return nil, false, fmt.Errorf("create object reader: %w", err)
 	}
-	defer func() { _ = reader.Close() }()
+	defer func() {
+		// Ignore error: it could do nothing on this error.
+		_ = reader.Close()
+	}()
 
 	if reader.Attrs.Generation == p.lastGeneration.Load() {
 		return nil, false, nil
