@@ -12,6 +12,7 @@ permissions:
 
 jobs:
   examples-aws:
+    if: ${{ github.actor != 'dependabot[bot]' }}
     name: Examples AWS
     runs-on: ubuntu-latest
     steps:
@@ -23,12 +24,13 @@ jobs:
       - name: configure aws credentials
         uses: aws-actions/configure-aws-credentials@v3
         with:
-          role-to-assume: arn:aws:iam::851725503283:role/github
+          role-to-assume: ${{ secrets.AWS_ROLE }}
           aws-region: us-west-1
       - name: Test
         run: go test -shuffle=on -v ./...
         working-directory: "examples/aws"
   examples-azure:
+    if: ${{ github.actor != 'dependabot[bot]' }}
     name: Examples Azure
     runs-on: ubuntu-latest
     steps:
@@ -47,6 +49,7 @@ jobs:
         run: go test -shuffle=on -v ./...
         working-directory: "examples/azure"
   examples-gcp:
+    if: ${{ github.actor != 'dependabot[bot]' }}
     name: Examples GCP
     runs-on: ubuntu-latest
     steps:
