@@ -117,6 +117,8 @@ type clientProxy struct {
 
 func (p *clientProxy) load(ctx context.Context) ([]byte, bool, error) {
 	if p == nil {
+		// Use empty instance instead to avoid nil pointer dereference,
+		// Assignment propagates only to callee but not to caller.
 		p = &clientProxy{}
 	}
 
