@@ -42,8 +42,8 @@ func TestTransformKeys(t *testing.T) {
 		t.Run(tc.description, func(t *testing.T) {
 			t.Parallel()
 
-			actual := maps.TransformKeys(tc.src, tc.keyMap)
-			assert.Equal(t, tc.expected, actual)
+			maps.TransformKeys(tc.src, tc.keyMap)
+			assert.Equal(t, tc.expected, tc.src)
 		})
 	}
 }

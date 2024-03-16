@@ -103,10 +103,11 @@ func (c *Config) Load(loader Loader) error {
 	if err != nil {
 		return fmt.Errorf("load configuration: %w", err)
 	}
+	c.transformKeys(values)
 
 	prd := provider{
 		loader: loader,
-		values: c.transformKeys(values),
+		values: values,
 	}
 	c.providers = append(c.providers, prd)
 	maps.Merge(c.values, prd.values)
@@ -149,7 +150,7 @@ func (c *Config) sub(values map[string]any, path string) any {
 		path = toLower(path)
 	}
 
-	return maps.Sub(values, strings.Split(path, c.delim()))
+	return maps.Sub(values, path, c.delim())
 }
 
 func (c *Config) delim() string {
@@ -160,12 +161,10 @@ func (c *Config) delim() string {
 	return c.delimiter
 }
 
-func (c *Config) transformKeys(m map[string]any) map[string]any {
-	if c.caseSensitive {
-		return m
+func (c *Config) transformKeys(m map[string]any) {
+	if !c.caseSensitive {
+		maps.TransformKeys(m, toLower)
 	}
-
-	return maps.TransformKeys(m, toLower)
 }
 
 func toLower(s string) string {

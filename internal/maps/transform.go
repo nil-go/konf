@@ -3,18 +3,18 @@
 
 package maps
 
-func TransformKeys(src map[string]interface{}, keyMap func(string) string) map[string]interface{} {
+func TransformKeys(src map[string]interface{}, keyMap func(string) string) {
 	if src == nil || keyMap == nil {
-		return src
+		return
 	}
-
-	dst := make(map[string]interface{}, len(src))
 	for key, value := range src {
 		if m, ok := value.(map[string]interface{}); ok {
-			value = TransformKeys(m, keyMap)
+			TransformKeys(m, keyMap)
 		}
-		dst[keyMap(key)] = value
+		newKey := keyMap(key)
+		if newKey != key {
+			delete(src, key)
+			src[newKey] = value
+		}
 	}
-
-	return dst
 }
