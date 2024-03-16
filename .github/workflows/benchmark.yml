@@ -27,7 +27,6 @@ jobs:
         with:
           path: ./cache
           key: ${{ runner.os }}-benchmark
-          save-always: ${{ github.ref_name=='main' }}
       - name: Store benchmark result
         uses: benchmark-action/github-action-benchmark@v1
         with:
@@ -38,3 +37,8 @@ jobs:
           summary-always: true
           comment-always: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/cache/save@v4
+        if: ${{ github.ref_name=='main' }}
+        with:
+          path: path/to/dependencies
+          key: ${{ runner.os }}-benchmark
