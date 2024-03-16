@@ -26,7 +26,9 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: ./cache
-          key: ${{ runner.os }}-benchmark
+          key: ${{ runner.os }}-benchmark-{{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-benchmark
       - name: Store benchmark result
         uses: benchmark-action/github-action-benchmark@v1
         with:
@@ -41,4 +43,4 @@ jobs:
         if: ${{ github.ref_name=='main' }}
         with:
           path: ./cache
-          key: ${{ runner.os }}-benchmark
+          key: ${{ runner.os }}-benchmark-{{ github.sha }}
