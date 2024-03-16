@@ -3,24 +3,21 @@
 
 package maps
 
-func Sub(values map[string]any, keys []string) any {
-	if len(keys) == 0 || len(keys) == 1 && keys[0] == "" {
+import "strings"
+
+func Sub(values map[string]any, path string, delimiter string) any {
+	if path == "" {
 		return values
 	}
 
-	var next any = values
-	for _, key := range keys {
-		mp, ok := next.(map[string]any)
-		if !ok {
-			return nil
-		}
-
-		val, exist := mp[key]
-		if !exist {
-			return nil
-		}
-		next = val
+	key, path, _ := strings.Cut(path, delimiter)
+	if path == "" {
+		return values[key]
 	}
 
-	return next
+	if mp, ok := values[key].(map[string]any); ok {
+		return Sub(mp, path, delimiter)
+	}
+
+	return nil
 }

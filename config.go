@@ -149,7 +149,7 @@ func (c *Config) sub(values map[string]any, path string) any {
 		path = toLower(path)
 	}
 
-	return maps.Sub(values, strings.Split(path, c.delim()))
+	return maps.Sub(values, path, c.delim())
 }
 
 func (c *Config) delim() string {
