@@ -12,13 +12,26 @@ becoming coupled to a particular configuration source.
 
 ## Features
 
-- [konf.Unmarshal](#usage) for reading configuration to any type of object.
+- [konf.Unmarshal](#usage) for reading configuration to any type of object with zero-allocation.
 - [konf.OnChange](#usage) for registering callbacks while configuration changes.
 - [konf.Explain](#understand-the-configuration) for understanding where the configuration is loaded from.
 - [Various providers](#configuration-providers) for loading configuration from major clouds,
   [AWS](examples/aws), [Azure](examples/azure), and [GCP](examples/gcp).
 - [Zero dependencies](go.mod) in core module which supports loading configuration
-from environment variables,flags, and embed file system.
+  from environment variables,flags, and embed file system.
+
+## Benchmarks
+
+The following [benchmarks](benchmark)  compare the performance of konf with [spf13/viper](https://github.com/spf13/viper) and
+[knadh/koanf](https://github.com/knadh/koanf), which are inspiration of konf.
+
+```
+|       | Unmarshal (ns/op) | Unmarshal (allocs/op) | Get (ns/op) | Get (allocs/op) |
+|:------|------------------:|----------------------:|------------:|----------------:|
+| Konf  |             41.09 |                     4 |       16.71 |               1 |
+| Viper |             614.8 |                    22 |       104.9 |               3 |
+| Koanf |             15949 |                   657 |       7.898 |               1 |
+```
 
 ## Usage
 
@@ -86,10 +99,10 @@ configuration source(s). They read configuration in terms of functions in packag
 It contains two APIs with two different sets of users:
 
 - The `Config` type is intended for application authors. It provides a relatively
-small API which can be used everywhere you want to read configuration.
-It defers the actual configuration loading to the `Loader` interface.
+  small API which can be used everywhere you want to read configuration.
+  It defers the actual configuration loading to the `Loader` interface.
 - The `Loader` and `Watcher` interface is intended for configuration source library implementers.
-They are pure interfaces which can be implemented to provide the actual configuration.
+  They are pure interfaces which can be implemented to provide the actual configuration.
 
 This decoupling allows application developers to write code in terms of `*konf.Config`
 while the configuration source(s) is managed "up stack" (e.g. in or near `main()`).
@@ -100,6 +113,7 @@ Application developers can then switch configuration sources(s) as necessary.
 While the configuration is loaded from multiple sources, static like environments or dynamic like AWS AppConfig,
 it's hard to understand where a final value comes from. The `Config.Explain` method provides information
 about how Config resolve each value from loaders for the given path. One example explanation is like:
+
 ```
 config.nest has value [map] is loaded by map.
 Here are other value(loader)s:
@@ -134,11 +148,5 @@ There are providers for the following configuration sources.
 
 ## Custom Configuration Providers
 
-You can implement your own provider by implementing the `Loader` for static configuration loader (e.g [`fs`](provider/fs))
+You can Custom provider by implementing the `Loader` for static configuration loader (e.g [`fs`](provider/fs))
 or both `Loader` and `Watcher` for dynamic configuration loader (e.g. [`appconfig`](provider/appconfig)).
-
-## Inspiration
-
-konf is inspired by [spf13/viper](https://github.com/spf13/viper) and
-[knadh/koanf](https://github.com/knadh/koanf).
-Thanks for authors of both awesome configuration libraries.
