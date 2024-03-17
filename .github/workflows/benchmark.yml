@@ -43,4 +43,4 @@ jobs:
         if: ${{ github.ref_name=='main' }}
         with:
           path: ./cache
-          key: ${{ runner.os }}-benchmark-{{ github.sha }}
+          key: ${{ runner.os }}-benchmark-${{ github.sha }}
