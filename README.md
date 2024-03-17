@@ -25,13 +25,11 @@ becoming coupled to a particular configuration source.
 The following [benchmarks](benchmark)  compare the performance of konf with [spf13/viper](https://github.com/spf13/viper) and
 [knadh/koanf](https://github.com/knadh/koanf), which are inspiration of konf.
 
-```
-|       | Unmarshal (ns/op) | Unmarshal (allocs/op) | Get (ns/op) | Get (allocs/op) |
-|:------|------------------:|----------------------:|------------:|----------------:|
-| Konf  |             41.09 |                     4 |       16.71 |               1 |
-| Viper |             614.8 |                    22 |       104.9 |               3 |
-| Koanf |             15949 |                   657 |       7.898 |               1 |
-```
+|       |    Unmarshal (ns/op) |    Unmarshal (allocs/op) |    Get (ns/op) |     Get (allocs/op) |
+|:------|---------------------:|-------------------------:|---------------:|--------------------:|
+| Konf  |            __41.09__ |                    __4__ |          16.71 |               __1__ |
+| Viper |                614.8 |                       22 |          104.9 |                   3 |
+| Koanf |                15949 |                      657 |      __7.898__ |               __1__ |
 
 ## Usage
 
