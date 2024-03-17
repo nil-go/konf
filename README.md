@@ -12,7 +12,7 @@ becoming coupled to a particular configuration source.
 
 ## Features
 
-- [konf.Unmarshal](#usage) for reading configuration to any type of object with zero-allocation.
+- [konf.Unmarshal](#usage) for reading configuration to any type of object.
 - [konf.OnChange](#usage) for registering callbacks while configuration changes.
 - [konf.Explain](#understand-the-configuration) for understanding where the configuration is loaded from.
 - [Various providers](#configuration-providers) for loading configuration from major clouds,
