@@ -4,6 +4,7 @@
 package konf_test
 
 import (
+	"os"
 	"testing"
 
 	"github.com/nil-go/konf"
@@ -12,50 +13,50 @@ import (
 
 func BenchmarkLoad(b *testing.B) {
 	var config konf.Config
-
-	var err error
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		err = config.Load(mapLoader{"k": "v"})
-	}
-	b.StopTimer()
-
+	err := config.Load(mapLoader{"k": "v"})
 	assert.NoError(b, err)
 	var value string
 	assert.NoError(b, config.Unmarshal("k", &value))
 	assert.Equal(b, "v", value)
+
+	b.ReportAllocs()
+	b.ResetTimer()
+
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			var cfg konf.Config
+			_ = cfg.Load(mapLoader{"k": "v"})
+		}
+	})
 }
 
 func BenchmarkGet(b *testing.B) {
-	var config konf.Config
-	assert.NoError(b, config.Load(mapLoader{"k": "v"}))
-	konf.SetDefault(&config)
+	assert.Equal(b, os.Getenv("USER"), konf.Get[string]("user"))
 
-	var value string
+	b.ReportAllocs()
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		value = konf.Get[string]("k")
-	}
-	b.StopTimer()
 
-	assert.Equal(b, "v", value)
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			_ = konf.Get[string]("user")
+		}
+	})
 }
 
 func BenchmarkUnmarshal(b *testing.B) {
-	var config konf.Config
-	assert.NoError(b, config.Load(mapLoader{"k": "v"}))
-	konf.SetDefault(&config)
-
-	var (
-		value string
-		err   error
-	)
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		err = konf.Unmarshal("k", &value)
+	var value struct {
+		User string
 	}
-	b.StopTimer()
-
+	err := konf.Unmarshal("", &value)
 	assert.NoError(b, err)
-	assert.Equal(b, "v", value)
+	assert.Equal(b, os.Getenv("USER"), value.User)
+
+	b.ReportAllocs()
+	b.ResetTimer()
+
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			_ = konf.Unmarshal("", &value)
+		}
+	})
 }
