@@ -31,22 +31,20 @@ func BenchmarkLoad(b *testing.B) {
 }
 
 func BenchmarkGet(b *testing.B) {
-	assert.Equal(b, os.Getenv("USER"), konf.Get[string]("user"))
+	assert.Equal(b, os.Getenv("USER"), konf.Get[Value]("").User)
 
 	b.ReportAllocs()
 	b.ResetTimer()
 
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			_ = konf.Get[string]("user")
+			_ = konf.Get[Value]("")
 		}
 	})
 }
 
 func BenchmarkUnmarshal(b *testing.B) {
-	var value struct {
-		User string
-	}
+	var value Value
 	err := konf.Unmarshal("", &value)
 	assert.NoError(b, err)
 	assert.Equal(b, os.Getenv("USER"), value.User)
@@ -59,4 +57,8 @@ func BenchmarkUnmarshal(b *testing.B) {
 			_ = konf.Unmarshal("", &value)
 		}
 	})
+}
+
+type Value struct {
+	User string
 }
