@@ -3,9 +3,9 @@ module github.com/nil-go/konf/examples/aws
 go 1.22
 
 require (
-	github.com/nil-go/konf v0.9.1
-	github.com/nil-go/konf/provider/appconfig v0.9.1
-	github.com/nil-go/konf/provider/s3 v0.9.1
+	github.com/nil-go/konf v1.0.0
+	github.com/nil-go/konf/provider/appconfig v1.0.0
+	github.com/nil-go/konf/provider/s3 v1.0.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -24,7 +24,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/internal/checksum v1.3.5 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.11.5 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/s3shared v1.17.3 // indirect
-	github.com/aws/aws-sdk-go-v2/service/s3 v1.51.4 // indirect
+	github.com/aws/aws-sdk-go-v2/service/s3 v1.52.1 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sso v1.20.2 // indirect
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.23.2 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sts v1.28.4 // indirect
