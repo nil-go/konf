@@ -1,8 +1,7 @@
 // Copyright (c) 2024 The konf authors
 // Use of this source code is governed by a MIT license found in the LICENSE file.
 
-//nolint:testpackage
-package aws
+package aws_test
 
 import (
 	"context"

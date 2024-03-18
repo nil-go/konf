@@ -3,9 +3,9 @@ module github.com/nil-go/konf/examples/azure
 go 1.22
 
 require (
-	github.com/nil-go/konf v0.9.1
-	github.com/nil-go/konf/provider/azappconfig v0.9.1
-	github.com/nil-go/konf/provider/azblob v0.9.1
+	github.com/nil-go/konf v1.0.0
+	github.com/nil-go/konf/provider/azappconfig v1.0.0
+	github.com/nil-go/konf/provider/azblob v1.0.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 

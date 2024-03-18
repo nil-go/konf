@@ -5,7 +5,7 @@ go 1.21
 require (
 	github.com/knadh/koanf/providers/env v0.1.0
 	github.com/knadh/koanf/v2 v2.1.0
-	github.com/nil-go/konf v0.9.3-0.20240316215034-c136ffe9a627
+	github.com/nil-go/konf v1.0.0
 	github.com/spf13/viper v1.18.2
 	github.com/stretchr/testify v1.9.0
 )
