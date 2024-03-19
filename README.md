@@ -1,4 +1,4 @@
-# The simplest config loader API for Go
+# The simplest config loader for Go
 
 ![Go Version](https://img.shields.io/github/go-mod/go-version/nil-go/konf)
 [![Go Reference](https://pkg.go.dev/badge/github.com/nil-go/konf.svg)](https://pkg.go.dev/github.com/nil-go/konf)
