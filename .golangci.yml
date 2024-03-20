@@ -17,7 +17,8 @@ linters-settings:
   gomoddirectives:
     replace-local: true
   govet:
-    check-shadowing: true
+    enable:
+      - shadow
   inamedparam:
     skip-single-param: true
   makezero:
@@ -41,6 +42,7 @@ linters:
     - bodyclose
     - containedctx
     - contextcheck
+    # copyloopvar // go 1.22
     - cyclop
     - decorder
     # depguard
@@ -89,14 +91,15 @@ linters:
     - inamedparam
     - ineffassign
     - interfacebloat
+    # intrange // go 1.22
     - ireturn
     - lll
-    - loggercheck
+    # loggercheck
     - maintidx
     - makezero
     - mirror
     - misspell
-    - musttag
+    # musttag
     - nakedret
     - nestif
     - nilerr
@@ -116,7 +119,8 @@ linters:
     - revive
     - rowserrcheck
     - sloglint
-    - sqlclosecheck
+    # spancheck
+    # sqlclosecheck
     - staticcheck
     - stylecheck
     - tagalign
@@ -137,7 +141,7 @@ linters:
     - whitespace
     - wrapcheck
     # wsl
-    - zerologlint
+    # zerologlint
 
 issues:
   exclude-rules:
