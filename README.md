@@ -22,15 +22,18 @@ becoming coupled to a particular configuration source.
 
 ## Benchmarks
 
-The following [benchmarks](benchmark)  compare the performance of konf with [spf13/viper](https://github.com/spf13/viper) and
+The following [benchmarks](benchmark)  compare the performance of konf
+with [spf13/viper](https://github.com/spf13/viper) and
 [knadh/koanf](https://github.com/knadh/koanf), which are inspiration of konf.
 
-|       |    Unmarshal (ns/op) |    Unmarshal (allocs/op) |    Get (ns/op) |     Get (allocs/op) |
-|:------|---------------------:|-------------------------:|---------------:|--------------------:|
-| Konf  |            __41.09__ |                    __4__ |          16.71 |               __1__ |
-| Viper |                614.8 |                       22 |          104.9 |                   3 |
-| Koanf |                15949 |                      657 |      __7.898__ |               __1__ |
-
+|       | Unmarshal (ns/op) | Unmarshal (allocs/op) | Get[^1] (ns/op) | Get (allocs/op) |
+|:------|------------------:|----------------------:|----------------:|----------------:|
+| Konf  |         __41.09__ |                 __4__ |           16.71 |           __1__ |
+| Viper |             614.8 |                    22 |           104.9 |               3 |
+| Koanf |             15949 |                   657 |       __7.898__ |           __1__ |
+[^1]: Comparing to Get in both Viper and Koanf only can get the primitive types, Get in Konf can get any type
+since it's just a wrapper of Unmarshal. So for complex struct, it only needs single Konf Get
+but may needs multiple Get(s) in Viper and Koanf.
 ## Usage
 
 Somewhere, early in an application's life, it will make a decision about which
