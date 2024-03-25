@@ -36,6 +36,12 @@ github.com/aws/aws-sdk-go-v2/service/sts v1.28.4 h1:Ppup1nVNAOWbBOrcoOxaxPeEnSFB
 github.com/aws/aws-sdk-go-v2/service/sts v1.28.4/go.mod h1:+K1rNPVyGxkRuv9NNiaZ4YhBFuyw2MMA9SlIJ1Zlpz8=
 github.com/aws/smithy-go v1.20.1 h1:4SZlSlMr36UEqC7XOyRVb27XMeZubNcBNN+9IgEPIQw=
 github.com/aws/smithy-go v1.20.1/go.mod h1:krry+ya/rV9RDcV/Q16kpu6ypI4K2czasz0NC3qS14E=
+github.com/nil-go/konf v1.0.0 h1:vz8qW1KEy7x9H9ti4rA9mDOOtLCkWFq3SfH0vqmP0ck=
+github.com/nil-go/konf v1.0.0/go.mod h1:ULW6PmJzWMd0F4KKNJQPhWD6Zu5eoX9U1C9SW2BPAr4=
+github.com/nil-go/konf/provider/appconfig v1.0.0 h1:GTDGUMBoocI4pLaNMYXmqJbyKQb38HFmGYHwfgFA2u0=
+github.com/nil-go/konf/provider/appconfig v1.0.0/go.mod h1:LZsp7Xz/PoYwiFuInluh14hgrbmjyZyJBcj2a3I/U7o=
+github.com/nil-go/konf/provider/s3 v1.0.0 h1:7DVGQcADVTcPipW2uqteDPFTVqf76cx2NgQ1zG0epcw=
+github.com/nil-go/konf/provider/s3 v1.0.0/go.mod h1:qn2a+lYExR/eUqo9zphgFt+gWvAxbLtJxROn5NMzoEA=
 gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405 h1:yhCVgyC4o1eVCa2tZl7eS0r+SDo693bJlVdllGtEeKM=
 gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
 gopkg.in/yaml.v3 v3.0.1 h1:fxVm/GzAzEWqLHuvctI91KS9hhNmmWOoWu0XTYJS7CA=
