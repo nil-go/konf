@@ -30,9 +30,3 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sts v1.28.4 // indirect
 	github.com/aws/smithy-go v1.20.1 // indirect
 )
-
-replace (
-	github.com/nil-go/konf => ../..
-	github.com/nil-go/konf/provider/appconfig => ../../provider/appconfig
-	github.com/nil-go/konf/provider/s3 => ../../provider/s3
-)
