@@ -26,9 +26,3 @@ require (
 	golang.org/x/sys v0.18.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 )
-
-replace (
-	github.com/nil-go/konf => ../..
-	github.com/nil-go/konf/provider/azappconfig => ../../provider/azappconfig
-	github.com/nil-go/konf/provider/azblob => ../../provider/azblob
-)
