@@ -46,9 +46,3 @@ require (
 	google.golang.org/grpc v1.62.1 // indirect
 	google.golang.org/protobuf v1.33.0 // indirect
 )
-
-replace (
-	github.com/nil-go/konf => ../..
-	github.com/nil-go/konf/provider/gcs => ../../provider/gcs
-	github.com/nil-go/konf/provider/secretmanager => ../../provider/secretmanager
-)
