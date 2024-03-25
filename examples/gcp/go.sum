@@ -67,6 +67,12 @@ github.com/googleapis/enterprise-certificate-proxy v0.3.2 h1:Vie5ybvEvT75RniqhfF
 github.com/googleapis/enterprise-certificate-proxy v0.3.2/go.mod h1:VLSiSSBs/ksPL8kq3OBOQ6WRI2QnaFynd1DCjZ62+V0=
 github.com/googleapis/gax-go/v2 v2.12.3 h1:5/zPPDvw8Q1SuXjrqrZslrqT7dL/uJT2CQii/cLCKqA=
 github.com/googleapis/gax-go/v2 v2.12.3/go.mod h1:AKloxT6GtNbaLm8QTNSidHUVsHYcBHwWRvkNFJUQcS4=
+github.com/nil-go/konf v1.0.0 h1:vz8qW1KEy7x9H9ti4rA9mDOOtLCkWFq3SfH0vqmP0ck=
+github.com/nil-go/konf v1.0.0/go.mod h1:ULW6PmJzWMd0F4KKNJQPhWD6Zu5eoX9U1C9SW2BPAr4=
+github.com/nil-go/konf/provider/gcs v1.0.0 h1:G2Fn2IfLhLDUc7PPfJd6r9O2Y/j3XPLNkXXRgKRx83Q=
+github.com/nil-go/konf/provider/gcs v1.0.0/go.mod h1:UxO+9h6rLFIZY91SVI1hASh6mH+IJbPY+ZSgaJNEjQw=
+github.com/nil-go/konf/provider/secretmanager v1.0.0 h1:Snyj9g1vhFG+sE3RTtJJ1a4I4VmQorbgDzHHMN8BqfM=
+github.com/nil-go/konf/provider/secretmanager v1.0.0/go.mod h1:KIH+8gIyY/ODZcBOr0gjjVVJxpmjqZb9zQDxzNhHfVs=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/prometheus/client_model v0.0.0-20190812154241-14fe0d1b01d4/go.mod h1:xMI15A0UPsDsEKsMN9yxemIoYk6Tm2C1GtYGdfGttqA=
