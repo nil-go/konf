@@ -136,6 +136,9 @@ func TestSecretManager_Load(t *testing.T) {
 				secretmanager.WithProject("test"),
 				option.WithGRPCConn(conn),
 			)...)
+			defer func() {
+				_ = loader.Close()
+			}()
 			var values map[string]any
 			values, err := loader.Load()
 			if testcase.err != "" {
@@ -203,6 +206,9 @@ func TestSecretManager_Watch(t *testing.T) {
 				option.WithGRPCConn(conn),
 				secretmanager.WithPollInterval(10*time.Millisecond),
 			)...)
+			defer func() {
+				_ = loader.Close()
+			}()
 			var err atomic.Pointer[error]
 			loader.Status(func(_ bool, e error) {
 				if e != nil {
@@ -260,7 +266,6 @@ func grpcServer(t *testing.T, service pb.SecretManagerServiceServer) (*grpc.Clie
 	assert.NoError(t, err)
 
 	return conn, func() {
-		assert.NoError(t, conn.Close())
 		server.GracefulStop()
 	}
 }

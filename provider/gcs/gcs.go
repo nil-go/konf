@@ -110,6 +110,14 @@ func (g *GCS) Status(onStatus func(bool, error)) {
 	g.onStatus = onStatus
 }
 
+func (g *GCS) Close() error {
+	if err := g.client.client.Close(); err != nil {
+		return fmt.Errorf("close GCS client: %w", err)
+	}
+
+	return nil
+}
+
 func (g *GCS) String() string {
 	return "gs://" + g.client.bucket + "/" + g.client.object
 }

@@ -56,6 +56,9 @@ func TestGCS_Load(t *testing.T) {
 				}),
 				gcs.WithUnmarshal(testcase.unmarshal),
 			)
+			defer func() {
+				_ = loader.Close()
+			}()
 			values, err := loader.Load()
 			if testcase.err != "" {
 				assert.EqualError(t, err, testcase.err)
@@ -98,6 +101,9 @@ func TestGCS_Watch(t *testing.T) {
 				gcs.WithPollInterval(10*time.Millisecond),
 				gcs.WithUnmarshal(testcase.unmarshal),
 			)
+			defer func() {
+				_ = loader.Close()
+			}()
 			loader.Status(func(_ bool, e error) {
 				if e != nil {
 					err.Store(&e)
