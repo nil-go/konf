@@ -44,15 +44,15 @@ func Example() {
 	})
 
 	// This should not be part of the application. It's just for verification.
-	time.Sleep(20 * time.Second) // Wait for at lease two watch polls.
+	time.Sleep(25 * time.Second) // Wait for at lease two watch polls.
 
 	fmt.Println()
 	fmt.Println("konf.source:", config.Source)
 	fmt.Println()
 	fmt.Println(konf.Explain("konf.source"))
 	// Output:
-	// load executed: loader=appconfig://konf/config.yaml, changed=false, error=<nil>
 	// load executed: loader=s3://konf-test/config.yaml, changed=false, error=<nil>
+	// load executed: loader=appconfig://konf/config.yaml, changed=false, error=<nil>
 	//
 	// konf.source: AppConfig
 	//
@@ -88,7 +88,7 @@ func loadConfig(ctx context.Context) {
 	if err := config.Load(appconfig.New(
 		"konf", "test", "config.yaml",
 		appconfig.WithUnmarshal(yaml.Unmarshal),
-		appconfig.WithPollInterval(15*time.Second),
+		appconfig.WithPollInterval(20*time.Second),
 	)); err != nil {
 		panic(err) // handle error
 	}

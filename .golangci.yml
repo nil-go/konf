@@ -143,6 +143,9 @@ linters:
 
 issues:
   exclude-rules:
+    - linters:
+        - lll
+      source: "^\t*// "
     - path: _test\.go
       linters:
         - contextcheck

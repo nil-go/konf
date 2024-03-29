@@ -98,7 +98,7 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 
 		if watcher, ok := provider.loader.(Watcher); ok {
 			waitGroup.Add(1)
-			go func() {
+			go func(ctx context.Context) {
 				defer waitGroup.Done()
 
 				onChange := func(values map[string]any) {
@@ -125,8 +125,7 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 					}
 					onChangesChannel <- onChanges()
 
-					c.log(context.Background(),
-						slog.LevelInfo,
+					c.log(ctx, slog.LevelInfo,
 						"Configuration has been changed.",
 						slog.Any("loader", watcher),
 					)
@@ -136,7 +135,7 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 				if err := watcher.Watch(ctx, onChange); err != nil {
 					cancel(fmt.Errorf("watch configuration change on %v: %w", watcher, err))
 				}
-			}()
+			}(ctx)
 		}
 	}
 	waitGroup.Wait()

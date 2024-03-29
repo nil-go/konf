@@ -1,5 +1,9 @@
 # All files and folders start with .
 .*
 
+# Go workspace file
+go.work
+go.work.sum
+
 # Go vendor folder
 vendor

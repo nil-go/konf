@@ -44,7 +44,7 @@ func Example() {
 	})
 
 	// This should not be part of the application. It's just for verification.
-	time.Sleep(20 * time.Second) // Wait for at lease two watch polls.
+	time.Sleep(25 * time.Second) // Wait for at lease two watch polls.
 
 	fmt.Println()
 	fmt.Println("konf.source:", config.Source)
@@ -87,7 +87,7 @@ func loadConfig(ctx context.Context) {
 	// Load configuration from GCP Secret Manager.
 	if err := config.Load(secretmanager.New(
 		secretmanager.WithProject("konf-test"),
-		secretmanager.WithPollInterval(15*time.Second),
+		secretmanager.WithPollInterval(20*time.Second),
 	)); err != nil {
 		panic(err) // handle error
 	}
