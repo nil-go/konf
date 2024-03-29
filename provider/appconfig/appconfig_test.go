@@ -396,10 +396,11 @@ func TestAppConfig_Watch(t *testing.T) {
 			case val := <-values:
 				assert.Equal(t, testcase.expected, val)
 			default:
+				e := err.Load()
 				if testcase.err == "" {
-					assert.Equal(t, nil, err.Load())
+					assert.Equal(t, nil, e)
 				} else {
-					assert.EqualError(t, *err.Load(), testcase.err)
+					assert.EqualError(t, *e, testcase.err)
 				}
 			}
 		})
