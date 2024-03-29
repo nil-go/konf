@@ -114,6 +114,14 @@ func (m *SecretManager) Status(onStatus func(bool, error)) {
 	m.onStatus = onStatus
 }
 
+func (m *SecretManager) Close() error {
+	if err := m.client.client.Close(); err != nil {
+		return fmt.Errorf("close Secret Manager client: %w", err)
+	}
+
+	return nil
+}
+
 func (m *SecretManager) String() string {
 	return "secret-manager://" + m.client.project
 }
