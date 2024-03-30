@@ -19,12 +19,12 @@ import (
 )
 
 func TestBlob_empty(t *testing.T) {
-	var loader azblob.Blob
+	var loader *azblob.Blob
 	values, err := loader.Load()
-	if err == nil {
-		t.Fatal("expected error, got nil")
-	}
+	assert.EqualError(t, err, "nil Blob")
 	assert.Equal(t, nil, values)
+	err = loader.Watch(context.Background(), nil)
+	assert.EqualError(t, err, "nil Blob")
 }
 
 func TestBlob(t *testing.T) {

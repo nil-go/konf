@@ -32,7 +32,7 @@ type S3 struct {
 	pollInterval time.Duration
 
 	onStatus func(bool, error)
-	client   *clientProxy
+	client   clientProxy
 }
 
 // New creates an S3 with the given uri and Option(s).
@@ -42,7 +42,7 @@ func New(uri string, opts ...Option) *S3 {
 	bucket, key, _ := strings.Cut(uri, "/")
 
 	option := &options{
-		client: &clientProxy{
+		client: clientProxy{
 			bucket: bucket,
 			key:    key,
 		},
@@ -55,13 +55,23 @@ func New(uri string, opts ...Option) *S3 {
 	return (*S3)(option)
 }
 
+var errNil = errors.New("nil S3")
+
 func (a *S3) Load() (map[string]any, error) {
+	if a == nil {
+		return nil, errNil
+	}
+
 	values, _, err := a.load(context.Background())
 
 	return values, err
 }
 
 func (a *S3) Watch(ctx context.Context, onChange func(map[string]any)) error {
+	if a == nil {
+		return errNil
+	}
+
 	pollInterval := time.Minute
 	if a.pollInterval > 0 {
 		pollInterval = a.pollInterval
@@ -123,12 +133,6 @@ type clientProxy struct {
 }
 
 func (p *clientProxy) load(ctx context.Context) ([]byte, bool, error) {
-	if p == nil {
-		// Use empty instance instead to avoid nil pointer dereference,
-		// Assignment propagates only to callee but not to caller.
-		p = &clientProxy{}
-	}
-
 	if p.client == nil {
 		if reflect.ValueOf(p.config).IsZero() {
 			var err error

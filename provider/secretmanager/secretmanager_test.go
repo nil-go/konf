@@ -28,12 +28,12 @@ import (
 )
 
 func TestSecretManager_empty(t *testing.T) {
-	var loader secretmanager.SecretManager
+	var loader *secretmanager.SecretManager
 	values, err := loader.Load()
-	if err == nil {
-		t.Fatal("expected error, got nil")
-	}
+	assert.EqualError(t, err, "nil SecretManager")
 	assert.Equal(t, nil, values)
+	err = loader.Watch(context.Background(), nil)
+	assert.EqualError(t, err, "nil SecretManager")
 }
 
 func TestSecretManager_Load(t *testing.T) {
@@ -136,9 +136,6 @@ func TestSecretManager_Load(t *testing.T) {
 				secretmanager.WithProject("test"),
 				option.WithGRPCConn(conn),
 			)...)
-			defer func() {
-				_ = loader.Close()
-			}()
 			var values map[string]any
 			values, err := loader.Load()
 			if testcase.err != "" {
@@ -206,9 +203,6 @@ func TestSecretManager_Watch(t *testing.T) {
 				option.WithGRPCConn(conn),
 				secretmanager.WithPollInterval(10*time.Millisecond),
 			)...)
-			defer func() {
-				_ = loader.Close()
-			}()
 			var err atomic.Pointer[error]
 			loader.Status(func(_ bool, e error) {
 				if e != nil {

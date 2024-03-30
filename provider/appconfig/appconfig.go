@@ -13,6 +13,7 @@ package appconfig
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"reflect"
 	"sync/atomic"
@@ -30,13 +31,13 @@ type AppConfig struct {
 	unmarshal func([]byte, any) error
 
 	onStatus func(bool, error)
-	client   *clientProxy
+	client   clientProxy
 }
 
 // New creates an AppConfig with the given application, environment, profile and Option(s).
 func New(application, environment, profile string, opts ...Option) *AppConfig {
 	option := &options{
-		client: &clientProxy{
+		client: clientProxy{
 			application: application,
 			environment: environment,
 			profile:     profile,
@@ -49,13 +50,23 @@ func New(application, environment, profile string, opts ...Option) *AppConfig {
 	return (*AppConfig)(option)
 }
 
+var errNil = errors.New("nil AppConfig")
+
 func (a *AppConfig) Load() (map[string]any, error) {
+	if a == nil {
+		return nil, errNil
+	}
+
 	values, _, err := a.load(context.Background())
 
 	return values, err
 }
 
 func (a *AppConfig) Watch(ctx context.Context, onChange func(map[string]any)) error {
+	if a == nil {
+		return errNil
+	}
+
 	timer := time.NewTimer(a.client.nextPollDuration())
 	defer timer.Stop()
 
@@ -116,12 +127,6 @@ type clientProxy struct {
 }
 
 func (p *clientProxy) load(ctx context.Context) ([]byte, bool, error) {
-	if p == nil {
-		// Use empty instance instead to avoid nil pointer dereference,
-		// Assignment propagates only to callee but not to caller.
-		p = &clientProxy{}
-	}
-
 	if p.client == nil {
 		if reflect.ValueOf(p.config).IsZero() {
 			var err error

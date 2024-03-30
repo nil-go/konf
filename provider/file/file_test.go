@@ -4,6 +4,7 @@
 package file_test
 
 import (
+	"context"
 	"errors"
 	"path/filepath"
 	"testing"
@@ -13,10 +14,12 @@ import (
 )
 
 func TestFS_empty(t *testing.T) {
-	var loader file.File
+	var loader *file.File
 	values, err := loader.Load()
-	assert.EqualError(t, err, "read file: open : no such file or directory")
+	assert.EqualError(t, err, "nil File")
 	assert.Equal(t, nil, values)
+	err = loader.Watch(context.Background(), nil)
+	assert.EqualError(t, err, "nil File")
 }
 
 func TestFile_Load(t *testing.T) {

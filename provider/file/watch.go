@@ -19,6 +19,10 @@ func (f *File) Status(onStatus func(bool, error)) {
 
 //nolint:cyclop,funlen
 func (f *File) Watch(ctx context.Context, onChange func(map[string]any)) (err error) { //nolint:gocognit,nonamedreturns
+	if f == nil {
+		return errNil
+	}
+
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		return fmt.Errorf("create file watcher for %s: %w", f.path, err)

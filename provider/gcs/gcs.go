@@ -30,7 +30,7 @@ type GCS struct {
 	unmarshal    func([]byte, any) error
 
 	onStatus func(bool, error)
-	client   *clientProxy
+	client   clientProxy
 }
 
 // New creates a GCS with the given endpoint and Option(s).
@@ -40,7 +40,7 @@ func New(uri string, opts ...Option) *GCS {
 	bucket, object, _ := strings.Cut(uri, "/")
 
 	option := &options{
-		client: &clientProxy{
+		client: clientProxy{
 			bucket: bucket,
 			object: object,
 		},
@@ -57,13 +57,29 @@ func New(uri string, opts ...Option) *GCS {
 	return (*GCS)(option)
 }
 
+var errNil = errors.New("nil GCS")
+
 func (g *GCS) Load() (map[string]any, error) {
+	if g == nil {
+		return nil, errNil
+	}
+
 	values, _, err := g.load(context.Background())
 
 	return values, err
 }
 
 func (g *GCS) Watch(ctx context.Context, onChange func(map[string]any)) error {
+	if g == nil {
+		return errNil
+	}
+
+	defer func() {
+		if g.client.client != nil {
+			_ = g.client.client.Close()
+		}
+	}()
+
 	pollInterval := time.Minute
 	if g.pollInterval > 0 {
 		pollInterval = g.pollInterval
@@ -110,14 +126,6 @@ func (g *GCS) Status(onStatus func(bool, error)) {
 	g.onStatus = onStatus
 }
 
-func (g *GCS) Close() error {
-	if err := g.client.client.Close(); err != nil {
-		return fmt.Errorf("close GCS client: %w", err)
-	}
-
-	return nil
-}
-
 func (g *GCS) String() string {
 	return "gs://" + g.client.bucket + "/" + g.client.object
 }
@@ -132,12 +140,6 @@ type clientProxy struct {
 }
 
 func (p *clientProxy) load(ctx context.Context) ([]byte, bool, error) {
-	if p == nil {
-		// Use empty instance instead to avoid nil pointer dereference,
-		// Assignment propagates only to callee but not to caller.
-		p = &clientProxy{}
-	}
-
 	if p.client == nil {
 		var err error
 		if p.client, err = storage.NewClient(ctx, append(p.opts, storage.WithJSONReads())...); err != nil {
