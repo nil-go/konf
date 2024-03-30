@@ -19,12 +19,12 @@ import (
 )
 
 func TestAppConfig_empty(t *testing.T) {
-	var loader azappconfig.AppConfig
+	var loader *azappconfig.AppConfig
 	values, err := loader.Load()
-	if err == nil {
-		t.Fatal("expected error, got nil")
-	}
+	assert.EqualError(t, err, "nil AppConfig")
 	assert.Equal(t, nil, values)
+	err = loader.Watch(context.Background(), nil)
+	assert.EqualError(t, err, "nil AppConfig")
 }
 
 func TestAppConfig(t *testing.T) {

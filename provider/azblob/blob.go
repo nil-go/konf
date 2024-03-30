@@ -9,6 +9,7 @@ package azblob
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"reflect"
@@ -30,13 +31,13 @@ type Blob struct {
 	unmarshal    func([]byte, any) error
 
 	onStatus func(bool, error)
-	client   *clientProxy
+	client   clientProxy
 }
 
 // New creates an Blob with the given endpoint and Option(s).
 func New(endpoint, container, blob string, opts ...Option) *Blob {
 	option := &options{
-		client: &clientProxy{
+		client: clientProxy{
 			// Place holder for the default credential.
 			credential: &azidentity.DefaultAzureCredential{},
 			endpoint:   endpoint,
@@ -52,13 +53,23 @@ func New(endpoint, container, blob string, opts ...Option) *Blob {
 	return (*Blob)(option)
 }
 
+var errNil = errors.New("nil Blob")
+
 func (a *Blob) Load() (map[string]any, error) {
+	if a == nil {
+		return nil, errNil
+	}
+
 	values, _, err := a.load(context.Background())
 
 	return values, err
 }
 
 func (a *Blob) Watch(ctx context.Context, onChange func(map[string]any)) error {
+	if a == nil {
+		return errNil
+	}
+
 	pollInterval := time.Minute
 	if a.pollInterval > 0 {
 		pollInterval = a.pollInterval
@@ -121,12 +132,6 @@ type clientProxy struct {
 }
 
 func (p *clientProxy) load(ctx context.Context) ([]byte, bool, error) { //nolint:cyclop
-	if p == nil {
-		// Use empty instance instead to avoid nil pointer dereference,
-		// Assignment propagates only to callee but not to caller.
-		p = &clientProxy{}
-	}
-
 	if p.client == nil {
 		if token, ok := p.credential.(*azidentity.DefaultAzureCredential); ok && reflect.ValueOf(*token).IsZero() {
 			var err error

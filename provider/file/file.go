@@ -12,6 +12,7 @@ package file
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -39,7 +40,13 @@ func New(path string, opts ...Option) *File {
 	return (*File)(option)
 }
 
+var errNil = errors.New("nil File")
+
 func (f *File) Load() (map[string]any, error) {
+	if f == nil {
+		return nil, errNil
+	}
+
 	bytes, err := os.ReadFile(f.path)
 	if err != nil {
 		return nil, fmt.Errorf("read file: %w", err)

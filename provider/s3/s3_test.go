@@ -23,12 +23,12 @@ import (
 )
 
 func TestS3_empty(t *testing.T) {
-	var loader ks3.S3
+	var loader *ks3.S3
 	values, err := loader.Load()
-	if err == nil {
-		t.Fatal("expected error, got nil")
-	}
+	assert.EqualError(t, err, "nil S3")
 	assert.Equal(t, nil, values)
+	err = loader.Watch(context.Background(), nil)
+	assert.EqualError(t, err, "nil S3")
 }
 
 func TestS3_Load(t *testing.T) {

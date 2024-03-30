@@ -34,13 +34,13 @@ type SecretManager struct {
 	splitter     func(string) []string
 
 	onStatus func(bool, error)
-	client   *clientProxy
+	client   clientProxy
 }
 
 // New creates a SecretManager with the given endpoint and Option(s).
 func New(opts ...Option) *SecretManager {
 	option := &options{
-		client: &clientProxy{},
+		client: clientProxy{},
 	}
 	for _, opt := range opts {
 		switch o := opt.(type) {
@@ -54,13 +54,29 @@ func New(opts ...Option) *SecretManager {
 	return (*SecretManager)(option)
 }
 
+var errNil = errors.New("nil SecretManager")
+
 func (m *SecretManager) Load() (map[string]any, error) {
+	if m == nil {
+		return nil, errNil
+	}
+
 	values, _, err := m.load(context.Background())
 
 	return values, err
 }
 
 func (m *SecretManager) Watch(ctx context.Context, onChange func(map[string]any)) error {
+	if m == nil {
+		return errNil
+	}
+
+	defer func() {
+		if m.client.client != nil {
+			_ = m.client.client.Close()
+		}
+	}()
+
 	pollInterval := time.Minute
 	if m.pollInterval > 0 {
 		pollInterval = m.pollInterval
@@ -114,14 +130,6 @@ func (m *SecretManager) Status(onStatus func(bool, error)) {
 	m.onStatus = onStatus
 }
 
-func (m *SecretManager) Close() error {
-	if err := m.client.client.Close(); err != nil {
-		return fmt.Errorf("close Secret Manager client: %w", err)
-	}
-
-	return nil
-}
-
 func (m *SecretManager) String() string {
 	return "secret-manager://" + m.client.project
 }
@@ -136,12 +144,6 @@ type clientProxy struct {
 }
 
 func (p *clientProxy) load(ctx context.Context) (map[string]string, bool, error) { //nolint:cyclop,funlen
-	if p == nil {
-		// Use empty instance instead to avoid nil pointer dereference,
-		// Assignment propagates only to callee but not to caller.
-		p = &clientProxy{}
-	}
-
 	if p.project == "" {
 		var err error
 		if p.project, err = metadata.ProjectID(); err != nil {

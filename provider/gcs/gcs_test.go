@@ -22,12 +22,12 @@ import (
 )
 
 func TestGCS_empty(t *testing.T) {
-	var loader gcs.GCS
+	var loader *gcs.GCS
 	values, err := loader.Load()
-	if err == nil {
-		t.Fatal("expected error, got nil")
-	}
+	assert.EqualError(t, err, "nil GCS")
 	assert.Equal(t, nil, values)
+	err = loader.Watch(context.Background(), nil)
+	assert.EqualError(t, err, "nil GCS")
 }
 
 func TestGCS_Load(t *testing.T) {
@@ -56,9 +56,6 @@ func TestGCS_Load(t *testing.T) {
 				}),
 				gcs.WithUnmarshal(testcase.unmarshal),
 			)
-			defer func() {
-				_ = loader.Close()
-			}()
 			values, err := loader.Load()
 			if testcase.err != "" {
 				assert.EqualError(t, err, testcase.err)
@@ -101,9 +98,6 @@ func TestGCS_Watch(t *testing.T) {
 				gcs.WithPollInterval(10*time.Millisecond),
 				gcs.WithUnmarshal(testcase.unmarshal),
 			)
-			defer func() {
-				_ = loader.Close()
-			}()
 			loader.Status(func(_ bool, e error) {
 				if e != nil {
 					err.Store(&e)

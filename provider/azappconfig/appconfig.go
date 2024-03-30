@@ -8,6 +8,7 @@ package azappconfig
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"maps"
 	"reflect"
@@ -30,13 +31,13 @@ type AppConfig struct {
 	pollInterval time.Duration
 
 	onStatus func(bool, error)
-	client   *clientProxy
+	client   clientProxy
 }
 
 // New creates an AppConfig with the given endpoint and Option(s).
 func New(endpoint string, opts ...Option) *AppConfig {
 	option := &options{
-		client: &clientProxy{
+		client: clientProxy{
 			// Place holder for the default credential.
 			credential: &azidentity.DefaultAzureCredential{},
 			endpoint:   endpoint,
@@ -50,13 +51,23 @@ func New(endpoint string, opts ...Option) *AppConfig {
 	return (*AppConfig)(option)
 }
 
+var errNil = errors.New("nil AppConfig")
+
 func (a *AppConfig) Load() (map[string]any, error) {
+	if a == nil {
+		return nil, errNil
+	}
+
 	values, _, err := a.load(context.Background())
 
 	return values, err
 }
 
 func (a *AppConfig) Watch(ctx context.Context, onChange func(map[string]any)) error {
+	if a == nil {
+		return errNil
+	}
+
 	pollInterval := time.Minute
 	if a.pollInterval > 0 {
 		pollInterval = a.pollInterval
@@ -124,12 +135,6 @@ type clientProxy struct {
 }
 
 func (p *clientProxy) load(ctx context.Context) (map[string]string, bool, error) { //nolint:cyclop,funlen
-	if p == nil {
-		// Use empty instance instead to avoid nil pointer dereference,
-		// Assignment propagates only to callee but not to caller.
-		p = &clientProxy{}
-	}
-
 	if p.client == nil {
 		if token, ok := p.credential.(*azidentity.DefaultAzureCredential); ok && reflect.ValueOf(*token).IsZero() {
 			var err error
