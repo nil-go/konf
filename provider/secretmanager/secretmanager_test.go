@@ -256,7 +256,7 @@ func grpcServer(t *testing.T, service pb.SecretManagerServiceServer) (*grpc.Clie
 	}()
 	<-started
 
-	conn, err := grpc.Dial("unix:"+endpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient("unix:"+endpoint, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	assert.NoError(t, err)
 
 	return conn, func() {
