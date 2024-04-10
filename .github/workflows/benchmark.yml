@@ -12,6 +12,7 @@ permissions:
 
 jobs:
   benchmark:
+    if: ${{ github.actor != 'dependabot[bot]' }}
     name: Benchmark
     runs-on: ubuntu-latest
     steps:
@@ -37,7 +38,6 @@ jobs:
           external-data-json-path: ./cache/benchmark-data.json
           fail-on-alert: true
           summary-always: true
-          comment-always: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/cache/save@v4
         if: ${{ github.ref_name=='main' }}
