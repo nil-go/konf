@@ -12,6 +12,7 @@ permissions:
 
 jobs:
   benchmark:
+    if: ${{ github.actor != 'dependabot[bot]' }}
     name: Benchmark
     runs-on: ubuntu-latest
     steps:
