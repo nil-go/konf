@@ -3,26 +3,22 @@
 
 // Package appconfig loads configuration from AWS [AppConfig].
 //
-// # Change notification
-//
-// By default, it periodically polls the configuration only. if the SNS topic is provided,
-// it will also listen to the events sent from AWS AppConfig using following extensions.
-//   - [EventBridge extension] With SNS target
-//   - [SNS extension]
-//
-// Only ON_DEPLOYMENT_ROLLED_BACK events [Fanout to Amazon SQS queues] and trigger polling the configuration
-// and other type of events are ignored.
-//
-// # Permission
-//
 // It requires following permissions to access AWS AppConfig:
 //   - appconfig:StartConfigurationSession
 //   - appconfig:GetLatestConfiguration
 //
+// # Change notification
+//
+// By default, it periodically polls the configuration only.
+// It also listens to change events by register it to SNS notifier with one of following extensions:
+//   - [EventBridge extension] With SNS target
+//   - [SNS extension]
+//
+// Only ON_DEPLOYMENT_ROLLED_BACK events trigger polling the configuration and other type of events are ignored.
+//
 // [AppConfig]: https://aws.amazon.com/systems-manager/features/appconfig
 // [EventBridge extension]: https://docs.aws.amazon.com/appconfig/latest/userguide/working-with-appconfig-extensions-about-predefined-notification-eventbridge.html
 // [SNS extension]: https://docs.aws.amazon.com/appconfig/latest/userguide/working-with-appconfig-extensions-about-predefined-notification-sns.html
-// [Fanout to Amazon SQS queues]: https://docs.aws.amazon.com/sns/latest/dg/sns-sqs-as-subscriber.html
 package appconfig
 
 import (
@@ -46,8 +42,9 @@ type AppConfig struct {
 	unmarshal    func([]byte, any) error
 	pollInterval time.Duration
 
-	onStatus func(bool, error)
-	client   clientProxy
+	onStatus  func(bool, error)
+	changedCh chan struct{}
+	client    clientProxy
 }
 
 // New creates an AppConfig with the given application, environment, profile and Option(s).
@@ -60,6 +57,7 @@ func New(application, environment, profile string, opts ...Option) *AppConfig {
 			environment: environment,
 			profile:     profile,
 		},
+		changedCh: make(chan struct{}, 1),
 	}
 	for _, opt := range opts {
 		opt(option)
@@ -85,23 +83,24 @@ func (a *AppConfig) Watch(ctx context.Context, onChange func(map[string]any)) er
 	if a == nil {
 		return errNil
 	}
+	if a.changedCh == nil {
+		a.changedCh = make(chan struct{}, 1)
+	}
 
 	pollInterval := a.pollInterval
 	if pollInterval == 0 {
 		pollInterval = time.Minute
 	}
-	var tickCh <-chan time.Time
-	if pollInterval > 0 {
-		ticker := time.NewTicker(pollInterval)
-		defer ticker.Stop()
-		tickCh = ticker.C
-	}
+	ticker := time.NewTicker(pollInterval)
+	defer ticker.Stop()
 
 	for {
 		select {
 		case <-ctx.Done():
 			return nil
-		case <-tickCh:
+		case <-ticker.C:
+			a.changed()
+		case <-a.changedCh:
 			values, changed, err := a.load(ctx)
 			if a.onStatus != nil {
 				a.onStatus(changed, err)
@@ -110,6 +109,14 @@ func (a *AppConfig) Watch(ctx context.Context, onChange func(map[string]any)) er
 				onChange(values)
 			}
 		}
+	}
+}
+
+func (a *AppConfig) changed() {
+	select {
+	case a.changedCh <- struct{}{}:
+	default:
+		// Ignore if the channel is full since it's already triggered.
 	}
 }
 
@@ -129,6 +136,65 @@ func (a *AppConfig) load(ctx context.Context) (map[string]any, bool, error) {
 	}
 
 	return values, true, nil
+}
+
+func (a *AppConfig) OnEvent(msg []byte) error { //nolint:cyclop
+	//nolint:tagliatelle
+	type (
+		appConfig struct {
+			Type        string `json:"Type"`
+			Application struct {
+				ID string `json:"Id"`
+			} `json:"Application"`
+			Environment struct {
+				ID string `json:"Id"`
+			} `json:"Environment"`
+			ConfigurationProfile struct {
+				ID   string `json:"Id"`
+				Name string `json:"Name"`
+			} `json:"ConfigurationProfile"`
+		}
+		s3Event struct {
+			// From EventBridge: https://docs.aws.amazon.com/appconfig/latest/userguide/working-with-appconfig-extensions-about-predefined-notification-eventbridge.html
+			Source string    `json:"source"`
+			Detail appConfig `json:"detail"`
+
+			// From SNS: https://docs.aws.amazon.com/appconfig/latest/userguide/working-with-appconfig-extensions-about-predefined-notification-sns.html
+			appConfig
+		}
+	)
+
+	var event s3Event
+	if err := json.Unmarshal(msg, &event); err != nil {
+		return fmt.Errorf("unmarshal appconfig event: %w", err)
+	}
+
+	if event.Source == "aws.appconfig" &&
+		event.Detail.Application.ID == a.client.application &&
+		event.Detail.Environment.ID == a.client.environment &&
+		(event.Detail.ConfigurationProfile.ID == a.client.profile ||
+			event.Detail.ConfigurationProfile.Name == a.client.profile) {
+		if event.Detail.Type == "OnDeploymentRolledBack" {
+			// Trigger to reload the configuration.
+			a.changed()
+		}
+
+		return nil
+	}
+
+	if event.Application.ID == a.client.application &&
+		event.Environment.ID == a.client.environment &&
+		(event.ConfigurationProfile.ID == a.client.profile ||
+			event.ConfigurationProfile.Name == a.client.profile) {
+		if event.Type == "OnDeploymentRolledBack" {
+			// Trigger to reload the configuration.
+			a.changed()
+		}
+
+		return nil
+	}
+
+	return fmt.Errorf("unsupported appconfig event: %w", errors.ErrUnsupported)
 }
 
 func (a *AppConfig) Status(onStatus func(bool, error)) {

@@ -3,28 +3,21 @@
 
 // Package s3 loads configuration from AWS [S3].
 //
-// # Poll/Push Mode
+// It requires following permissions to access object from AWS S3:
+//   - s3:GetObject
 //
-// By default, it's poll only mode which periodically polls the configuration.
-// You can switch to push only mode by providing the SNS topic,
-// or hybrid mode by providing both the SNS topic and the poll interval.
+// # Change notification
 //
-// if the SNS topic is provided, it will listen to the events sent from AWS S3 using following setup.
+// By default, it's periodically polls the configuration.
+// It also listens to change events by register it to SNS notifier with one of setups:
 //   - [EventBridge] with SNS target
 //   - [SNS]
 //
-// Only ObjectCreated:* events [Fanout to Amazon SQS queues] and trigger polling the configuration
-// and other type of events are ignored.
-//
-// # Permission
-//
-// It requires following permissions to access object from AWS S3:
-//   - s3:GetObject
+// Only ObjectCreated:* events trigger polling the configuration and other type of events are ignored.
 //
 // [S3]: https://aws.amazon.com/s3/
 // [EventBridge]: https://docs.aws.amazon.com/AmazonS3/latest/userguide/EventBridge.html
 // [SNS]: https://docs.aws.amazon.com/AmazonS3/latest/userguide/how-to-enable-disable-notification-intro.html
-// [Fanout to Amazon SQS queues]: https://docs.aws.amazon.com/sns/latest/dg/sns-sqs-as-subscriber.html
 package s3
 
 import (
@@ -52,8 +45,9 @@ type S3 struct {
 	unmarshal    func([]byte, any) error
 	pollInterval time.Duration
 
-	onStatus func(bool, error)
-	client   clientProxy
+	onStatus  func(bool, error)
+	changedCh chan struct{}
+	client    clientProxy
 }
 
 // New creates an S3 with the given uri and Option(s).
@@ -67,6 +61,7 @@ func New(uri string, opts ...Option) *S3 {
 			bucket: bucket,
 			key:    key,
 		},
+		changedCh: make(chan struct{}, 1),
 	}
 	for _, opt := range opts {
 		opt(option)
@@ -92,6 +87,9 @@ func (a *S3) Watch(ctx context.Context, onChange func(map[string]any)) error {
 	if a == nil {
 		return errNil
 	}
+	if a.changedCh == nil {
+		a.changedCh = make(chan struct{}, 1)
+	}
 
 	pollInterval := time.Minute
 	if a.pollInterval > 0 {
@@ -102,7 +100,11 @@ func (a *S3) Watch(ctx context.Context, onChange func(map[string]any)) error {
 
 	for {
 		select {
+		case <-ctx.Done():
+			return nil
 		case <-ticker.C:
+			a.changed()
+		case <-a.changedCh:
 			values, changed, err := a.load(ctx)
 			if a.onStatus != nil {
 				a.onStatus(changed, err)
@@ -110,9 +112,74 @@ func (a *S3) Watch(ctx context.Context, onChange func(map[string]any)) error {
 			if changed {
 				onChange(values)
 			}
-		case <-ctx.Done():
+		}
+	}
+}
+
+func (a *S3) OnEvent(msg []byte) error { //nolint:cyclop
+	//nolint:tagliatelle
+	type (
+		s3Object struct {
+			Bucket struct {
+				Name string `json:"name"`
+			} `json:"bucket"`
+			Object struct {
+				Key string `json:"key"`
+			} `json:"object"`
+		}
+		s3Event struct {
+			// From EventBridge: https://docs.aws.amazon.com/AmazonS3/latest/userguide/ev-events.html
+			DetailType string   `json:"detail-type"`
+			Source     string   `json:"source"`
+			Detail     s3Object `json:"detail"`
+
+			// From SNS: https://docs.aws.amazon.com/AmazonS3/latest/userguide/notification-content-structure.html
+			Records []struct {
+				EventSource string   `json:"eventSource"`
+				EventName   string   `json:"eventName"`
+				S3          s3Object `json:"s3"`
+			} `json:"Records"`
+		}
+	)
+
+	var event s3Event
+	if err := json.Unmarshal(msg, &event); err != nil {
+		return fmt.Errorf("unmarshal s3 event: %w", err)
+	}
+
+	if event.Source == "aws.s3" &&
+		event.Detail.Bucket.Name == a.client.bucket &&
+		event.Detail.Object.Key == a.client.key {
+		if event.DetailType == "Object Created" {
+			// Trigger to reload the configuration.
+			a.changed()
+		}
+
+		return nil
+	}
+
+	if len(event.Records) > 0 {
+		record := event.Records[0]
+		if record.EventSource == "aws:s3" &&
+			record.S3.Bucket.Name == a.client.bucket &&
+			record.S3.Object.Key == a.client.key {
+			if strings.HasPrefix(record.EventName, "ObjectCreated:") {
+				// Trigger to reload the configuration.
+				a.changed()
+			}
+
 			return nil
 		}
+	}
+
+	return fmt.Errorf("unsupported s3 event: %w", errors.ErrUnsupported)
+}
+
+func (a *S3) changed() {
+	select {
+	case a.changedCh <- struct{}{}:
+	default:
+		// Ignore if the channel is full since it's already triggered.
 	}
 }
 

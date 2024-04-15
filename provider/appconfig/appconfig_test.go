@@ -195,12 +195,13 @@ func TestAppConfig_Load(t *testing.T) {
 	}
 }
 
-func TestAppConfig_Watch(t *testing.T) {
+func TestAppConfig_Watch(t *testing.T) { //nolint:gocognit,maintidx
 	t.Parallel()
 
 	testcases := []struct {
 		description string
 		opts        []appconfig.Option
+		event       []byte
 		middleware  func(
 			context.Context,
 			middleware.FinalizeInput,
@@ -339,6 +340,176 @@ func TestAppConfig_Watch(t *testing.T) {
 			},
 			err: "unmarshal: unmarshal error",
 		},
+		{
+			description: "deployment rollback (sns)",
+			event: []byte(`
+{
+   "Application":{
+      "Id":"ba8toh7"
+   },
+   "Environment":{
+      "Id":"pgil2o7"
+   },
+   "ConfigurationProfile":{
+      "Id":"1a2b3c4d",
+      "Name":"profiler"
+   },
+   "Type":"OnDeploymentRolledBack"
+}`),
+			middleware: func(
+				ctx context.Context,
+				_ middleware.FinalizeInput,
+				_ middleware.FinalizeHandler,
+			) (middleware.FinalizeOutput, middleware.Metadata, error) {
+				switch awsMiddleware.GetOperationName(ctx) {
+				case "StartConfigurationSession":
+					return middleware.FinalizeOutput{
+						Result: &appconfigdata.StartConfigurationSessionOutput{
+							InitialConfigurationToken: aws.String("initial-token"),
+						},
+					}, middleware.Metadata{}, nil
+				case "GetLatestConfiguration":
+					return middleware.FinalizeOutput{
+						Result: &appconfigdata.GetLatestConfigurationOutput{
+							Configuration:              []byte(`{"k":"v"}`),
+							NextPollConfigurationToken: aws.String("next-token"),
+							NextPollIntervalInSeconds:  1,
+						},
+					}, middleware.Metadata{}, nil
+				default:
+					return middleware.FinalizeOutput{}, middleware.Metadata{}, nil
+				}
+			},
+			expected: map[string]any{
+				"k": "v",
+			},
+		},
+		{
+			description: "deployment rollback (event bridge)",
+			event: []byte(`
+{
+   "source":"aws.appconfig",
+   "detail":{
+      "Type":"OnDeploymentRolledBack",
+      "Application":{
+         "Id":"ba8toh7"
+      },
+      "Environment":{
+         "Id":"pgil2o7",
+         "Name":"MyEnv"
+      },
+      "ConfigurationProfile":{
+         "Id":"ga3tqep",
+         "Name":"profiler"
+      }
+   }
+}`),
+			middleware: func(
+				ctx context.Context,
+				_ middleware.FinalizeInput,
+				_ middleware.FinalizeHandler,
+			) (middleware.FinalizeOutput, middleware.Metadata, error) {
+				switch awsMiddleware.GetOperationName(ctx) {
+				case "StartConfigurationSession":
+					return middleware.FinalizeOutput{
+						Result: &appconfigdata.StartConfigurationSessionOutput{
+							InitialConfigurationToken: aws.String("initial-token"),
+						},
+					}, middleware.Metadata{}, nil
+				case "GetLatestConfiguration":
+					return middleware.FinalizeOutput{
+						Result: &appconfigdata.GetLatestConfigurationOutput{
+							Configuration:              []byte(`{"k":"v"}`),
+							NextPollConfigurationToken: aws.String("next-token"),
+							NextPollIntervalInSeconds:  1,
+						},
+					}, middleware.Metadata{}, nil
+				default:
+					return middleware.FinalizeOutput{}, middleware.Metadata{}, nil
+				}
+			},
+			expected: map[string]any{
+				"k": "v",
+			},
+		},
+		{
+			description: "unmatched deployment rollback",
+			event: []byte(`
+{
+   "source":"aws.appconfig",
+   "detail":{
+      "Type":"OnDeploymentRollback",
+      "Application":{
+         "Id":"ba8toh7"
+      },
+      "Environment":{
+         "Id":"pgil2o7",
+         "Name":"MyEnv"
+      },
+      "ConfigurationProfile":{
+         "Id":"ga3tqep",
+         "Name":"another-profiler"
+      }
+   }
+}`),
+			middleware: func(
+				ctx context.Context,
+				_ middleware.FinalizeInput,
+				_ middleware.FinalizeHandler,
+			) (middleware.FinalizeOutput, middleware.Metadata, error) {
+				switch awsMiddleware.GetOperationName(ctx) {
+				case "StartConfigurationSession":
+					return middleware.FinalizeOutput{
+						Result: &appconfigdata.StartConfigurationSessionOutput{
+							InitialConfigurationToken: aws.String("initial-token"),
+						},
+					}, middleware.Metadata{}, nil
+				case "GetLatestConfiguration":
+					return middleware.FinalizeOutput{
+						Result: &appconfigdata.GetLatestConfigurationOutput{
+							Configuration:              []byte(`{"k":"v"}`),
+							NextPollConfigurationToken: aws.String("next-token"),
+							NextPollIntervalInSeconds:  1,
+						},
+					}, middleware.Metadata{}, nil
+				default:
+					return middleware.FinalizeOutput{}, middleware.Metadata{}, nil
+				}
+			},
+			expected: map[string]any{
+				"k": "v",
+			},
+			err: "unsupported appconfig event: unsupported operation",
+		},
+		{
+			description: "non-json messages",
+			event:       []byte(`not a json`),
+			middleware: func(
+				ctx context.Context,
+				_ middleware.FinalizeInput,
+				_ middleware.FinalizeHandler,
+			) (middleware.FinalizeOutput, middleware.Metadata, error) {
+				switch awsMiddleware.GetOperationName(ctx) {
+				case "StartConfigurationSession":
+					return middleware.FinalizeOutput{
+						Result: &appconfigdata.StartConfigurationSessionOutput{
+							InitialConfigurationToken: aws.String("initial-token"),
+						},
+					}, middleware.Metadata{}, nil
+				case "GetLatestConfiguration":
+					return middleware.FinalizeOutput{
+						Result: &appconfigdata.GetLatestConfigurationOutput{
+							Configuration:              []byte{},
+							NextPollConfigurationToken: aws.String("next-token"),
+							NextPollIntervalInSeconds:  1,
+						},
+					}, middleware.Metadata{}, nil
+				default:
+					return middleware.FinalizeOutput{}, middleware.Metadata{}, nil
+				}
+			},
+			err: "unmarshal appconfig event: invalid character 'o' in literal null (expecting 'u')",
+		},
 	}
 
 	for _, testcase := range testcases {
@@ -390,16 +561,21 @@ func TestAppConfig_Watch(t *testing.T) {
 				assert.NoError(t, e)
 			}()
 			<-started
+			if testcase.event != nil {
+				err := loader.OnEvent(testcase.event)
+				if testcase.err != "" {
+					assert.EqualError(t, err, testcase.err)
+				} else {
+					assert.NoError(t, err)
+				}
+			}
 
 			time.Sleep(1500 * time.Millisecond) // wait for the first tick, but not the second
 			select {
 			case val := <-values:
 				assert.Equal(t, testcase.expected, val)
 			default:
-				e := err.Load()
-				if testcase.err == "" {
-					assert.Equal(t, nil, e)
-				} else {
+				if e := err.Load(); e != nil {
 					assert.EqualError(t, *e, testcase.err)
 				}
 			}
