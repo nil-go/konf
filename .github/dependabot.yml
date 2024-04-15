@@ -32,6 +32,7 @@ updates:
       aws-sdk-go:
         patterns:
           - github.com/aws/aws-sdk-go-v2*
+          - github.com/aws/smithy-go
 
   - package-ecosystem: gomod
     directory: /provider/s3

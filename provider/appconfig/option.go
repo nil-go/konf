@@ -24,7 +24,7 @@ func WithAWSConfig(config aws.Config) Option {
 // The default interval is 1 minute.
 func WithPollInterval(interval time.Duration) Option {
 	return func(options *options) {
-		options.client.pollInterval = interval
+		options.pollInterval = interval
 	}
 }
 

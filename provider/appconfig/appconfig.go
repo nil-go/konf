@@ -1,13 +1,28 @@
 // Copyright (c) 2024 The konf authors
 // Use of this source code is governed by a MIT license found in the LICENSE file.
 
-// Package appconfig loads configuration from AWS AppConfig.
+// Package appconfig loads configuration from AWS [AppConfig].
 //
-// AppConfig loads configuration from AWS AppConfig with the given application, environment, profile
-// and returns a nested map[string]any that is parsed with the given unmarshal function.
+// # Change notification
 //
-// The unmarshal function must be able to unmarshal the configuration into a map[string]any.
-// For example, with the default json.Unmarshal, the configuration is parsed as JSON.
+// By default, it periodically polls the configuration only. if the SNS topic is provided,
+// it will also listen to the events sent from AWS AppConfig using following extensions.
+//   - [EventBridge extension] With SNS target
+//   - [SNS extension]
+//
+// Only ON_DEPLOYMENT_ROLLED_BACK events [Fanout to Amazon SQS queues] and trigger polling the configuration
+// and other type of events are ignored.
+//
+// # Permission
+//
+// It requires following permissions to access AWS AppConfig:
+//   - appconfig:StartConfigurationSession
+//   - appconfig:GetLatestConfiguration
+//
+// [AppConfig]: https://aws.amazon.com/systems-manager/features/appconfig
+// [EventBridge extension]: https://docs.aws.amazon.com/appconfig/latest/userguide/working-with-appconfig-extensions-about-predefined-notification-eventbridge.html
+// [SNS extension]: https://docs.aws.amazon.com/appconfig/latest/userguide/working-with-appconfig-extensions-about-predefined-notification-sns.html
+// [Fanout to Amazon SQS queues]: https://docs.aws.amazon.com/sns/latest/dg/sns-sqs-as-subscriber.html
 package appconfig
 
 import (
@@ -28,13 +43,16 @@ import (
 //
 // To create a new AppConfig, call [New].
 type AppConfig struct {
-	unmarshal func([]byte, any) error
+	unmarshal    func([]byte, any) error
+	pollInterval time.Duration
 
 	onStatus func(bool, error)
 	client   clientProxy
 }
 
 // New creates an AppConfig with the given application, environment, profile and Option(s).
+//
+// The application and environment must be the id (not name) if push mode has been enabled.
 func New(application, environment, profile string, opts ...Option) *AppConfig {
 	option := &options{
 		client: clientProxy{
@@ -46,6 +64,7 @@ func New(application, environment, profile string, opts ...Option) *AppConfig {
 	for _, opt := range opts {
 		opt(option)
 	}
+	option.client.timeout = option.pollInterval / 2 //nolint:gomnd
 
 	return (*AppConfig)(option)
 }
@@ -67,12 +86,22 @@ func (a *AppConfig) Watch(ctx context.Context, onChange func(map[string]any)) er
 		return errNil
 	}
 
-	timer := time.NewTimer(a.client.nextPollDuration())
-	defer timer.Stop()
+	pollInterval := a.pollInterval
+	if pollInterval == 0 {
+		pollInterval = time.Minute
+	}
+	var tickCh <-chan time.Time
+	if pollInterval > 0 {
+		ticker := time.NewTicker(pollInterval)
+		defer ticker.Stop()
+		tickCh = ticker.C
+	}
 
 	for {
 		select {
-		case <-timer.C:
+		case <-ctx.Done():
+			return nil
+		case <-tickCh:
 			values, changed, err := a.load(ctx)
 			if a.onStatus != nil {
 				a.onStatus(changed, err)
@@ -80,9 +109,6 @@ func (a *AppConfig) Watch(ctx context.Context, onChange func(map[string]any)) er
 			if changed {
 				onChange(values)
 			}
-			timer.Reset(a.client.nextPollDuration())
-		case <-ctx.Done():
-			return nil
 		}
 	}
 }
@@ -114,14 +140,14 @@ func (a *AppConfig) String() string {
 }
 
 type clientProxy struct {
-	config       aws.Config
-	application  string
-	environment  string
-	profile      string
-	pollInterval time.Duration
+	config      aws.Config
+	application string
+	environment string
+	profile     string
 
 	client *appconfigdata.Client
 
+	timeout       time.Duration
 	nextPollToken atomic.Pointer[string]
 	nextPollTime  atomic.Pointer[time.Time]
 }
@@ -136,10 +162,13 @@ func (p *clientProxy) load(ctx context.Context) ([]byte, bool, error) {
 		}
 		p.client = appconfigdata.NewFromConfig(p.config)
 	}
-	// The minimum interval required by AWS AppConfig SDK is 15 seconds.
-	p.pollInterval = max(p.pollInterval, 15*time.Second) //nolint:gomnd
 
-	ctx, cancel := context.WithTimeout(ctx, p.pollInterval)
+	if nextPollTime := p.nextPollTime.Load(); nextPollTime != nil && time.Now().Before(*nextPollTime) {
+		// Have to wait until the next poll time.
+		time.Sleep(time.Until(*nextPollTime))
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, max(p.timeout, 10*time.Second)) //nolint:gomnd
 	defer cancel()
 
 	if p.nextPollToken.Load() == nil {
@@ -147,7 +176,7 @@ func (p *clientProxy) load(ctx context.Context) ([]byte, bool, error) {
 			ApplicationIdentifier:                aws.String(p.application),
 			ConfigurationProfileIdentifier:       aws.String(p.profile),
 			EnvironmentIdentifier:                aws.String(p.environment),
-			RequiredMinimumPollIntervalInSeconds: aws.Int32(int32(p.pollInterval.Seconds())),
+			RequiredMinimumPollIntervalInSeconds: aws.Int32(15), //nolint:gomnd // The minimum interval supported.
 		})
 		if err != nil {
 			return nil, false, fmt.Errorf("start configuration session: %w", err)
@@ -167,14 +196,4 @@ func (p *clientProxy) load(ctx context.Context) ([]byte, bool, error) {
 
 	// It may return empty configuration data if the client already has the latest version.
 	return resp.Configuration, len(resp.Configuration) > 0, nil
-}
-
-func (p *clientProxy) nextPollDuration() time.Duration {
-	if nextPollTime := p.nextPollTime.Load(); nextPollTime != nil {
-		if duration := time.Until(*nextPollTime); duration > 0 {
-			return duration
-		}
-	}
-
-	return p.pollInterval
 }

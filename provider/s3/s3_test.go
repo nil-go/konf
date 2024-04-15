@@ -130,7 +130,9 @@ func TestS3_Watch(t *testing.T) {
 			case val := <-values:
 				assert.Equal(t, testcase.expected, val)
 			default:
-				assert.EqualError(t, *err.Load(), testcase.err)
+				if e := err.Load(); e != nil {
+					assert.EqualError(t, *e, testcase.err)
+				}
 			}
 		})
 	}

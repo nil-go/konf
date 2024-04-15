@@ -3,7 +3,28 @@
 
 // Package s3 loads configuration from AWS [S3].
 //
+// # Poll/Push Mode
+//
+// By default, it's poll only mode which periodically polls the configuration.
+// You can switch to push only mode by providing the SNS topic,
+// or hybrid mode by providing both the SNS topic and the poll interval.
+//
+// if the SNS topic is provided, it will listen to the events sent from AWS S3 using following setup.
+//   - [EventBridge] with SNS target
+//   - [SNS]
+//
+// Only ObjectCreated:* events [Fanout to Amazon SQS queues] and trigger polling the configuration
+// and other type of events are ignored.
+//
+// # Permission
+//
+// It requires following permissions to access object from AWS S3:
+//   - s3:GetObject
+//
 // [S3]: https://aws.amazon.com/s3/
+// [EventBridge]: https://docs.aws.amazon.com/AmazonS3/latest/userguide/EventBridge.html
+// [SNS]: https://docs.aws.amazon.com/AmazonS3/latest/userguide/how-to-enable-disable-notification-intro.html
+// [Fanout to Amazon SQS queues]: https://docs.aws.amazon.com/sns/latest/dg/sns-sqs-as-subscriber.html
 package s3
 
 import (

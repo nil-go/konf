@@ -200,14 +200,14 @@ func TestAppConfig_Watch(t *testing.T) {
 
 	testcases := []struct {
 		description string
+		opts        []appconfig.Option
 		middleware  func(
 			context.Context,
 			middleware.FinalizeInput,
 			middleware.FinalizeHandler,
 		) (middleware.FinalizeOutput, middleware.Metadata, error)
-		unmarshal func([]byte, any) error
-		expected  map[string]any
-		err       string
+		expected map[string]any
+		err      string
 	}{
 		{
 			description: "latest configuration",
@@ -308,6 +308,11 @@ func TestAppConfig_Watch(t *testing.T) {
 		},
 		{
 			description: "unmarshal error",
+			opts: []appconfig.Option{
+				appconfig.WithUnmarshal(func([]byte, any) error {
+					return errors.New("unmarshal error")
+				}),
+			},
 			middleware: func(
 				ctx context.Context,
 				_ middleware.FinalizeInput,
@@ -331,9 +336,6 @@ func TestAppConfig_Watch(t *testing.T) {
 				default:
 					return middleware.FinalizeOutput{}, middleware.Metadata{}, nil
 				}
-			},
-			unmarshal: func([]byte, any) error {
-				return errors.New("unmarshal error")
 			},
 			err: "unmarshal: unmarshal error",
 		},
@@ -362,10 +364,8 @@ func TestAppConfig_Watch(t *testing.T) {
 			assert.NoError(t, cerr)
 
 			loader := appconfig.New(
-				"app", "env", "profiler",
-				appconfig.WithAWSConfig(cfg),
-				appconfig.WithUnmarshal(testcase.unmarshal),
-				appconfig.WithPollInterval(time.Second),
+				"ba8toh7", "pgil2o7", "profiler",
+				append(testcase.opts, appconfig.WithAWSConfig(cfg), appconfig.WithPollInterval(time.Second))...,
 			)
 			_, _ = loader.Load()
 
