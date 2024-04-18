@@ -52,7 +52,7 @@ jobs:
           script: |
             const modules = [
               'provider/file', 'provider/pflag',
-              'provider/appconfig', 'provider/s3',
+              'provider/appconfig', 'provider/s3', 'notifier/sns',
               'provider/azappconfig', 'provider/azblob',
               'provider/secretmanager', 'provider/gcs'
             ]

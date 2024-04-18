@@ -16,7 +16,7 @@ becoming coupled to a particular configuration source.
 - [konf.OnChange](#usage) for registering callbacks while configuration changes.
 - [konf.Explain](#understand-the-configuration) for understanding where the configuration is loaded from.
 - [Various providers](#configuration-providers) for loading configuration from major clouds,
-  [AWS](examples/aws), [Azure](examples/azure), and [GCP](examples/gcp).
+  [AWS](examples/aws), [Azure](examples/azure), and [GCP](examples/gcp) with [Notifier](notifier) for notifying the changes of configuration.
 - [Zero dependencies](go.mod) in core module which supports loading configuration
   from environment variables,flags, and embed file system.
 
@@ -31,9 +31,11 @@ with [spf13/viper](https://github.com/spf13/viper) and
 | Konf  |         __41.09__ |                 __4__ |           16.71 |           __1__ |
 | Viper |             614.8 |                    22 |           104.9 |               3 |
 | Koanf |             15949 |                   657 |       __7.898__ |           __1__ |
+
 [^1]: Comparing to Get in both Viper and Koanf only can get the primitive types, Get in Konf can get any type
 since it's just a wrapper of Unmarshal. So for complex struct, it only needs single Konf Get
 but may needs multiple Get(s) in Viper and Koanf.
+
 ## Usage
 
 Somewhere, early in an application's life, it will make a decision about which
@@ -133,19 +135,19 @@ to monitor the status of configuration loading/watching, e.g. recording metrics.
 
 There are providers for the following configuration sources.
 
-| Loader                                    | Load From                                                                               | Watch Changes |
-|:------------------------------------------|:----------------------------------------------------------------------------------------|:-------------:|
-| [`env`](provider/env)                     | environment variables                                                                   |               |
-| [`fs`](provider/fs)                       | [fs.FS](https://pkg.go.dev/io/fs)                                                       |               |
-| [`file`](provider/file)                   | file                                                                                    |       ✓       |
-| [`flag`](provider/flag)                   | [flag](https://pkg.go.dev/flag)                                                         |               |
-| [`pflag`](provider/pflag)                 | [spf13/pflag](https://github.com/spf13/pflag)                                           |               |
-| [`appconfig`](provider/appconfig)         | [AWS AppConfig](https://aws.amazon.com/systems-manager/features/appconfig/)             |       ✓       |
-| [`s3`](provider/s3)                       | [AWS S3](https://aws.amazon.com/s3)                                                     |       ✓       |
-| [`azappconfig`](provider/azappconfig)     | [Azure App Configuration](https://azure.microsoft.com/en-us/products/app-configuration) |       ✓       |
-| [`azblob`](provider/azblob)               | [Azure Blob Storage](https://azure.microsoft.com/en-us/products/storage/blobs)          |       ✓       |
-| [`secretmanager`](provider/secretmanager) | [GCP Secret Manager](https://cloud.google.com/security/products/secret-manager)         |       ✓       |
-| [`gcs`](provider/gcs)                     | [GCP Cloud Storage](https://cloud.google.com/storage)                                   |       ✓       |
+| Loader                                    | Load From                                                                               | Watch Changes | Notifier              |
+|:------------------------------------------|:----------------------------------------------------------------------------------------|:-------------:|:----------------------|
+| [`env`](provider/env)                     | environment variables                                                                   |               |                       |
+| [`fs`](provider/fs)                       | [fs.FS](https://pkg.go.dev/io/fs)                                                       |               |                       |
+| [`file`](provider/file)                   | file                                                                                    |       ✓       |                       |
+| [`flag`](provider/flag)                   | [flag](https://pkg.go.dev/flag)                                                         |               |                       |
+| [`pflag`](provider/pflag)                 | [spf13/pflag](https://github.com/spf13/pflag)                                           |               |                       |
+| [`appconfig`](provider/appconfig)         | [AWS AppConfig](https://aws.amazon.com/systems-manager/features/appconfig/)             |       ✓       | [sns](../notfier/sns) |
+| [`s3`](provider/s3)                       | [AWS S3](https://aws.amazon.com/s3)                                                     |       ✓       | [sns](../notfier/sns) |
+| [`azappconfig`](provider/azappconfig)     | [Azure App Configuration](https://azure.microsoft.com/en-us/products/app-configuration) |       ✓       |                       |
+| [`azblob`](provider/azblob)               | [Azure Blob Storage](https://azure.microsoft.com/en-us/products/storage/blobs)          |       ✓       |                       |
+| [`secretmanager`](provider/secretmanager) | [GCP Secret Manager](https://cloud.google.com/security/products/secret-manager)         |       ✓       |                       |
+| [`gcs`](provider/gcs)                     | [GCP Cloud Storage](https://cloud.google.com/storage)                                   |       ✓       |                       |
 
 ## Custom Configuration Providers
 
