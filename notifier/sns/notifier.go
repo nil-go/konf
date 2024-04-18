@@ -1,11 +1,14 @@
 // Copyright (c) 2024 The konf authors
 // Use of this source code is governed by a MIT license found in the LICENSE file.
 
-// It requires following permissions:
+// Package sns provides a notifier that subscribes to an SNS topic that watches change of configuration on AWS.
+//
+// It [Fanout SNS topic to Amazon SQS queues], which requires following permissions:
 //   - sns:Subscribe
 //   - sns:Unsubscribe
 //   - sqs:CreateQueue
-
+//
+// [Fanout SNS topic to Amazon SQS queues]: https://docs.aws.amazon.com/sns/latest/dg/sns-sqs-as-subscriber.html
 package sns
 
 import (
@@ -26,20 +29,19 @@ import (
 	"github.com/aws/smithy-go/rand"
 )
 
-type (
-	Notifier struct {
-		topic string
+// Notifier that watches change events on given SNS topic.
+//
+// To create a new Notifier, call [NewNotifier].
+type Notifier struct {
+	topic string
 
-		config       aws.Config
-		logger       *slog.Logger
-		loaders      []func([]byte) error
-		loadersMutex sync.RWMutex
-	}
-	Loader interface {
-		OnEvent([]byte) error
-	}
-)
+	config       aws.Config
+	logger       *slog.Logger
+	loaders      []func([]byte) error
+	loadersMutex sync.RWMutex
+}
 
+// NewNotifier creates a Notifier with the given SNS topic ARN.
 func NewNotifier(topic string, opts ...Option) *Notifier {
 	option := &options{}
 	for _, opt := range opts {
@@ -51,12 +53,16 @@ func NewNotifier(topic string, opts ...Option) *Notifier {
 	}
 }
 
-func (n *Notifier) Register(loader Loader) {
+// Register registers a loader to the Notifier.
+// The loader is required to implement `OnEvent([]byte) error`.
+func (n *Notifier) Register(loader interface{ OnEvent([]byte) error }) {
 	n.loadersMutex.Lock()
 	defer n.loadersMutex.Unlock()
 	n.loaders = append(n.loaders, loader.OnEvent)
 }
 
+// Start starts watching events on given SNS topic and fanout to registered loaders.
+// It blocks until ctx is done, or it returns an error.
 func (n *Notifier) Start(ctx context.Context) error { //nolint:cyclop,funlen,gocognit
 	logger := n.logger
 	if n.logger == nil {

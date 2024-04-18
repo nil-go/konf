@@ -111,6 +111,22 @@ This decoupling allows application developers to write code in terms of `*konf.C
 while the configuration source(s) is managed "up stack" (e.g. in or near `main()`).
 Application developers can then switch configuration sources(s) as necessary.
 
+## Change Notification
+The providers for loading configuration from clouds periodically poll the configuration source.
+It also supports watching the changes of configuration using corresponding notifier.
+For example, the `sns` notifier notifies the changes of `appconfig`  and `s3` provider:
+
+```
+	notifier := sns.NewNotifier("arn:aws:sns:us-west-1:851725503283:konf-test")
+	notifier.Register(s3Loader)
+	notifier.Register(appConfigLoader)
+	go func() {
+		if err := notifier.Start(ctx); err != nil {
+			// handle error
+		}
+	}()
+```
+
 ## Understand the configuration
 
 While the configuration is loaded from multiple sources, static like environments or dynamic like AWS AppConfig,

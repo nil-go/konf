@@ -49,7 +49,7 @@ type AppConfig struct {
 
 // New creates an AppConfig with the given application, environment, profile and Option(s).
 //
-// The application and environment must be the id (not name) if push mode has been enabled.
+// The application and environment must be the id (not name) if change notification has been enabled.
 func New(application, environment, profile string, opts ...Option) *AppConfig {
 	option := &options{
 		client: clientProxy{
