@@ -17,6 +17,7 @@ jobs:
           - 'provider/pflag'
           - 'provider/appconfig'
           - 'provider/s3'
+          - 'notifier/sns'
           - 'provider/azappconfig'
           - 'provider/azblob'
           - 'provider/secretmanager'
