@@ -28,6 +28,8 @@ func TestAppConfig_empty(t *testing.T) {
 	assert.Equal(t, nil, values)
 	err = loader.Watch(context.Background(), nil)
 	assert.EqualError(t, err, "nil AppConfig")
+	err = loader.OnEvent([]byte{})
+	assert.EqualError(t, err, "nil AppConfig")
 }
 
 func TestAppConfig_Load(t *testing.T) {
@@ -395,8 +397,98 @@ func TestAppConfig_Watch(t *testing.T) { //nolint:gocognit,maintidx
          "Id":"ba8toh7"
       },
       "Environment":{
-         "Id":"pgil2o7",
-         "Name":"MyEnv"
+         "Id":"pgil2o7"
+      },
+      "ConfigurationProfile":{
+         "Id":"ga3tqep",
+         "Name":"profiler"
+      }
+   }
+}`),
+			middleware: func(
+				ctx context.Context,
+				_ middleware.FinalizeInput,
+				_ middleware.FinalizeHandler,
+			) (middleware.FinalizeOutput, middleware.Metadata, error) {
+				switch awsMiddleware.GetOperationName(ctx) {
+				case "StartConfigurationSession":
+					return middleware.FinalizeOutput{
+						Result: &appconfigdata.StartConfigurationSessionOutput{
+							InitialConfigurationToken: aws.String("initial-token"),
+						},
+					}, middleware.Metadata{}, nil
+				case "GetLatestConfiguration":
+					return middleware.FinalizeOutput{
+						Result: &appconfigdata.GetLatestConfigurationOutput{
+							Configuration:              []byte(`{"k":"v"}`),
+							NextPollConfigurationToken: aws.String("next-token"),
+							NextPollIntervalInSeconds:  1,
+						},
+					}, middleware.Metadata{}, nil
+				default:
+					return middleware.FinalizeOutput{}, middleware.Metadata{}, nil
+				}
+			},
+			expected: map[string]any{
+				"k": "v",
+			},
+		},
+		{
+			description: "deployment complete (sns)",
+			event: []byte(`
+{
+   "Application":{
+      "Id":"ba8toh7"
+   },
+   "Environment":{
+      "Id":"pgil2o7"
+   },
+   "ConfigurationProfile":{
+      "Id":"1a2b3c4d",
+      "Name":"profiler"
+   },
+   "Type":"OnDeploymentComplete"
+}`),
+			middleware: func(
+				ctx context.Context,
+				_ middleware.FinalizeInput,
+				_ middleware.FinalizeHandler,
+			) (middleware.FinalizeOutput, middleware.Metadata, error) {
+				switch awsMiddleware.GetOperationName(ctx) {
+				case "StartConfigurationSession":
+					return middleware.FinalizeOutput{
+						Result: &appconfigdata.StartConfigurationSessionOutput{
+							InitialConfigurationToken: aws.String("initial-token"),
+						},
+					}, middleware.Metadata{}, nil
+				case "GetLatestConfiguration":
+					return middleware.FinalizeOutput{
+						Result: &appconfigdata.GetLatestConfigurationOutput{
+							Configuration:              []byte(`{"k":"v"}`),
+							NextPollConfigurationToken: aws.String("next-token"),
+							NextPollIntervalInSeconds:  1,
+						},
+					}, middleware.Metadata{}, nil
+				default:
+					return middleware.FinalizeOutput{}, middleware.Metadata{}, nil
+				}
+			},
+			expected: map[string]any{
+				"k": "v",
+			},
+		},
+		{
+			description: "deployment complete (event bridge)",
+			event: []byte(`
+{
+   "source":"aws.appconfig",
+   "detail":{
+      "Type":"OnDeploymentComplete",
+      "Application":{
+         "Id":"ba8toh7"
+      },
+      "Environment":{
+         "Id":"pgil2o7"
       },
       "ConfigurationProfile":{
          "Id":"ga3tqep",
@@ -443,8 +535,7 @@ func TestAppConfig_Watch(t *testing.T) { //nolint:gocognit,maintidx
          "Id":"ba8toh7"
       },
       "Environment":{
-         "Id":"pgil2o7",
-         "Name":"MyEnv"
+         "Id":"pgil2o7"
       },
       "ConfigurationProfile":{
          "Id":"ga3tqep",

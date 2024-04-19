@@ -19,6 +19,7 @@ import (
 	"reflect"
 	"slices"
 	"sync"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -33,37 +34,49 @@ import (
 //
 // To create a new Notifier, call [NewNotifier].
 type Notifier struct {
-	topic string
+	topic  string
+	config aws.Config
+	logger *slog.Logger
 
-	config       aws.Config
-	logger       *slog.Logger
-	loaders      []func([]byte) error
+	loaders      []loader
 	loadersMutex sync.RWMutex
 }
 
+type loader interface{ OnEvent([]byte) error }
+
 // NewNotifier creates a Notifier with the given SNS topic ARN.
 func NewNotifier(topic string, opts ...Option) *Notifier {
-	option := &options{}
+	option := &options{
+		topic: topic,
+	}
 	for _, opt := range opts {
 		opt(option)
 	}
 
-	return &Notifier{
-		topic: topic,
-	}
+	return (*Notifier)(option)
 }
 
 // Register registers a loader to the Notifier.
 // The loader is required to implement `OnEvent([]byte) error`.
-func (n *Notifier) Register(loader interface{ OnEvent([]byte) error }) {
+func (n *Notifier) Register(loader loader) {
+	if n == nil {
+		return
+	}
+
 	n.loadersMutex.Lock()
 	defer n.loadersMutex.Unlock()
-	n.loaders = append(n.loaders, loader.OnEvent)
+	n.loaders = append(n.loaders, loader)
 }
+
+var errNil = errors.New("nil Notifier")
 
 // Start starts watching events on given SNS topic and fanout to registered loaders.
 // It blocks until ctx is done, or it returns an error.
 func (n *Notifier) Start(ctx context.Context) error { //nolint:cyclop,funlen,gocognit
+	if n == nil {
+		return errNil
+	}
+
 	logger := n.logger
 	if n.logger == nil {
 		logger = slog.Default()
@@ -129,12 +142,13 @@ func (n *Notifier) Start(ctx context.Context) error { //nolint:cyclop,funlen,goc
 		return fmt.Errorf("create sqs queue: %w", err)
 	}
 	defer func() {
-		deleteQueueInput := &sqs.DeleteQueueInput{QueueUrl: queue.QueueUrl}
-		if _, e := sqsClient.DeleteQueue(context.WithoutCancel(ctx), deleteQueueInput); e != nil {
+		if _, derr := sqsClient.DeleteQueue(context.WithoutCancel(ctx), &sqs.DeleteQueueInput{
+			QueueUrl: queue.QueueUrl,
+		}); derr != nil {
 			logger.LogAttrs(ctx, slog.LevelWarn,
 				"Fail to delete sqs queue.",
 				slog.String("queue", *queue.QueueUrl),
-				slog.Any("error", e),
+				slog.Any("error", derr),
 			)
 		}
 	}()
@@ -145,12 +159,13 @@ func (n *Notifier) Start(ctx context.Context) error { //nolint:cyclop,funlen,goc
 	if err != nil {
 		return fmt.Errorf("get sqs queue attributes: %w", err)
 	}
+	queueArn := queueAttrs.Attributes["QueueArn"]
 
 	snsClient := sns.NewFromConfig(n.config)
 	Subscription, err := snsClient.Subscribe(ctx, &sns.SubscribeInput{
-		Protocol:              aws.String("sqs"),
 		TopicArn:              aws.String(n.topic),
-		Endpoint:              aws.String(queueAttrs.Attributes["QueueArn"]),
+		Protocol:              aws.String("sqs"),
+		Endpoint:              aws.String(queueArn),
 		Attributes:            map[string]string{"RawMessageDelivery": "true"},
 		ReturnSubscriptionArn: true,
 	})
@@ -158,26 +173,30 @@ func (n *Notifier) Start(ctx context.Context) error { //nolint:cyclop,funlen,goc
 		return fmt.Errorf("subscribe sns topic %s: %w", n.topic, err)
 	}
 	defer func() {
-		unsubscribeInput := &sns.UnsubscribeInput{SubscriptionArn: Subscription.SubscriptionArn}
-		if _, e := snsClient.Unsubscribe(context.WithoutCancel(ctx), unsubscribeInput); e != nil {
+		if _, derr := snsClient.Unsubscribe(context.WithoutCancel(ctx), &sns.UnsubscribeInput{
+			SubscriptionArn: Subscription.SubscriptionArn,
+		}); derr != nil {
 			logger.LogAttrs(ctx, slog.LevelWarn,
 				"Fail to unsubscribe sns topic.",
 				slog.String("topic", n.topic),
-				slog.Any("error", e),
+				slog.Any("error", derr),
 			)
 		}
 	}()
-	slog.LogAttrs(ctx, slog.LevelInfo,
+	logger.LogAttrs(ctx, slog.LevelInfo,
 		"Subscribed sqs queue to sns topic.",
 		slog.String("queue", *queue.QueueUrl),
 		slog.String("topic", n.topic),
 	)
 
+	timer := time.NewTimer(0)
+	defer timer.Stop()
+
 	for {
 		select {
 		case <-ctx.Done():
 			return nil
-		default:
+		case <-timer.C:
 			messages, err := sqsClient.ReceiveMessage(ctx, &sqs.ReceiveMessageInput{
 				QueueUrl:            queue.QueueUrl,
 				MaxNumberOfMessages: 10, //nolint:gomnd // The maximum number of messages to return.
@@ -191,9 +210,12 @@ func (n *Notifier) Start(ctx context.Context) error { //nolint:cyclop,funlen,goc
 						slog.Any("error", err),
 					)
 				}
+				timer.Reset(20 * time.Second) //nolint:gomnd // Retry after 20 seconds to avoid busy loop.
 
 				continue
 			}
+
+			timer.Reset(time.Second) // Reset timer for next polling.
 			if len(messages.Messages) == 0 {
 				continue
 			}
@@ -205,7 +227,7 @@ func (n *Notifier) Start(ctx context.Context) error { //nolint:cyclop,funlen,goc
 				bytes := []byte(*msg.Body)
 				var errM error
 				for _, loader := range loaders {
-					errM = loader(bytes)
+					errM = loader.OnEvent(bytes)
 					if errors.Is(errM, errors.ErrUnsupported) {
 						continue
 					}

@@ -117,6 +117,10 @@ func (a *S3) Watch(ctx context.Context, onChange func(map[string]any)) error {
 }
 
 func (a *S3) OnEvent(msg []byte) error { //nolint:cyclop
+	if a == nil {
+		return errNil
+	}
+
 	//nolint:tagliatelle
 	type (
 		s3Object struct {

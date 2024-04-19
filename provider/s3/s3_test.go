@@ -29,6 +29,8 @@ func TestS3_empty(t *testing.T) {
 	assert.Equal(t, nil, values)
 	err = loader.Watch(context.Background(), nil)
 	assert.EqualError(t, err, "nil S3")
+	err = loader.OnEvent([]byte{})
+	assert.EqualError(t, err, "nil S3")
 }
 
 func TestS3_Load(t *testing.T) {
@@ -280,6 +282,82 @@ func watchcases() []testcase {
 			event: []byte(`
 {
   "detail-type": "Object Created",
+  "source": "aws.s3",
+  "detail": {
+    "bucket": {
+      "name": "bucket"
+    },
+    "object": {
+      "key": "key"
+    }
+  }
+}`),
+			middleware: func(
+				ctx context.Context,
+				_ middleware.FinalizeInput,
+				_ middleware.FinalizeHandler,
+			) (middleware.FinalizeOutput, middleware.Metadata, error) {
+				switch awsMiddleware.GetOperationName(ctx) {
+				case "GetObject":
+					return middleware.FinalizeOutput{
+						Result: &s3.GetObjectOutput{
+							Body: io.NopCloser(strings.NewReader(`{"k":"v"}`)),
+							ETag: aws.String("k42"),
+						},
+					}, middleware.Metadata{}, nil
+				default:
+					return middleware.FinalizeOutput{}, middleware.Metadata{}, nil
+				}
+			},
+			expected: map[string]any{
+				"k": "v",
+			},
+		},
+		{
+			description: "object deleted (sns)",
+			event: []byte(`
+{
+   "Records":[
+      {
+         "eventSource":"aws:s3",
+         "eventName":"ObjectRemoved:Delete",
+         "s3":{
+            "bucket":{
+               "name":"bucket"
+            },
+            "object":{
+               "key":"key"
+            }
+         }
+      }
+   ]
+}`),
+			middleware: func(
+				ctx context.Context,
+				_ middleware.FinalizeInput,
+				_ middleware.FinalizeHandler,
+			) (middleware.FinalizeOutput, middleware.Metadata, error) {
+				switch awsMiddleware.GetOperationName(ctx) {
+				case "GetObject":
+					return middleware.FinalizeOutput{
+						Result: &s3.GetObjectOutput{
+							Body: io.NopCloser(strings.NewReader(`{"k":"v"}`)),
+							ETag: aws.String("k42"),
+						},
+					}, middleware.Metadata{}, nil
+				default:
+					return middleware.FinalizeOutput{}, middleware.Metadata{}, nil
+				}
+			},
+			expected: map[string]any{
+				"k": "v",
+			},
+		},
+		{
+			description: "object deleted (event bridge)",
+			event: []byte(`
+{
+  "detail-type": "Object Deleted",
   "source": "aws.s3",
   "detail": {
     "bucket": {

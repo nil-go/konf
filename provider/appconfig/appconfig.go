@@ -139,6 +139,10 @@ func (a *AppConfig) load(ctx context.Context) (map[string]any, bool, error) {
 }
 
 func (a *AppConfig) OnEvent(msg []byte) error { //nolint:cyclop
+	if a == nil {
+		return errNil
+	}
+
 	//nolint:tagliatelle
 	type (
 		appConfig struct {
