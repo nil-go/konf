@@ -54,7 +54,7 @@ jobs:
               'provider/file', 'provider/pflag',
               'provider/appconfig', 'provider/s3', 'notifier/sns',
               'provider/azappconfig', 'provider/azblob',
-              'provider/secretmanager', 'provider/gcs'
+              'provider/secretmanager', 'provider/gcs', 'notifier/pubsub'
             ]
             for (const module of modules) {
               github.rest.git.createRef({

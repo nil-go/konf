@@ -57,7 +57,6 @@ func NewNotifier(topic string, opts ...Option) *Notifier {
 }
 
 // Register registers a loader to the Notifier.
-// The loader is required to implement `OnEvent([]byte) error`.
 func (n *Notifier) Register(loader loader) {
 	if n == nil {
 		return

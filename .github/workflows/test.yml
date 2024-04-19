@@ -22,6 +22,7 @@ jobs:
           - 'provider/azblob'
           - 'provider/secretmanager'
           - 'provider/gcs'
+          - 'notifier/pubsub'
         go-version: [ 'stable', 'oldstable' ]
     name: Test
     runs-on: ubuntu-latest

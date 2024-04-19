@@ -23,6 +23,7 @@ jobs:
           - 'provider/azblob'
           - 'provider/secretmanager'
           - 'provider/gcs'
+          - 'notifier/pubsub'
     name: Coverage
     runs-on: ubuntu-latest
     steps:
