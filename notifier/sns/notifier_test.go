@@ -699,10 +699,10 @@ level=WARN msg="Fail to delete sqs message." queue=https://sqs.us-west-2.amazona
 			)
 			assert.NoError(t, err)
 
-			buf := &buffer{}
 			opts := []ksns.Option{
 				ksns.WithAWSConfig(cfg),
 			}
+			buf := &buffer{}
 			if testcase.log != "" {
 				opts = append(opts, ksns.WithLogHandler(logHandler(buf)))
 			}

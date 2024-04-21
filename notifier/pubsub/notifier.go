@@ -138,7 +138,7 @@ func (n *Notifier) Start(ctx context.Context) error { //nolint:cyclop,funlen
 			if err != nil {
 				logger.LogAttrs(ctx, slog.LevelError,
 					"Fail to fanout event to loader.",
-					slog.Any("msg", msg),
+					slog.Any("msg", msg.Attributes),
 					slog.Any("loader", loader),
 					slog.Any("error", err),
 				)
@@ -150,7 +150,7 @@ func (n *Notifier) Start(ctx context.Context) error { //nolint:cyclop,funlen
 			logger.LogAttrs(ctx, slog.LevelWarn,
 				"No loader to process message.",
 				slog.String("topic", n.topic),
-				slog.Any("msg", msg),
+				slog.Any("msg", msg.Attributes),
 			)
 		}
 

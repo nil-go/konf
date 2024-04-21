@@ -28,12 +28,14 @@ func TestGCS_empty(t *testing.T) {
 	assert.Equal(t, nil, values)
 	err = loader.Watch(context.Background(), nil)
 	assert.EqualError(t, err, "nil GCS")
+	err = loader.OnEvent(map[string]string{})
+	assert.EqualError(t, err, "nil GCS")
 }
 
 func TestGCS_Load(t *testing.T) {
 	t.Parallel()
 
-	for _, testcase := range testcases() { //nolint:bodyclose
+	for _, testcase := range testcases() {
 		testcase := testcase
 
 		t.Run(testcase.description, func(t *testing.T) {
@@ -73,7 +75,7 @@ func TestGCS_Load(t *testing.T) {
 func TestGCS_Watch(t *testing.T) {
 	t.Parallel()
 
-	for _, testcase := range testcases() { //nolint:bodyclose
+	for _, testcase := range append(testcases(), watchcases()...) {
 		testcase := testcase
 
 		t.Run(testcase.description, func(t *testing.T) {
@@ -119,6 +121,15 @@ func TestGCS_Watch(t *testing.T) {
 			}()
 			<-started
 
+			if len(testcase.event) > 0 {
+				eerr := loader.OnEvent(testcase.event)
+				if testcase.err == "" {
+					assert.NoError(t, eerr)
+				} else {
+					assert.EqualError(t, eerr, testcase.err)
+				}
+			}
+
 			time.Sleep(15 * time.Millisecond) // wait for the first tick, but not the second
 			select {
 			case val := <-values:
@@ -134,22 +145,17 @@ func TestGCS_Watch(t *testing.T) {
 	}
 }
 
-func testcases() []struct {
+type testcase struct {
 	description string
-	attrs       *http.Response
 	object      *http.Response
+	event       map[string]string
 	unmarshal   func([]byte, any) error
 	expected    map[string]any
 	err         string
-} {
-	return []struct {
-		description string
-		attrs       *http.Response
-		object      *http.Response
-		unmarshal   func([]byte, any) error
-		expected    map[string]any
-		err         string
-	}{
+}
+
+func testcases() []testcase {
+	return []testcase{
 		{
 			description: "gcs",
 			object: &http.Response{
@@ -181,6 +187,60 @@ func testcases() []struct {
 				return errors.New("unmarshal error")
 			},
 			err: "unmarshal: unmarshal error",
+		},
+	}
+}
+
+func watchcases() []testcase {
+	return []testcase{
+		{
+			description: "OBJECT_FINALIZE",
+			object: &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(strings.NewReader(`{"k": "v"}`)),
+				Header:     http.Header{"X-Goog-Generation": []string{"42"}},
+			},
+			event: map[string]string{
+				"eventType": "OBJECT_FINALIZE",
+				"bucketId":  "bucket",
+				"objectId":  "file",
+			},
+			expected: map[string]any{
+				"k": "v",
+			},
+		},
+		{
+			description: "OBJECT_DELETE",
+			object: &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(strings.NewReader(`{"k": "v"}`)),
+				Header:     http.Header{"X-Goog-Generation": []string{"42"}},
+			},
+			event: map[string]string{
+				"eventType": "OBJECT_DELETE",
+				"bucketId":  "bucket",
+				"objectId":  "file",
+			},
+			expected: map[string]any{
+				"k": "v",
+			},
+		},
+		{
+			description: "unmatched event",
+			object: &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(strings.NewReader(`{"k": "v"}`)),
+				Header:     http.Header{"X-Goog-Generation": []string{"42"}},
+			},
+			event: map[string]string{
+				"EventType": "OBJECT_DELETE",
+				"bucketId":  "bucket",
+				"objectId":  "another file",
+			},
+			expected: map[string]any{
+				"k": "v",
+			},
+			err: "unsupported gcs event: unsupported operation",
 		},
 	}
 }

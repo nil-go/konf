@@ -15,6 +15,7 @@
 //   - SECRET_VERSION_ADD
 //   - SECRET_VERSION_ENABLE
 //   - SECRET_VERSION_DISABLE
+//   - SECRET_VERSION_DESTROY
 //
 // [Secret Manager]: https://cloud.google.com/security/products/secret-manager
 // [Set up notifications on a secret]: https://cloud.google.com/secret-manager/docs/event-notifications

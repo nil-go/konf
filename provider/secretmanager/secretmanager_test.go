@@ -34,6 +34,8 @@ func TestSecretManager_empty(t *testing.T) {
 	assert.Equal(t, nil, values)
 	err = loader.Watch(context.Background(), nil)
 	assert.EqualError(t, err, "nil SecretManager")
+	err = loader.OnEvent(map[string]string{})
+	assert.EqualError(t, err, "nil SecretManager")
 }
 
 func TestSecretManager_Load(t *testing.T) {
@@ -157,6 +159,7 @@ func TestSecretManager_Watch(t *testing.T) {
 	testcases := []struct {
 		description string
 		opts        []option.ClientOption
+		event       map[string]string
 		service     pb.SecretManagerServiceServer
 		expected    map[string]any
 		err         string
@@ -165,8 +168,8 @@ func TestSecretManager_Watch(t *testing.T) {
 			description: "success",
 			service: &secretManagerService{
 				values: map[string]string{
-					"projects/test/secrets/p-k": "v",
-					"projects/test/secrets/p-d": ".",
+					"projects/12345/secrets/p-k": "v",
+					"projects/12345/secrets/p-d": ".",
 				},
 			},
 			expected: map[string]any{
@@ -185,6 +188,64 @@ func TestSecretManager_Watch(t *testing.T) {
 			description: "access secret error",
 			service:     &faultySecretManagerService{method: "AccessSecretVersion"},
 			err:         "access secret p-k: rpc error: code = Unknown desc = access secret error",
+		},
+		{
+			description: "SECRET_VERSION_ADD",
+			service: &secretManagerService{
+				values: map[string]string{
+					"projects/12345/secrets/p-k": "v",
+					"projects/12345/secrets/p-d": ".",
+				},
+			},
+			event: map[string]string{
+				"eventType": "SECRET_VERSION_ADD",
+				"secretId":  "projects/12345/secrets/p-k",
+			},
+			expected: map[string]any{
+				"p": map[string]any{
+					"k": "v",
+					"d": ".",
+				},
+			},
+		},
+		{
+			description: "SECRET_CREATE",
+			service: &secretManagerService{
+				values: map[string]string{
+					"projects/12345/secrets/p-k": "v",
+					"projects/12345/secrets/p-d": ".",
+				},
+			},
+			event: map[string]string{
+				"eventType": "SECRET_CREATE",
+				"secretId":  "projects/12345/secrets/p-k",
+			},
+			expected: map[string]any{
+				"p": map[string]any{
+					"k": "v",
+					"d": ".",
+				},
+			},
+		},
+		{
+			description: "unmatched event",
+			service: &secretManagerService{
+				values: map[string]string{
+					"projects/12345/secrets/p-k": "v",
+					"projects/12345/secrets/p-d": ".",
+				},
+			},
+			event: map[string]string{
+				"eventType": "SECRET_CREATE",
+				"secretId":  "projects/54321/secrets/p-k",
+			},
+			expected: map[string]any{
+				"p": map[string]any{
+					"k": "v",
+					"d": ".",
+				},
+			},
+			err: "unsupported secret manager event: unsupported operation",
 		},
 	}
 
@@ -224,12 +285,24 @@ func TestSecretManager_Watch(t *testing.T) {
 			}()
 			<-started
 
+			if len(testcase.event) > 0 {
+				_, _ = loader.Load() // initial load for prefix
+				eerr := loader.OnEvent(testcase.event)
+				if testcase.err == "" {
+					assert.NoError(t, eerr)
+				} else {
+					assert.EqualError(t, eerr, testcase.err)
+				}
+			}
+
 			time.Sleep(15 * time.Millisecond) // wait for the first tick, but not the second
 			select {
 			case val := <-values:
 				assert.Equal(t, testcase.expected, val)
 			default:
-				assert.EqualError(t, *err.Load(), testcase.err)
+				if e := err.Load(); e != nil {
+					assert.EqualError(t, *e, testcase.err)
+				}
 			}
 		})
 	}
