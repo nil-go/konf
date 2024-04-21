@@ -183,9 +183,9 @@ func (n *Notifier) Start(ctx context.Context) error { //nolint:cyclop,funlen,goc
 		}
 	}()
 	logger.LogAttrs(ctx, slog.LevelInfo,
-		"Subscribed sqs queue to sns topic.",
-		slog.String("queue", *queue.QueueUrl),
+		"Start watching SNS topic.",
 		slog.String("topic", n.topic),
+		slog.String("queue", *queue.QueueUrl),
 	)
 
 	timer := time.NewTimer(0)
