@@ -7,6 +7,10 @@
 //   - appconfig:StartConfigurationSession
 //   - appconfig:GetLatestConfiguration
 //
+// If change notification is enabled, it also requires following permissions:
+//   - appconfig:GetApplication
+//   - appconfig:GetEnvironment
+//
 // # Change notification
 //
 // By default, it periodically polls the configuration only.
@@ -32,6 +36,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/appconfig"
 	"github.com/aws/aws-sdk-go-v2/service/appconfigdata"
 )
 
@@ -47,9 +52,8 @@ type AppConfig struct {
 	client    clientProxy
 }
 
-// New creates an AppConfig with the given application, environment, profile and Option(s).
-//
-// The application and environment must be the id (not name) if change notification has been enabled.
+// New creates an AppConfig with the given application (ID or Name),
+// environment (ID or Name), profile (ID or Name) and Option(s).
 func New(application, environment, profile string, opts ...Option) *AppConfig {
 	option := &options{
 		client: clientProxy{
@@ -142,6 +146,9 @@ func (a *AppConfig) OnEvent(msg []byte) error { //nolint:cyclop
 	if a == nil {
 		return errNil
 	}
+	if msg == nil {
+		return nil
+	}
 
 	//nolint:tagliatelle
 	type (
@@ -158,7 +165,7 @@ func (a *AppConfig) OnEvent(msg []byte) error { //nolint:cyclop
 				Name string `json:"Name"`
 			} `json:"ConfigurationProfile"`
 		}
-		s3Event struct {
+		appConfigEvent struct {
 			// From EventBridge: https://docs.aws.amazon.com/appconfig/latest/userguide/working-with-appconfig-extensions-about-predefined-notification-eventbridge.html
 			Source string    `json:"source"`
 			Detail appConfig `json:"detail"`
@@ -168,14 +175,29 @@ func (a *AppConfig) OnEvent(msg []byte) error { //nolint:cyclop
 		}
 	)
 
-	var event s3Event
+	var event appConfigEvent
 	if err := json.Unmarshal(msg, &event); err != nil {
 		return fmt.Errorf("unmarshal appconfig event: %w", err)
 	}
 
+	applicationID := event.Detail.Application.ID
+	if applicationID == "" {
+		applicationID = event.Application.ID
+	}
+	if err := a.client.ensureApplicationID(applicationID); err != nil {
+		return err
+	}
+	environmentID := event.Detail.Environment.ID
+	if environmentID == "" {
+		environmentID = event.Environment.ID
+	}
+	if err := a.client.ensureEnvironmentID(environmentID); err != nil {
+		return err
+	}
+
 	if event.Source == "aws.appconfig" &&
-		event.Detail.Application.ID == a.client.application &&
-		event.Detail.Environment.ID == a.client.environment &&
+		event.Detail.Application.ID == a.client.applicationID &&
+		event.Detail.Environment.ID == a.client.environmentID &&
 		(event.Detail.ConfigurationProfile.ID == a.client.profile ||
 			event.Detail.ConfigurationProfile.Name == a.client.profile) {
 		if event.Detail.Type == "OnDeploymentRolledBack" {
@@ -186,8 +208,8 @@ func (a *AppConfig) OnEvent(msg []byte) error { //nolint:cyclop
 		return nil
 	}
 
-	if event.Application.ID == a.client.application &&
-		event.Environment.ID == a.client.environment &&
+	if event.Application.ID == a.client.applicationID &&
+		event.Environment.ID == a.client.environmentID &&
 		(event.ConfigurationProfile.ID == a.client.profile ||
 			event.ConfigurationProfile.Name == a.client.profile) {
 		if event.Type == "OnDeploymentRolledBack" {
@@ -210,10 +232,12 @@ func (a *AppConfig) String() string {
 }
 
 type clientProxy struct {
-	config      aws.Config
-	application string
-	environment string
-	profile     string
+	config        aws.Config
+	application   string
+	applicationID string
+	environment   string
+	environmentID string
+	profile       string
 
 	client *appconfigdata.Client
 
@@ -266,4 +290,53 @@ func (p *clientProxy) load(ctx context.Context) ([]byte, bool, error) {
 
 	// It may return empty configuration data if the client already has the latest version.
 	return resp.Configuration, len(resp.Configuration) > 0, nil
+}
+
+func (p *clientProxy) ensureApplicationID(applicationID string) error {
+	if p.applicationID != "" || applicationID == "" {
+		return nil
+	}
+	if applicationID == p.application {
+		p.applicationID = applicationID
+
+		return nil
+	}
+
+	client := appconfig.NewFromConfig(p.config)
+	application, err := client.GetApplication(context.Background(), &appconfig.GetApplicationInput{
+		ApplicationId: aws.String(applicationID),
+	})
+	if err != nil {
+		return fmt.Errorf("get application: %w", err)
+	}
+	if aws.ToString(application.Name) == p.application {
+		p.applicationID = applicationID
+	}
+
+	return nil
+}
+
+func (p *clientProxy) ensureEnvironmentID(environmentID string) error {
+	if p.environmentID != "" || p.applicationID == "" || environmentID == "" {
+		return nil
+	}
+	if environmentID == p.environment {
+		p.environmentID = environmentID
+
+		return nil
+	}
+
+	client := appconfig.NewFromConfig(p.config)
+	environment, err := client.GetEnvironment(context.Background(), &appconfig.GetEnvironmentInput{
+		ApplicationId: aws.String(p.applicationID),
+		EnvironmentId: aws.String(environmentID),
+	})
+	if err != nil {
+		return fmt.Errorf("get environment: %w", err)
+	}
+	if aws.ToString(environment.Name) == p.environment {
+		p.environmentID = environmentID
+	}
+
+	return nil
 }

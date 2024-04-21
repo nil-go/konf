@@ -237,6 +237,7 @@ func TestNotifier(t *testing.T) {
 			},
 			notified: true,
 			log: `level=INFO msg="Subscribed sqs queue to sns topic." queue=https://sqs.us-west-2.amazonaws.com/123456789012/MyQueue topic=topic
+level=INFO msg="Received messages from SNS topic." topic=topic count=1
 level=WARN msg="No loader to process message." msg=message
 `,
 		},
@@ -305,6 +306,7 @@ level=WARN msg="No loader to process message." msg=message
 			},
 			notified: true,
 			log: `level=INFO msg="Subscribed sqs queue to sns topic." queue=https://sqs.us-west-2.amazonaws.com/123456789012/MyQueue topic=topic
+level=INFO msg="Received messages from SNS topic." topic=topic count=1
 level=WARN msg="Fail to process message." msg=message loader=loader error="process message error"
 `,
 		},
@@ -443,6 +445,7 @@ level=WARN msg="Fail to process message." msg=message loader=loader error="proce
 			},
 			notified: true,
 			log: `level=INFO msg="Subscribed sqs queue to sns topic." queue=https://sqs.us-west-2.amazonaws.com/123456789012/MyQueue topic=topic
+level=INFO msg="Received messages from SNS topic." topic=topic count=1
 level=WARN msg="Fail to delete sqs queue." queue=https://sqs.us-west-2.amazonaws.com/123456789012/MyQueue error="operation error SQS: DeleteQueue, delete queue error"
 `,
 		},
@@ -549,6 +552,7 @@ level=WARN msg="Fail to delete sqs queue." queue=https://sqs.us-west-2.amazonaws
 			},
 			notified: true,
 			log: `level=INFO msg="Subscribed sqs queue to sns topic." queue=https://sqs.us-west-2.amazonaws.com/123456789012/MyQueue topic=topic
+level=INFO msg="Received messages from SNS topic." topic=topic count=1
 level=WARN msg="Fail to unsubscribe sns topic." topic=topic error="operation error SNS: Unsubscribe, unsubscribe error"
 `,
 		},
@@ -667,6 +671,7 @@ level=WARN msg="Fail to receive sqs message." queue=https://sqs.us-west-2.amazon
 			},
 			notified: true,
 			log: `level=INFO msg="Subscribed sqs queue to sns topic." queue=https://sqs.us-west-2.amazonaws.com/123456789012/MyQueue topic=topic
+level=INFO msg="Received messages from SNS topic." topic=topic count=1
 level=WARN msg="Fail to delete sqs message." queue=https://sqs.us-west-2.amazonaws.com/123456789012/MyQueue error="operation error SQS: DeleteMessageBatch, delete message error"
 `,
 		},

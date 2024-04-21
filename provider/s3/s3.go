@@ -9,7 +9,7 @@
 // # Change notification
 //
 // By default, it's periodically polls the configuration.
-// It also listens to change events by register it to SNS notifier with one of setups:
+// It also listens to change events by register it to SNS notifier with one of following setups:
 //   - [EventBridge] with SNS target
 //   - [SNS]
 //
@@ -116,9 +116,30 @@ func (a *S3) Watch(ctx context.Context, onChange func(map[string]any)) error {
 	}
 }
 
+func (a *S3) load(ctx context.Context) (map[string]any, bool, error) {
+	resp, changed, err := a.client.load(ctx)
+	if !changed || err != nil {
+		return nil, false, err
+	}
+
+	unmarshal := a.unmarshal
+	if unmarshal == nil {
+		unmarshal = json.Unmarshal
+	}
+	var values map[string]any
+	if e := unmarshal(resp, &values); e != nil {
+		return nil, false, fmt.Errorf("unmarshal: %w", e)
+	}
+
+	return values, true, nil
+}
+
 func (a *S3) OnEvent(msg []byte) error { //nolint:cyclop
 	if a == nil {
 		return errNil
+	}
+	if msg == nil {
+		return nil
 	}
 
 	//nolint:tagliatelle
@@ -185,24 +206,6 @@ func (a *S3) changed() {
 	default:
 		// Ignore if the channel is full since it's already triggered.
 	}
-}
-
-func (a *S3) load(ctx context.Context) (map[string]any, bool, error) {
-	resp, changed, err := a.client.load(ctx)
-	if !changed || err != nil {
-		return nil, false, err
-	}
-
-	unmarshal := a.unmarshal
-	if unmarshal == nil {
-		unmarshal = json.Unmarshal
-	}
-	var values map[string]any
-	if e := unmarshal(resp, &values); e != nil {
-		return nil, false, fmt.Errorf("unmarshal: %w", e)
-	}
-
-	return values, true, nil
 }
 
 func (a *S3) Status(onStatus func(bool, error)) {
