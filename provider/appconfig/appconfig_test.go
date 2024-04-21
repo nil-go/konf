@@ -198,7 +198,8 @@ func TestAppConfig_Load(t *testing.T) {
 	}
 }
 
-func TestAppConfig_Watch(t *testing.T) { //nolint:gocognit,maintidx
+//nolint:dupl,gocognit,gocyclo,maintidx
+func TestAppConfig_Watch(t *testing.T) {
 	t.Parallel()
 
 	testcases := []struct {
