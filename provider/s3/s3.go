@@ -134,12 +134,9 @@ func (a *S3) load(ctx context.Context) (map[string]any, bool, error) {
 	return values, true, nil
 }
 
-func (a *S3) OnEvent(msg []byte) error { //nolint:cyclop,funlen
+func (a *S3) OnEvent(msg []byte) error { //nolint:cyclop
 	if a == nil {
 		return errNil
-	}
-	if msg == nil {
-		return nil
 	}
 
 	//nolint:tagliatelle

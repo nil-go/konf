@@ -146,9 +146,6 @@ func (a *AppConfig) OnEvent(msg []byte) error { //nolint:cyclop,funlen
 	if a == nil {
 		return errNil
 	}
-	if msg == nil {
-		return nil
-	}
 
 	//nolint:tagliatelle
 	type (

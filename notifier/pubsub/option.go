@@ -11,6 +11,17 @@ import (
 	"google.golang.org/api/option/internaloption"
 )
 
+// WithProject provides GCP project ID.
+//
+// By default, it fetches project ID from metadata server.
+func WithProject(project string) Option {
+	return &optionFunc{
+		fn: func(options *options) {
+			options.project = project
+		},
+	}
+}
+
 // WithLogHandler provides the slog.Handler for logs from notifier.
 //
 // By default, it uses handler from slog.Default().

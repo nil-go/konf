@@ -3,7 +3,21 @@
 
 // Package secretmanager loads configuration from GCP [Secret Manager].
 //
+// It requires following roles on the target project:
+//   - roles/secretmanager.viewer
+//
+// # Change notification
+//
+// By default, it periodically polls the configuration only.
+// It also listens to change events by register it to PubSub notifier with [Set up notifications on a secret].
+//
+// Only following events trigger polling the configuration and other type of events are ignored:
+//   - SECRET_VERSION_ADD
+//   - SECRET_VERSION_ENABLE
+//   - SECRET_VERSION_DISABLE
+//
 // [Secret Manager]: https://cloud.google.com/security/products/secret-manager
+// [Set up notifications on a secret]: https://cloud.google.com/secret-manager/docs/event-notifications
 package secretmanager
 
 import (
@@ -33,14 +47,16 @@ type SecretManager struct {
 	pollInterval time.Duration
 	splitter     func(string) []string
 
-	onStatus func(bool, error)
-	client   clientProxy
+	onStatus  func(bool, error)
+	changedCh chan struct{}
+	client    clientProxy
 }
 
 // New creates a SecretManager with the given endpoint and Option(s).
 func New(opts ...Option) *SecretManager {
 	option := &options{
-		client: clientProxy{},
+		client:    clientProxy{},
+		changedCh: make(chan struct{}, 1),
 	}
 	for _, opt := range opts {
 		switch o := opt.(type) {
@@ -66,9 +82,12 @@ func (m *SecretManager) Load() (map[string]any, error) {
 	return values, err
 }
 
-func (m *SecretManager) Watch(ctx context.Context, onChange func(map[string]any)) error {
+func (m *SecretManager) Watch(ctx context.Context, onChange func(map[string]any)) error { //nolint:cyclop
 	if m == nil {
 		return errNil
+	}
+	if m.changedCh == nil {
+		m.changedCh = make(chan struct{}, 1)
 	}
 
 	defer func() {
@@ -87,6 +106,8 @@ func (m *SecretManager) Watch(ctx context.Context, onChange func(map[string]any)
 	for {
 		select {
 		case <-ticker.C:
+			m.changed()
+		case <-m.changedCh:
 			values, changed, err := m.load(ctx)
 			if m.onStatus != nil {
 				m.onStatus(changed, err)
@@ -97,6 +118,14 @@ func (m *SecretManager) Watch(ctx context.Context, onChange func(map[string]any)
 		case <-ctx.Done():
 			return nil
 		}
+	}
+}
+
+func (m *SecretManager) changed() {
+	select {
+	case m.changedCh <- struct{}{}:
+	default:
+		// Ignore if the channel is full since it's already triggered.
 	}
 }
 
@@ -126,6 +155,26 @@ func (m *SecretManager) load(ctx context.Context) (map[string]any, bool, error) 
 	return values, true, nil
 }
 
+func (m *SecretManager) OnEvent(attributes map[string]string) error {
+	if m == nil {
+		return errNil
+	}
+
+	if strings.HasPrefix(attributes["secretId"], m.client.namePrefix) {
+		switch attributes["eventType"] {
+		case "SECRET_VERSION_ADD",
+			"SECRET_VERSION_ENABLE",
+			"SECRET_VERSION_DISABLE",
+			"SECRET_VERSION_DESTROY":
+			m.changed()
+		}
+
+		return nil
+	}
+
+	return fmt.Errorf("unsupported secret manager event: %w", errors.ErrUnsupported)
+}
+
 func (m *SecretManager) Status(onStatus func(bool, error)) {
 	m.onStatus = onStatus
 }
@@ -135,8 +184,9 @@ func (m *SecretManager) String() string {
 }
 
 type clientProxy struct {
-	project string
-	filter  string
+	project    string
+	namePrefix string
+	filter     string
 
 	client    *secretmanager.Client
 	opts      []option.ClientOption
@@ -149,6 +199,11 @@ func (p *clientProxy) load(ctx context.Context) (map[string]string, bool, error)
 		if p.project, err = metadata.ProjectID(); err != nil {
 			return nil, false, fmt.Errorf("get GCP project ID: %w", err)
 		}
+		projectNumer, err := metadata.NumericProjectID()
+		if err != nil {
+			return nil, false, fmt.Errorf("get GCP numeric project ID: %w", err)
+		}
+		p.namePrefix = "projects/" + projectNumer + "/secrets/"
 	}
 	if p.client == nil {
 		var err error
@@ -171,6 +226,10 @@ func (p *clientProxy) load(ctx context.Context) (map[string]string, bool, error)
 		}
 		if err != nil {
 			return nil, false, fmt.Errorf("list secrets on %s: %w", p.project, err)
+		}
+
+		if p.namePrefix == "" {
+			p.namePrefix = strings.Join(strings.Split(resp.GetName(), "/")[0:3], "/") + "/"
 		}
 		eTags[resp.GetName()] = resp.GetEtag()
 	}

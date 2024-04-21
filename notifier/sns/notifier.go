@@ -71,7 +71,7 @@ var errNil = errors.New("nil Notifier")
 
 // Start starts watching events on given SNS topic and fanout to registered loaders.
 // It blocks until ctx is done, or it returns an error.
-func (n *Notifier) Start(ctx context.Context) error { //nolint:cyclop,funlen,gocognit
+func (n *Notifier) Start(ctx context.Context) error { //nolint:cyclop,funlen,gocognit,maintidx
 	if n == nil {
 		return errNil
 	}
@@ -230,6 +230,10 @@ func (n *Notifier) Start(ctx context.Context) error { //nolint:cyclop,funlen,goc
 			n.loadersMutex.RUnlock()
 			for _, msg := range messages.Messages {
 				bytes := []byte(*msg.Body)
+				if len(bytes) == 0 {
+					continue
+				}
+
 				var errM error
 				for _, loader := range loaders {
 					errM = loader.OnEvent(bytes)
