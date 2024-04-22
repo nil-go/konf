@@ -3,6 +3,9 @@
 
 // Package azappconfig loads configuration from Azure [App Configuration].
 //
+// It requires following roles to access Azure App Configuration:
+//   - App Configuration Data Reader
+//
 // [App Configuration]: https://docs.microsoft.com/en-us/azure/azure-app-configuration/
 package azappconfig
 
