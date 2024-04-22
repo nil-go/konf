@@ -1,7 +1,7 @@
 // Copyright (c) 2024 The konf authors
 // Use of this source code is governed by a MIT license found in the LICENSE file.
 
-// Package sns provides a notifier that subscribes to an SNS topic that watches change of configuration on AWS.
+// Package sns provides a notifier that subscribes to a SNS topic that watches change of configuration on AWS.
 //
 // It [Fanout SNS topic to Amazon SQS queues], which requires following permissions:
 //   - sns:Subscribe
@@ -57,7 +57,6 @@ func NewNotifier(topic string, opts ...Option) *Notifier {
 }
 
 // Register registers a loader to the Notifier.
-// The loader is required to implement `OnEvent([]byte) error`.
 func (n *Notifier) Register(loader loader) {
 	if n == nil {
 		return
@@ -72,7 +71,7 @@ var errNil = errors.New("nil Notifier")
 
 // Start starts watching events on given SNS topic and fanout to registered loaders.
 // It blocks until ctx is done, or it returns an error.
-func (n *Notifier) Start(ctx context.Context) error { //nolint:cyclop,funlen,gocognit
+func (n *Notifier) Start(ctx context.Context) error { //nolint:cyclop,funlen,gocognit,maintidx
 	if n == nil {
 		return errNil
 	}
@@ -133,7 +132,7 @@ func (n *Notifier) Start(ctx context.Context) error { //nolint:cyclop,funlen,goc
 		return fmt.Errorf("generate uuid: %w", err)
 	}
 	queue, err := sqsClient.CreateQueue(ctx, &sqs.CreateQueueInput{
-		QueueName: aws.String(uuid),
+		QueueName: aws.String("konf-" + uuid),
 		Attributes: map[string]string{
 			"Policy": policy,
 		},
@@ -184,9 +183,9 @@ func (n *Notifier) Start(ctx context.Context) error { //nolint:cyclop,funlen,goc
 		}
 	}()
 	logger.LogAttrs(ctx, slog.LevelInfo,
-		"Subscribed sqs queue to sns topic.",
-		slog.String("queue", *queue.QueueUrl),
+		"Start watching SNS topic.",
 		slog.String("topic", n.topic),
+		slog.String("queue", *queue.QueueUrl),
 	)
 
 	timer := time.NewTimer(0)
@@ -220,11 +219,21 @@ func (n *Notifier) Start(ctx context.Context) error { //nolint:cyclop,funlen,goc
 				continue
 			}
 
+			logger.LogAttrs(ctx, slog.LevelInfo,
+				"Received messages from SNS topic.",
+				slog.String("topic", n.topic),
+				slog.Int("count", len(messages.Messages)),
+			)
+
 			n.loadersMutex.RLock()
 			loaders := slices.Clone(n.loaders)
 			n.loadersMutex.RUnlock()
 			for _, msg := range messages.Messages {
 				bytes := []byte(*msg.Body)
+				if len(bytes) == 0 {
+					continue
+				}
+
 				var errM error
 				for _, loader := range loaders {
 					errM = loader.OnEvent(bytes)

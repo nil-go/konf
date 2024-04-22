@@ -25,6 +25,7 @@ jobs:
           - 'examples/aws'
           - 'examples/azure'
           - 'examples/gcp'
+          - 'notifier/pubsub'
     name: Lint
     runs-on: ubuntu-latest
     steps:

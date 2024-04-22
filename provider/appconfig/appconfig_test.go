@@ -13,16 +13,17 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awsMiddleware "github.com/aws/aws-sdk-go-v2/aws/middleware"
 	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/appconfig"
 	"github.com/aws/aws-sdk-go-v2/service/appconfigdata"
 	"github.com/aws/smithy-go/middleware"
 	"github.com/aws/smithy-go/transport/http"
 
-	"github.com/nil-go/konf/provider/appconfig"
+	kappconfig "github.com/nil-go/konf/provider/appconfig"
 	"github.com/nil-go/konf/provider/appconfig/internal/assert"
 )
 
 func TestAppConfig_empty(t *testing.T) {
-	var loader *appconfig.AppConfig
+	var loader *kappconfig.AppConfig
 	values, err := loader.Load()
 	assert.EqualError(t, err, "nil AppConfig")
 	assert.Equal(t, nil, values)
@@ -178,10 +179,10 @@ func TestAppConfig_Load(t *testing.T) {
 			)
 			assert.NoError(t, err)
 
-			loader := appconfig.New(
+			loader := kappconfig.New(
 				"app", "env", "profiler",
-				appconfig.WithAWSConfig(cfg),
-				appconfig.WithUnmarshal(testcase.unmarshal),
+				kappconfig.WithAWSConfig(cfg),
+				kappconfig.WithUnmarshal(testcase.unmarshal),
 			)
 			values, err := loader.Load()
 			if testcase.err != "" {
@@ -197,12 +198,13 @@ func TestAppConfig_Load(t *testing.T) {
 	}
 }
 
-func TestAppConfig_Watch(t *testing.T) { //nolint:gocognit,maintidx
+//nolint:dupl,gocognit,gocyclo,maintidx
+func TestAppConfig_Watch(t *testing.T) {
 	t.Parallel()
 
 	testcases := []struct {
 		description string
-		opts        []appconfig.Option
+		opts        []kappconfig.Option
 		event       []byte
 		middleware  func(
 			context.Context,
@@ -311,8 +313,8 @@ func TestAppConfig_Watch(t *testing.T) { //nolint:gocognit,maintidx
 		},
 		{
 			description: "unmarshal error",
-			opts: []appconfig.Option{
-				appconfig.WithUnmarshal(func([]byte, any) error {
+			opts: []kappconfig.Option{
+				kappconfig.WithUnmarshal(func([]byte, any) error {
 					return errors.New("unmarshal error")
 				}),
 			},
@@ -378,6 +380,20 @@ func TestAppConfig_Watch(t *testing.T) { //nolint:gocognit,maintidx
 							NextPollIntervalInSeconds:  1,
 						},
 					}, middleware.Metadata{}, nil
+				case "GetApplication":
+					return middleware.FinalizeOutput{
+						Result: &appconfig.GetApplicationOutput{
+							Id:   aws.String("ba8toh7"),
+							Name: aws.String("konf"),
+						},
+					}, middleware.Metadata{}, nil
+				case "GetEnvironment":
+					return middleware.FinalizeOutput{
+						Result: &appconfig.GetEnvironmentOutput{
+							Id:   aws.String("pgil2o7"),
+							Name: aws.String("test"),
+						},
+					}, middleware.Metadata{}, nil
 				default:
 					return middleware.FinalizeOutput{}, middleware.Metadata{}, nil
 				}
@@ -425,6 +441,20 @@ func TestAppConfig_Watch(t *testing.T) { //nolint:gocognit,maintidx
 							NextPollIntervalInSeconds:  1,
 						},
 					}, middleware.Metadata{}, nil
+				case "GetApplication":
+					return middleware.FinalizeOutput{
+						Result: &appconfig.GetApplicationOutput{
+							Id:   aws.String("ba8toh7"),
+							Name: aws.String("konf"),
+						},
+					}, middleware.Metadata{}, nil
+				case "GetEnvironment":
+					return middleware.FinalizeOutput{
+						Result: &appconfig.GetEnvironmentOutput{
+							Id:   aws.String("pgil2o7"),
+							Name: aws.String("test"),
+						},
+					}, middleware.Metadata{}, nil
 				default:
 					return middleware.FinalizeOutput{}, middleware.Metadata{}, nil
 				}
@@ -467,6 +497,20 @@ func TestAppConfig_Watch(t *testing.T) { //nolint:gocognit,maintidx
 							Configuration:              []byte(`{"k":"v"}`),
 							NextPollConfigurationToken: aws.String("next-token"),
 							NextPollIntervalInSeconds:  1,
+						},
+					}, middleware.Metadata{}, nil
+				case "GetApplication":
+					return middleware.FinalizeOutput{
+						Result: &appconfig.GetApplicationOutput{
+							Id:   aws.String("ba8toh7"),
+							Name: aws.String("konf"),
+						},
+					}, middleware.Metadata{}, nil
+				case "GetEnvironment":
+					return middleware.FinalizeOutput{
+						Result: &appconfig.GetEnvironmentOutput{
+							Id:   aws.String("pgil2o7"),
+							Name: aws.String("test"),
 						},
 					}, middleware.Metadata{}, nil
 				default:
@@ -516,6 +560,20 @@ func TestAppConfig_Watch(t *testing.T) { //nolint:gocognit,maintidx
 							NextPollIntervalInSeconds:  1,
 						},
 					}, middleware.Metadata{}, nil
+				case "GetApplication":
+					return middleware.FinalizeOutput{
+						Result: &appconfig.GetApplicationOutput{
+							Id:   aws.String("ba8toh7"),
+							Name: aws.String("konf"),
+						},
+					}, middleware.Metadata{}, nil
+				case "GetEnvironment":
+					return middleware.FinalizeOutput{
+						Result: &appconfig.GetEnvironmentOutput{
+							Id:   aws.String("pgil2o7"),
+							Name: aws.String("test"),
+						},
+					}, middleware.Metadata{}, nil
 				default:
 					return middleware.FinalizeOutput{}, middleware.Metadata{}, nil
 				}
@@ -561,6 +619,20 @@ func TestAppConfig_Watch(t *testing.T) { //nolint:gocognit,maintidx
 							Configuration:              []byte(`{"k":"v"}`),
 							NextPollConfigurationToken: aws.String("next-token"),
 							NextPollIntervalInSeconds:  1,
+						},
+					}, middleware.Metadata{}, nil
+				case "GetApplication":
+					return middleware.FinalizeOutput{
+						Result: &appconfig.GetApplicationOutput{
+							Id:   aws.String("ba8toh7"),
+							Name: aws.String("konf"),
+						},
+					}, middleware.Metadata{}, nil
+				case "GetEnvironment":
+					return middleware.FinalizeOutput{
+						Result: &appconfig.GetEnvironmentOutput{
+							Id:   aws.String("pgil2o7"),
+							Name: aws.String("test"),
 						},
 					}, middleware.Metadata{}, nil
 				default:
@@ -625,9 +697,9 @@ func TestAppConfig_Watch(t *testing.T) { //nolint:gocognit,maintidx
 			)
 			assert.NoError(t, cerr)
 
-			loader := appconfig.New(
-				"ba8toh7", "pgil2o7", "profiler",
-				append(testcase.opts, appconfig.WithAWSConfig(cfg), appconfig.WithPollInterval(time.Second))...,
+			loader := kappconfig.New(
+				"konf", "test", "profiler",
+				append(testcase.opts, kappconfig.WithAWSConfig(cfg), kappconfig.WithPollInterval(time.Second))...,
 			)
 			_, _ = loader.Load()
 
@@ -677,6 +749,6 @@ func TestAppConfig_Watch(t *testing.T) { //nolint:gocognit,maintidx
 func TestAppConfig_String(t *testing.T) {
 	t.Parallel()
 
-	loader := appconfig.New("app", "env", "profile")
+	loader := kappconfig.New("app", "env", "profile")
 	assert.Equal(t, "appconfig://app/profile", loader.String())
 }

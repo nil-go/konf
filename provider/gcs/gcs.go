@@ -3,7 +3,18 @@
 
 // Package gcs loads configuration from GCP [Cloud Storage].
 //
+// It requires following roles on the target GCS object:
+//   - roles/storage.objectViewer
+//
+// # Change notification
+//
+// By default, it periodically polls the configuration only.
+// It also listens to change events by register it to PubSub notifier with [Pub/Sub notifications for Cloud Storage].
+//
+// Only OBJECT_FINALIZE events trigger polling the configuration and other type of events are ignored.
+//
 // [Cloud Storage]: https://cloud.google.com/storage
+// [Pub/Sub notifications for Cloud Storage]: https://cloud.google.com/storage/docs/pubsub-notifications
 package gcs
 
 import (
@@ -29,8 +40,9 @@ type GCS struct {
 	pollInterval time.Duration
 	unmarshal    func([]byte, any) error
 
-	onStatus func(bool, error)
-	client   clientProxy
+	onStatus  func(bool, error)
+	changedCh chan struct{}
+	client    clientProxy
 }
 
 // New creates a GCS with the given endpoint and Option(s).
@@ -44,6 +56,7 @@ func New(uri string, opts ...Option) *GCS {
 			bucket: bucket,
 			object: object,
 		},
+		changedCh: make(chan struct{}, 1),
 	}
 	for _, opt := range opts {
 		switch o := opt.(type) {
@@ -69,9 +82,12 @@ func (g *GCS) Load() (map[string]any, error) {
 	return values, err
 }
 
-func (g *GCS) Watch(ctx context.Context, onChange func(map[string]any)) error {
+func (g *GCS) Watch(ctx context.Context, onChange func(map[string]any)) error { //nolint:cyclop
 	if g == nil {
 		return errNil
+	}
+	if g.changedCh == nil {
+		g.changedCh = make(chan struct{}, 1)
 	}
 
 	defer func() {
@@ -90,6 +106,8 @@ func (g *GCS) Watch(ctx context.Context, onChange func(map[string]any)) error {
 	for {
 		select {
 		case <-ticker.C:
+			g.changed()
+		case <-g.changedCh:
 			values, changed, err := g.load(ctx)
 			if g.onStatus != nil {
 				g.onStatus(changed, err)
@@ -100,6 +118,14 @@ func (g *GCS) Watch(ctx context.Context, onChange func(map[string]any)) error {
 		case <-ctx.Done():
 			return nil
 		}
+	}
+}
+
+func (g *GCS) changed() {
+	select {
+	case g.changedCh <- struct{}{}:
+	default:
+		// Ignore if the channel is full since it's already triggered.
 	}
 }
 
@@ -120,6 +146,23 @@ func (g *GCS) load(ctx context.Context) (map[string]any, bool, error) {
 	}
 
 	return values, true, nil
+}
+
+func (g *GCS) OnEvent(attributes map[string]string) error {
+	if g == nil {
+		return errNil
+	}
+
+	if attributes["bucketId"] == g.client.bucket &&
+		attributes["objectId"] == g.client.object {
+		if attributes["eventType"] == "OBJECT_FINALIZE" {
+			g.changed()
+		}
+
+		return nil
+	}
+
+	return fmt.Errorf("unsupported gcs event: %w", errors.ErrUnsupported)
 }
 
 func (g *GCS) Status(onStatus func(bool, error)) {

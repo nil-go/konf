@@ -109,6 +109,18 @@ updates:
           - google.golang.org/api
 
   - package-ecosystem: gomod
+    directory: /notifier/pubsub
+    labels:
+      - Skip-Changelog
+    schedule:
+      interval: weekly
+    groups:
+      cloud.google.com/go:
+        patterns:
+          - cloud.google.com/go/*
+          - google.golang.org/api
+
+  - package-ecosystem: gomod
     directory: /examples/aws
     labels:
       - Skip-Changelog
