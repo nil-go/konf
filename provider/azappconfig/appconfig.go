@@ -148,7 +148,7 @@ func (a *AppConfig) OnEvent(event messaging.CloudEvent) error {
 		return errNil
 	}
 
-	if strings.HasSuffix(*event.Subject, a.client.endpoint) {
+	if strings.HasPrefix(*event.Subject, a.client.endpoint) {
 		switch event.Type {
 		case "Microsoft.AppConfiguration.KeyValueModified",
 			"Microsoft.AppConfiguration.KeyValueDeleted":
@@ -158,7 +158,7 @@ func (a *AppConfig) OnEvent(event messaging.CloudEvent) error {
 		return nil
 	}
 
-	return fmt.Errorf("unsupported blob storage event: %w", errors.ErrUnsupported)
+	return fmt.Errorf("unsupported app configuration event: %w", errors.ErrUnsupported)
 }
 
 func (a *AppConfig) Status(onStatus func(bool, error)) {

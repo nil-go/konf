@@ -9,10 +9,14 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/messaging"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 
 	"github.com/nil-go/konf/provider/azappconfig"
 	"github.com/nil-go/konf/provider/azappconfig/internal/assert"
@@ -24,6 +28,8 @@ func TestAppConfig_empty(t *testing.T) {
 	assert.EqualError(t, err, "nil AppConfig")
 	assert.Equal(t, nil, values)
 	err = loader.Watch(context.Background(), nil)
+	assert.EqualError(t, err, "nil AppConfig")
+	err = loader.OnEvent(messaging.CloudEvent{})
 	assert.EqualError(t, err, "nil AppConfig")
 }
 
@@ -133,9 +139,13 @@ func TestAppConfig_Load(t *testing.T) {
 func TestAppConfig_Watch(t *testing.T) {
 	t.Parallel()
 
+	server := httpServer()
+	t.Cleanup(server.Close)
+
 	testcases := []struct {
 		description string
 		opts        []azappconfig.Option
+		event       messaging.CloudEvent
 		expected    map[string]any
 		err         string
 	}{
@@ -163,6 +173,46 @@ list settings error
 --------------------------------------------------------------------------------
 `,
 		},
+		{
+			description: "KeyValueModified",
+			event: messaging.CloudEvent{
+				Type:    "Microsoft.AppConfiguration.KeyValueModified",
+				Subject: to.Ptr(server.URL + "/kv/k"),
+			},
+			expected: map[string]any{
+				"p": map[string]any{
+					"k": "v",
+					"d": ".",
+				},
+			},
+		},
+		{
+			description: "KeyValueDeleted",
+			event: messaging.CloudEvent{
+				Type:    "Microsoft.AppConfiguration.KeyValueDeleted",
+				Subject: to.Ptr(server.URL + "/kv/k"),
+			},
+			expected: map[string]any{
+				"p": map[string]any{
+					"k": "v",
+					"d": ".",
+				},
+			},
+		},
+		{
+			description: "unmatched event",
+			event: messaging.CloudEvent{
+				Type:    "Microsoft.Storage.BlobCreated",
+				Subject: to.Ptr("https://another.azconfig.io/kv/"),
+			},
+			expected: map[string]any{
+				"p": map[string]any{
+					"k": "v",
+					"d": ".",
+				},
+			},
+			err: "unsupported app configuration event: unsupported operation",
+		},
 	}
 
 	for _, testcase := range testcases {
@@ -170,9 +220,6 @@ list settings error
 
 		t.Run(testcase.description, func(t *testing.T) {
 			t.Parallel()
-
-			server := httpServer()
-			defer server.Close()
 
 			loader := azappconfig.New(
 				server.URL,
@@ -204,12 +251,23 @@ list settings error
 			}()
 			<-started
 
+			if !reflect.ValueOf(testcase.event).IsZero() {
+				eerr := loader.OnEvent(testcase.event)
+				if testcase.err == "" {
+					assert.NoError(t, eerr)
+				} else {
+					assert.EqualError(t, eerr, testcase.err)
+				}
+			}
+
 			time.Sleep(15 * time.Millisecond) // wait for the first tick, but not the second
 			select {
 			case val := <-values:
 				assert.Equal(t, testcase.expected, val)
 			default:
-				assert.EqualError(t, *err.Load(), fmt.Sprintf(testcase.err, server.URL))
+				if e := err.Load(); e != nil {
+					assert.EqualError(t, *e, fmt.Sprintf(testcase.err, server.URL))
+				}
 			}
 		})
 	}

@@ -144,7 +144,10 @@ func (b *Blob) OnEvent(event messaging.CloudEvent) error {
 		return errNil
 	}
 
-	account, _, _ := strings.Cut(strings.TrimPrefix(b.client.endpoint, "https://"), ".blob.core.windows.net")
+	var account string
+	if strings.Contains(b.client.endpoint, ".blob.core.windows.net") {
+		account, _, _ = strings.Cut(strings.TrimPrefix(b.client.endpoint, "https://"), ".blob.core.windows.net")
+	}
 	if strings.HasSuffix(event.Source, account) &&
 		*event.Subject == "/blobServices/default/containers/"+b.client.container+"/blobs/"+b.client.blob {
 		if event.Type == "Microsoft.Storage.BlobCreated" {
