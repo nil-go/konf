@@ -6,6 +6,7 @@
 // It [Fanout SNS topic to Amazon SQS queues], which requires following permissions:
 //   - sns:Subscribe
 //   - sns:Unsubscribe
+//   - sns:CreateTopic
 //   - sqs:CreateQueue
 //
 // [Fanout SNS topic to Amazon SQS queues]: https://docs.aws.amazon.com/sns/latest/dg/sns-sqs-as-subscriber.html
@@ -22,6 +23,7 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/aws/arn"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/sns"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
@@ -44,7 +46,7 @@ type Notifier struct {
 
 type loader interface{ OnEvent([]byte) error }
 
-// NewNotifier creates a Notifier with the given SNS topic ARN.
+// NewNotifier creates a Notifier with the given SNS topic Name or ARN.
 func NewNotifier(topic string, opts ...Option) *Notifier {
 	option := &options{
 		topic: topic,
@@ -88,6 +90,19 @@ func (n *Notifier) Start(ctx context.Context) error { //nolint:cyclop,funlen,goc
 		}
 	}
 
+	snsClient := sns.NewFromConfig(n.config)
+	topicArn := n.topic
+	if !arn.IsARN(topicArn) {
+		// Here uses CreateTopic to get topic ARN as the topic already exists.
+		topic, err := snsClient.CreateTopic(ctx, &sns.CreateTopicInput{
+			Name: aws.String(n.topic),
+		})
+		if err != nil {
+			return fmt.Errorf("get sns topic ARN: %w", err)
+		}
+		topicArn = *topic.TopicArn
+	}
+
 	stsClient := sts.NewFromConfig(n.config)
 	identity, err := stsClient.GetCallerIdentity(ctx, &sts.GetCallerIdentityInput{})
 	if err != nil {
@@ -124,7 +139,7 @@ func (n *Notifier) Start(ctx context.Context) error { //nolint:cyclop,funlen,goc
 			"Resource":"*"
 		}
 	]
-}`, n.topic, aws.ToString(identity.Arn))
+}`, topicArn, aws.ToString(identity.Arn))
 
 	sqsClient := sqs.NewFromConfig(n.config)
 	uuid, err := rand.NewUUID(rand.Reader).GetUUID()
@@ -160,9 +175,8 @@ func (n *Notifier) Start(ctx context.Context) error { //nolint:cyclop,funlen,goc
 	}
 	queueArn := queueAttrs.Attributes["QueueArn"]
 
-	snsClient := sns.NewFromConfig(n.config)
 	Subscription, err := snsClient.Subscribe(ctx, &sns.SubscribeInput{
-		TopicArn:              aws.String(n.topic),
+		TopicArn:              aws.String(topicArn),
 		Protocol:              aws.String("sqs"),
 		Endpoint:              aws.String(queueArn),
 		Attributes:            map[string]string{"RawMessageDelivery": "true"},
