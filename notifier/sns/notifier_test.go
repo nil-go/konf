@@ -66,6 +66,12 @@ func TestNotifier(t *testing.T) {
 							Arn: aws.String("arn:aws:sts::123456789012:assumed-role/role-name/session-name"),
 						},
 					}, middleware.Metadata{}, nil
+				case "CreateTopic":
+					return middleware.FinalizeOutput{
+						Result: &sns.CreateTopicOutput{
+							TopicArn: aws.String("arn:aws:sns:us-west-2:123456789012:MyTopic"),
+						},
+					}, middleware.Metadata{}, nil
 				case "CreateQueue":
 					return middleware.FinalizeOutput{
 						Result: &sqs.CreateQueueOutput{
@@ -130,6 +136,12 @@ func TestNotifier(t *testing.T) {
 							Arn: aws.String("arn:aws:sts::123456789012:assumed-role/role-name/session-name"),
 						},
 					}, middleware.Metadata{}, nil
+				case "CreateTopic":
+					return middleware.FinalizeOutput{
+						Result: &sns.CreateTopicOutput{
+							TopicArn: aws.String("arn:aws:sns:us-west-2:123456789012:MyTopic"),
+						},
+					}, middleware.Metadata{}, nil
 				case "CreateQueue":
 					return middleware.FinalizeOutput{
 						Result: &sqs.CreateQueueOutput{
@@ -185,6 +197,12 @@ func TestNotifier(t *testing.T) {
 					return middleware.FinalizeOutput{
 						Result: &sts.GetCallerIdentityOutput{
 							Arn: aws.String("arn:aws:sts::123456789012:assumed-role/role-name/session-name"),
+						},
+					}, middleware.Metadata{}, nil
+				case "CreateTopic":
+					return middleware.FinalizeOutput{
+						Result: &sns.CreateTopicOutput{
+							TopicArn: aws.String("arn:aws:sns:us-west-2:123456789012:MyTopic"),
 						},
 					}, middleware.Metadata{}, nil
 				case "CreateQueue":
@@ -256,6 +274,12 @@ level=WARN msg="No loader to process message." msg=message
 							Arn: aws.String("arn:aws:sts::123456789012:assumed-role/role-name/session-name"),
 						},
 					}, middleware.Metadata{}, nil
+				case "CreateTopic":
+					return middleware.FinalizeOutput{
+						Result: &sns.CreateTopicOutput{
+							TopicArn: aws.String("arn:aws:sns:us-west-2:123456789012:MyTopic"),
+						},
+					}, middleware.Metadata{}, nil
 				case "CreateQueue":
 					return middleware.FinalizeOutput{
 						Result: &sqs.CreateQueueOutput{
@@ -320,12 +344,35 @@ level=WARN msg="Fail to process message." msg=message loader=loader error="proce
 				switch awsMiddleware.GetOperationName(ctx) {
 				case "GetCallerIdentity":
 					return middleware.FinalizeOutput{}, middleware.Metadata{}, errors.New("get caller identity error")
+				case "CreateTopic":
+					return middleware.FinalizeOutput{
+						Result: &sns.CreateTopicOutput{
+							TopicArn: aws.String("arn:aws:sns:us-west-2:123456789012:MyTopic"),
+						},
+					}, middleware.Metadata{}, nil
 				default:
 					return middleware.FinalizeOutput{}, middleware.Metadata{}, nil
 				}
 			},
 			notified: false,
 			error:    "get caller identity: operation error STS: GetCallerIdentity, get caller identity error",
+		},
+		{
+			description: "CreateTopic error",
+			middleware: func(
+				ctx context.Context,
+				_ middleware.FinalizeInput,
+				_ middleware.FinalizeHandler,
+			) (middleware.FinalizeOutput, middleware.Metadata, error) {
+				switch awsMiddleware.GetOperationName(ctx) {
+				case "CreateTopic":
+					return middleware.FinalizeOutput{}, middleware.Metadata{}, errors.New("create topic error")
+				default:
+					return middleware.FinalizeOutput{}, middleware.Metadata{}, nil
+				}
+			},
+			notified: false,
+			error:    "get sns topic ARN: operation error SNS: CreateTopic, create topic error",
 		},
 		{
 			description: "CreateQueue error",
@@ -339,6 +386,12 @@ level=WARN msg="Fail to process message." msg=message loader=loader error="proce
 					return middleware.FinalizeOutput{
 						Result: &sts.GetCallerIdentityOutput{
 							Arn: aws.String("arn:aws:sts::123456789012:assumed-role/role-name/session-name"),
+						},
+					}, middleware.Metadata{}, nil
+				case "CreateTopic":
+					return middleware.FinalizeOutput{
+						Result: &sns.CreateTopicOutput{
+							TopicArn: aws.String("arn:aws:sns:us-west-2:123456789012:MyTopic"),
 						},
 					}, middleware.Metadata{}, nil
 				case "CreateQueue":
@@ -362,6 +415,12 @@ level=WARN msg="Fail to process message." msg=message loader=loader error="proce
 					return middleware.FinalizeOutput{
 						Result: &sts.GetCallerIdentityOutput{
 							Arn: aws.String("arn:aws:sts::123456789012:assumed-role/role-name/session-name"),
+						},
+					}, middleware.Metadata{}, nil
+				case "CreateTopic":
+					return middleware.FinalizeOutput{
+						Result: &sns.CreateTopicOutput{
+							TopicArn: aws.String("arn:aws:sns:us-west-2:123456789012:MyTopic"),
 						},
 					}, middleware.Metadata{}, nil
 				case "CreateQueue":
@@ -395,6 +454,12 @@ level=WARN msg="Fail to process message." msg=message loader=loader error="proce
 					return middleware.FinalizeOutput{
 						Result: &sts.GetCallerIdentityOutput{
 							Arn: aws.String("arn:aws:sts::123456789012:assumed-role/role-name/session-name"),
+						},
+					}, middleware.Metadata{}, nil
+				case "CreateTopic":
+					return middleware.FinalizeOutput{
+						Result: &sns.CreateTopicOutput{
+							TopicArn: aws.String("arn:aws:sns:us-west-2:123456789012:MyTopic"),
 						},
 					}, middleware.Metadata{}, nil
 				case "CreateQueue":
@@ -463,6 +528,12 @@ level=WARN msg="Fail to delete sqs queue." queue=https://sqs.us-west-2.amazonaws
 							Arn: aws.String("arn:aws:sts::123456789012:assumed-role/role-name/session-name"),
 						},
 					}, middleware.Metadata{}, nil
+				case "CreateTopic":
+					return middleware.FinalizeOutput{
+						Result: &sns.CreateTopicOutput{
+							TopicArn: aws.String("arn:aws:sns:us-west-2:123456789012:MyTopic"),
+						},
+					}, middleware.Metadata{}, nil
 				case "CreateQueue":
 					return middleware.FinalizeOutput{
 						Result: &sqs.CreateQueueOutput{
@@ -502,6 +573,12 @@ level=WARN msg="Fail to delete sqs queue." queue=https://sqs.us-west-2.amazonaws
 					return middleware.FinalizeOutput{
 						Result: &sts.GetCallerIdentityOutput{
 							Arn: aws.String("arn:aws:sts::123456789012:assumed-role/role-name/session-name"),
+						},
+					}, middleware.Metadata{}, nil
+				case "CreateTopic":
+					return middleware.FinalizeOutput{
+						Result: &sns.CreateTopicOutput{
+							TopicArn: aws.String("arn:aws:sns:us-west-2:123456789012:MyTopic"),
 						},
 					}, middleware.Metadata{}, nil
 				case "CreateQueue":
@@ -570,6 +647,12 @@ level=WARN msg="Fail to unsubscribe sns topic." topic=topic error="operation err
 							Arn: aws.String("arn:aws:sts::123456789012:assumed-role/role-name/session-name"),
 						},
 					}, middleware.Metadata{}, nil
+				case "CreateTopic":
+					return middleware.FinalizeOutput{
+						Result: &sns.CreateTopicOutput{
+							TopicArn: aws.String("arn:aws:sns:us-west-2:123456789012:MyTopic"),
+						},
+					}, middleware.Metadata{}, nil
 				case "CreateQueue":
 					return middleware.FinalizeOutput{
 						Result: &sqs.CreateQueueOutput{
@@ -621,6 +704,12 @@ level=WARN msg="Fail to receive sqs message." queue=https://sqs.us-west-2.amazon
 					return middleware.FinalizeOutput{
 						Result: &sts.GetCallerIdentityOutput{
 							Arn: aws.String("arn:aws:sts::123456789012:assumed-role/role-name/session-name"),
+						},
+					}, middleware.Metadata{}, nil
+				case "CreateTopic":
+					return middleware.FinalizeOutput{
+						Result: &sns.CreateTopicOutput{
+							TopicArn: aws.String("arn:aws:sns:us-west-2:123456789012:MyTopic"),
 						},
 					}, middleware.Metadata{}, nil
 				case "CreateQueue":

@@ -117,7 +117,7 @@ It also supports watching the changes of configuration using corresponding notif
 For example, the `sns` notifier notifies the changes of `appconfig`  and `s3` provider:
 
 ```
-	notifier := sns.NewNotifier("arn:aws:sns:us-west-1:851725503283:konf-test")
+	notifier := sns.NewNotifier("konf-test")
 	notifier.Register(s3Loader)
 	notifier.Register(appConfigLoader)
 	go func() {
