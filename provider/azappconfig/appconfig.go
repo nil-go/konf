@@ -6,7 +6,17 @@
 // It requires following roles to access Azure App Configuration:
 //   - App Configuration Data Reader
 //
+// # Change notification
+//
+// By default, it periodically polls the configuration only.
+// It also listens to change events by register it to notifier with [Cloud Event schema].
+//
+// Only following events trigger polling the configuration and other type of events are ignored:
+//   - Microsoft.AppConfiguration.KeyValueModified
+//   - Microsoft.AppConfiguration.KeyValueDeleted
+//
 // [App Configuration]: https://docs.microsoft.com/en-us/azure/azure-app-configuration/
+// [Cloud Event schema]: https://learn.microsoft.com/en-us/azure/azure-app-configuration/concept-app-configuration-event?tabs=cloud-event-schema
 package azappconfig
 
 import (
@@ -20,6 +30,7 @@ import (
 	"time"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/messaging"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/data/azappconfig"
 
@@ -33,8 +44,9 @@ type AppConfig struct {
 	splitter     func(string) []string
 	pollInterval time.Duration
 
-	onStatus func(bool, error)
-	client   clientProxy
+	onStatus  func(bool, error)
+	changedCh chan struct{}
+	client    clientProxy
 }
 
 // New creates an AppConfig with the given endpoint and Option(s).
@@ -45,6 +57,7 @@ func New(endpoint string, opts ...Option) *AppConfig {
 			credential: &azidentity.DefaultAzureCredential{},
 			endpoint:   endpoint,
 		},
+		changedCh: make(chan struct{}, 1),
 	}
 	for _, opt := range opts {
 		opt(option)
@@ -70,6 +83,9 @@ func (a *AppConfig) Watch(ctx context.Context, onChange func(map[string]any)) er
 	if a == nil {
 		return errNil
 	}
+	if a.changedCh == nil {
+		a.changedCh = make(chan struct{}, 1)
+	}
 
 	pollInterval := time.Minute
 	if a.pollInterval > 0 {
@@ -81,6 +97,8 @@ func (a *AppConfig) Watch(ctx context.Context, onChange func(map[string]any)) er
 	for {
 		select {
 		case <-ticker.C:
+			a.changed()
+		case <-a.changedCh:
 			values, changed, err := a.load(ctx)
 			if a.onStatus != nil {
 				a.onStatus(changed, err)
@@ -91,6 +109,14 @@ func (a *AppConfig) Watch(ctx context.Context, onChange func(map[string]any)) er
 		case <-ctx.Done():
 			return nil
 		}
+	}
+}
+
+func (a *AppConfig) changed() {
+	select {
+	case a.changedCh <- struct{}{}:
+	default:
+		// Ignore if the channel is full since it's already triggered.
 	}
 }
 
@@ -115,6 +141,24 @@ func (a *AppConfig) load(ctx context.Context) (map[string]any, bool, error) {
 	}
 
 	return values, true, nil
+}
+
+func (a *AppConfig) OnEvent(event messaging.CloudEvent) error {
+	if a == nil {
+		return errNil
+	}
+
+	if strings.HasPrefix(*event.Subject, a.client.endpoint) {
+		switch event.Type {
+		case "Microsoft.AppConfiguration.KeyValueModified",
+			"Microsoft.AppConfiguration.KeyValueDeleted":
+			a.changed()
+		}
+
+		return nil
+	}
+
+	return fmt.Errorf("unsupported app configuration event: %w", errors.ErrUnsupported)
 }
 
 func (a *AppConfig) Status(onStatus func(bool, error)) {

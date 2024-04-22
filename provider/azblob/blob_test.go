@@ -9,10 +9,14 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/messaging"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 
 	"github.com/nil-go/konf/provider/azblob"
 	"github.com/nil-go/konf/provider/azblob/internal/assert"
@@ -24,6 +28,8 @@ func TestBlob_empty(t *testing.T) {
 	assert.EqualError(t, err, "nil Blob")
 	assert.Equal(t, nil, values)
 	err = loader.Watch(context.Background(), nil)
+	assert.EqualError(t, err, "nil Blob")
+	err = loader.OnEvent(messaging.CloudEvent{})
 	assert.EqualError(t, err, "nil Blob")
 }
 
@@ -71,7 +77,7 @@ func TestBlob_Load(t *testing.T) {
 func TestBlob_Watch(t *testing.T) {
 	t.Parallel()
 
-	for _, testcase := range testcases() {
+	for _, testcase := range append(testcases(), watchcases("account")...) {
 		testcase := testcase
 
 		t.Run(testcase.description, func(t *testing.T) {
@@ -113,6 +119,15 @@ func TestBlob_Watch(t *testing.T) {
 			}()
 			<-started
 
+			if !reflect.ValueOf(testcase.event).IsZero() {
+				eerr := loader.OnEvent(testcase.event)
+				if testcase.err == "" {
+					assert.NoError(t, eerr)
+				} else {
+					assert.EqualError(t, eerr, testcase.err)
+				}
+			}
+
 			time.Sleep(15 * time.Millisecond) // wait for the first tick, but not the second
 			select {
 			case val := <-values:
@@ -128,22 +143,18 @@ func TestBlob_Watch(t *testing.T) {
 	}
 }
 
-func testcases() []struct {
+type testcase struct {
 	description string
 	opts        []azblob.Option
 	handler     func(http.ResponseWriter, *http.Request)
+	event       messaging.CloudEvent
 	unmarshal   func([]byte, any) error
 	expected    map[string]any
 	err         string
-} {
-	return []struct {
-		description string
-		opts        []azblob.Option
-		handler     func(http.ResponseWriter, *http.Request)
-		unmarshal   func([]byte, any) error
-		expected    map[string]any
-		err         string
-	}{
+}
+
+func testcases() []testcase {
+	return []testcase{
 		{
 			description: "blob",
 			opts: []azblob.Option{
@@ -192,6 +203,66 @@ download blob error
 		{
 			description: "default credential",
 			err:         "get blob: authenticated requests are not permitted for non TLS protected (https) endpoints",
+		},
+	}
+}
+
+func watchcases(account string) []testcase {
+	return []testcase{
+		{
+			description: "BlobCreated",
+			opts: []azblob.Option{
+				azblob.WithCredential(nil),
+			},
+			handler: func(writer http.ResponseWriter, _ *http.Request) {
+				writer.Header().Set("ETag", "k42")
+				_, _ = writer.Write([]byte(`{"k":"v"}`))
+			},
+			event: messaging.CloudEvent{
+				Type:    "Microsoft.Storage.BlobCreated",
+				Source:  "/subscriptions/subscription/resourceGroups/Storage/providers/Microsoft.Storage/storageAccounts/" + account,
+				Subject: to.Ptr("/blobServices/default/containers/container/blobs/blob"),
+			},
+			expected: map[string]any{
+				"k": "v",
+			},
+		},
+		{
+			description: "BlobDeleted",
+			opts: []azblob.Option{
+				azblob.WithCredential(nil),
+			},
+			handler: func(writer http.ResponseWriter, _ *http.Request) {
+				writer.Header().Set("ETag", "k42")
+				_, _ = writer.Write([]byte(`{"k":"v"}`))
+			},
+			event: messaging.CloudEvent{
+				Type:    "Microsoft.Storage.Deleted",
+				Source:  "/subscriptions/subscription/resourceGroups/Storage/providers/Microsoft.Storage/storageAccounts/" + account,
+				Subject: to.Ptr("/blobServices/default/containers/container/blobs/blob"),
+			},
+			expected: map[string]any{
+				"k": "v",
+			},
+		},
+		{
+			description: "unmatched event",
+			opts: []azblob.Option{
+				azblob.WithCredential(nil),
+			},
+			handler: func(writer http.ResponseWriter, _ *http.Request) {
+				writer.Header().Set("ETag", "k42")
+				_, _ = writer.Write([]byte(`{"k":"v"}`))
+			},
+			event: messaging.CloudEvent{
+				Type:    "Microsoft.Storage.BlobCreated",
+				Source:  "/subscriptions/subscription/resourceGroups/Storage/providers/Microsoft.Storage/storageAccounts/" + account,
+				Subject: to.Ptr("/blobServices/default/containers/another_container/blobs/blob"),
+			},
+			expected: map[string]any{
+				"k": "v",
+			},
+			err: "unsupported blob storage event: unsupported operation",
 		},
 	}
 }

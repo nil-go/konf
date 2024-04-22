@@ -11,6 +11,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - Support change notification via SNS topic (#267).
 - Support change notification via PubSub topic (#294).
+- Add OnEvent on Azure providers (#297).
 
 ## [1.0.0] - 2024-03-16
 
