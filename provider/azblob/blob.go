@@ -6,7 +6,15 @@
 // It requires following roles to access blob from Azure Blob Storage:
 // - Storage Blob Data Reader
 //
+// # Change notification
+//
+// By default, it periodically polls the configuration only.
+// It also listens to change events by register it to notifier with [Cloud Event schema].
+//
+// Only Microsoft.Storage.BlobCreated events trigger polling the configuration and other type of events are ignored.
+//
 // [Blob Storage]: https://azure.microsoft.com/en-us/products/storage/blobs
+// [Cloud Event schema]: https://learn.microsoft.com/en-us/azure/event-grid/event-schema-blob-storage?tabs=cloud-event-schema
 package azblob
 
 import (
@@ -16,10 +24,12 @@ import (
 	"fmt"
 	"io"
 	"reflect"
+	"strings"
 	"sync/atomic"
 	"time"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/messaging"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob"
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob/blob"
@@ -33,8 +43,9 @@ type Blob struct {
 	pollInterval time.Duration
 	unmarshal    func([]byte, any) error
 
-	onStatus func(bool, error)
-	client   clientProxy
+	onStatus  func(bool, error)
+	changedCh chan struct{}
+	client    clientProxy
 }
 
 // New creates an Blob with the given endpoint and Option(s).
@@ -47,6 +58,7 @@ func New(endpoint, container, blob string, opts ...Option) *Blob {
 			container:  container,
 			blob:       blob,
 		},
+		changedCh: make(chan struct{}, 1),
 	}
 	for _, opt := range opts {
 		opt(option)
@@ -58,24 +70,27 @@ func New(endpoint, container, blob string, opts ...Option) *Blob {
 
 var errNil = errors.New("nil Blob")
 
-func (a *Blob) Load() (map[string]any, error) {
-	if a == nil {
+func (b *Blob) Load() (map[string]any, error) {
+	if b == nil {
 		return nil, errNil
 	}
 
-	values, _, err := a.load(context.Background())
+	values, _, err := b.load(context.Background())
 
 	return values, err
 }
 
-func (a *Blob) Watch(ctx context.Context, onChange func(map[string]any)) error {
-	if a == nil {
+func (b *Blob) Watch(ctx context.Context, onChange func(map[string]any)) error {
+	if b == nil {
 		return errNil
+	}
+	if b.changedCh == nil {
+		b.changedCh = make(chan struct{}, 1)
 	}
 
 	pollInterval := time.Minute
-	if a.pollInterval > 0 {
-		pollInterval = a.pollInterval
+	if b.pollInterval > 0 {
+		pollInterval = b.pollInterval
 	}
 	ticker := time.NewTicker(pollInterval)
 	defer ticker.Stop()
@@ -83,9 +98,11 @@ func (a *Blob) Watch(ctx context.Context, onChange func(map[string]any)) error {
 	for {
 		select {
 		case <-ticker.C:
-			values, changed, err := a.load(ctx)
-			if a.onStatus != nil {
-				a.onStatus(changed, err)
+			b.changed()
+		case <-b.changedCh:
+			values, changed, err := b.load(ctx)
+			if b.onStatus != nil {
+				b.onStatus(changed, err)
 			}
 			if changed {
 				onChange(values)
@@ -96,13 +113,21 @@ func (a *Blob) Watch(ctx context.Context, onChange func(map[string]any)) error {
 	}
 }
 
-func (a *Blob) load(ctx context.Context) (map[string]any, bool, error) {
-	resp, changed, err := a.client.load(ctx)
+func (b *Blob) changed() {
+	select {
+	case b.changedCh <- struct{}{}:
+	default:
+		// Ignore if the channel is full since it's already triggered.
+	}
+}
+
+func (b *Blob) load(ctx context.Context) (map[string]any, bool, error) {
+	resp, changed, err := b.client.load(ctx)
 	if !changed || err != nil {
 		return nil, false, err
 	}
 
-	unmarshal := a.unmarshal
+	unmarshal := b.unmarshal
 	if unmarshal == nil {
 		unmarshal = json.Unmarshal
 	}
@@ -114,12 +139,30 @@ func (a *Blob) load(ctx context.Context) (map[string]any, bool, error) {
 	return values, true, nil
 }
 
-func (a *Blob) Status(onStatus func(bool, error)) {
-	a.onStatus = onStatus
+func (b *Blob) OnEvent(event messaging.CloudEvent) error {
+	if b == nil {
+		return errNil
+	}
+
+	account, _, _ := strings.Cut(strings.TrimPrefix(b.client.endpoint, "https://"), ".blob.core.windows.net")
+	if strings.HasSuffix(event.Source, account) &&
+		*event.Subject == "/blobServices/default/containers/"+b.client.container+"/blobs/"+b.client.blob {
+		if event.Type == "Microsoft.Storage.BlobCreated" {
+			b.changed()
+		}
+
+		return nil
+	}
+
+	return fmt.Errorf("unsupported blob storage event: %w", errors.ErrUnsupported)
 }
 
-func (a *Blob) String() string {
-	return a.client.endpoint + "/" + a.client.container + "/" + a.client.blob
+func (b *Blob) Status(onStatus func(bool, error)) {
+	b.onStatus = onStatus
+}
+
+func (b *Blob) String() string {
+	return b.client.endpoint + "/" + b.client.container + "/" + b.client.blob
 }
 
 type clientProxy struct {
