@@ -3,6 +3,9 @@
 
 // Package azblob loads configuration from Azure [Blob Storage].
 //
+// It requires following roles to access blob from Azure Blob Storage:
+// - Storage Blob Data Reader
+//
 // [Blob Storage]: https://azure.microsoft.com/en-us/products/storage/blobs
 package azblob
 
