@@ -160,6 +160,7 @@ There are providers for the following configuration sources.
 | [`pflag`](provider/pflag)                 | [spf13/pflag](https://github.com/spf13/pflag)                                           |               |                              |
 | [`appconfig`](provider/appconfig)         | [AWS AppConfig](https://aws.amazon.com/systems-manager/features/appconfig/)             |       ✓       | [sns](notifier/sns)          |
 | [`s3`](provider/s3)                       | [AWS S3](https://aws.amazon.com/s3)                                                     |       ✓       | [sns](notifier/sns)       |
+| [`parameterstore`](provider/parameterstore)           | [AWS ParameterStore](https://docs.aws.amazon.com/systems-manager/latest/userguide/systems-manager-parameter-store.html)                                         |       ✓       | [sns](notifier/sns)       |
 | [`azappconfig`](provider/azappconfig)     | [Azure App Configuration](https://azure.microsoft.com/en-us/products/app-configuration) |       ✓       |                              |
 | [`azblob`](provider/azblob)               | [Azure Blob Storage](https://azure.microsoft.com/en-us/products/storage/blobs)          |       ✓       |                              |
 | [`secretmanager`](provider/secretmanager) | [GCP Secret Manager](https://cloud.google.com/security/products/secret-manager)         |       ✓       | [pubsub](notifier/pubsub) |

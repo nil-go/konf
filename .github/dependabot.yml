@@ -47,6 +47,18 @@ updates:
           - github.com/aws/smithy-go
 
   - package-ecosystem: gomod
+    directory: /provider/parameterstore
+    labels:
+      - Skip-Changelog
+    schedule:
+      interval: weekly
+    groups:
+      aws-sdk-go:
+        patterns:
+          - github.com/aws/aws-sdk-go-v2*
+          - github.com/aws/smithy-go
+
+  - package-ecosystem: gomod
     directory: /notifier/sns
     labels:
       - Skip-Changelog
