@@ -56,6 +56,9 @@ func New(opts ...Option) *ParameterStore {
 	for _, opt := range opts {
 		opt(option)
 	}
+	if option.client.path == "" {
+		option.client.path = "/"
+	}
 
 	return (*ParameterStore)(option)
 }
@@ -175,7 +178,7 @@ func (p *ParameterStore) Status(onStatus func(bool, error)) {
 }
 
 func (p *ParameterStore) String() string {
-	return "parameter-store"
+	return "parameter-store:" + p.client.path
 }
 
 type clientProxy struct {
