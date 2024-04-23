@@ -238,11 +238,10 @@ func (p *clientProxy) load(ctx context.Context) (map[string]string, bool, error)
 		}
 	}
 
-	var changed bool
-	if last := p.lastETags.Load(); last == nil || !maps.Equal(*last, eTags) {
-		changed = true
-		p.lastETags.Store(&eTags)
+	if last := p.lastETags.Load(); last != nil && maps.Equal(*last, eTags) {
+		return nil, false, nil
 	}
+	p.lastETags.Store(&eTags)
 
-	return values, changed, nil
+	return values, true, nil
 }
