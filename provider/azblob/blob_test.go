@@ -84,7 +84,6 @@ func TestBlob_Watch(t *testing.T) {
 
 			server := httptest.NewServer(http.HandlerFunc(testcase.handler))
 			defer server.Close()
-			defer server.Close()
 
 			loader := azblob.New(
 				server.URL,
