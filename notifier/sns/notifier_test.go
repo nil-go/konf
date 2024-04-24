@@ -801,7 +801,10 @@ level=WARN msg="Fail to delete sqs message." queue=https://sqs.us-west-2.amazona
 				err:    testcase.errLoader,
 			}
 			notifier.Register(loader)
+			var waitgroup sync.WaitGroup
+			waitgroup.Add(1)
 			go func() {
+				waitgroup.Done()
 				err = notifier.Start(ctx)
 				if testcase.error == "" {
 					assert.NoError(t, err)
@@ -809,8 +812,9 @@ level=WARN msg="Fail to delete sqs message." queue=https://sqs.us-west-2.amazona
 					assert.EqualError(t, err, testcase.error)
 				}
 			}()
-			time.Sleep(10 * time.Millisecond) // Wait for notifier starts
+			time.Sleep(10 * time.Millisecond) // Wait for notifier starts.
 
+			waitgroup.Wait()
 			assert.Equal(t, testcase.notified, loader.notified.Load())
 			assert.Equal(t, testcase.log, buf.String())
 		})
