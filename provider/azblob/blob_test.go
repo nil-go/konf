@@ -16,7 +16,6 @@ import (
 	"time"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/messaging"
-	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 
 	"github.com/nil-go/konf/provider/azblob"
 	"github.com/nil-go/konf/provider/azblob/internal/assert"
@@ -77,14 +76,13 @@ func TestBlob_Load(t *testing.T) {
 func TestBlob_Watch(t *testing.T) {
 	t.Parallel()
 
-	for _, testcase := range append(testcases(), watchcases("account")...) {
+	for _, testcase := range append(testcases(), watchcases()...) {
 		testcase := testcase
 
 		t.Run(testcase.description, func(t *testing.T) {
 			t.Parallel()
 
 			server := httptest.NewServer(http.HandlerFunc(testcase.handler))
-			defer server.Close()
 			defer server.Close()
 
 			loader := azblob.New(
@@ -120,6 +118,7 @@ func TestBlob_Watch(t *testing.T) {
 			<-started
 
 			if !reflect.ValueOf(testcase.event).IsZero() {
+				testcase.event.Data = []byte(fmt.Sprintf(string(testcase.event.Data.([]byte)), server.URL))
 				eerr := loader.OnEvent(testcase.event)
 				if testcase.err == "" {
 					assert.NoError(t, eerr)
@@ -207,7 +206,7 @@ download blob error
 	}
 }
 
-func watchcases(account string) []testcase {
+func watchcases() []testcase {
 	return []testcase{
 		{
 			description: "BlobCreated",
@@ -219,9 +218,8 @@ func watchcases(account string) []testcase {
 				_, _ = writer.Write([]byte(`{"k":"v"}`))
 			},
 			event: messaging.CloudEvent{
-				Type:    "Microsoft.Storage.BlobCreated",
-				Source:  "/subscriptions/subscription/resourceGroups/Storage/providers/Microsoft.Storage/storageAccounts/" + account,
-				Subject: to.Ptr("/blobServices/default/containers/container/blobs/blob"),
+				Type: "Microsoft.Storage.BlobCreated",
+				Data: []byte(`{"url":"%s/container/blob"}`),
 			},
 			expected: map[string]any{
 				"k": "v",
@@ -237,9 +235,8 @@ func watchcases(account string) []testcase {
 				_, _ = writer.Write([]byte(`{"k":"v"}`))
 			},
 			event: messaging.CloudEvent{
-				Type:    "Microsoft.Storage.Deleted",
-				Source:  "/subscriptions/subscription/resourceGroups/Storage/providers/Microsoft.Storage/storageAccounts/" + account,
-				Subject: to.Ptr("/blobServices/default/containers/container/blobs/blob"),
+				Type: "Microsoft.Storage.Deleted",
+				Data: []byte(`{"url":"%s/container/blob"}`),
 			},
 			expected: map[string]any{
 				"k": "v",
@@ -255,9 +252,8 @@ func watchcases(account string) []testcase {
 				_, _ = writer.Write([]byte(`{"k":"v"}`))
 			},
 			event: messaging.CloudEvent{
-				Type:    "Microsoft.Storage.BlobCreated",
-				Source:  "/subscriptions/subscription/resourceGroups/Storage/providers/Microsoft.Storage/storageAccounts/" + account,
-				Subject: to.Ptr("/blobServices/default/containers/another_container/blobs/blob"),
+				Type: "Microsoft.Storage.BlobCreated",
+				Data: []byte(`{"url":"%s/another_container/blob"}`),
 			},
 			expected: map[string]any{
 				"k": "v",
