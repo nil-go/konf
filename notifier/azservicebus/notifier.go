@@ -26,7 +26,7 @@ import (
 	"github.com/google/uuid"
 )
 
-// Notifier that watches change events on given PubSub topic.
+// Notifier that watches change events on given Service Bus topic.
 //
 // To create a new Notifier, call [NewNotifier].
 type Notifier struct {

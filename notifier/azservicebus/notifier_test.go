@@ -23,5 +23,5 @@ func TestNotifier_nil(t *testing.T) {
 func TestNotifier(t *testing.T) {
 	t.Parallel()
 
-	t.Skip("Could not fake service bus for testing")
+	t.Skip("Could not fake service bus for testing. See https://github.com/Azure/azure-sdk-for-go/issues/22364")
 }
