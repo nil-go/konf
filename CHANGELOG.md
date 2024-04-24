@@ -7,6 +7,11 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.1.0] - 2024-04-24
+
+This version introduces a new feature to support change notification
+via AWS SNS, GCP PubSub, and Azure Service Bus.
+
 ### Added
 
 - Support change notification via SNS topic (#267).
