@@ -7,11 +7,13 @@ import (
 	"context"
 	"embed"
 	"fmt"
+	"sync"
 	"time"
 
 	"gopkg.in/yaml.v3"
 
 	"github.com/nil-go/konf"
+	"github.com/nil-go/konf/notifier/azservicebus"
 	"github.com/nil-go/konf/provider/azappconfig"
 	"github.com/nil-go/konf/provider/azblob"
 	"github.com/nil-go/konf/provider/env"
@@ -21,8 +23,11 @@ import (
 func Example() {
 	// At the beginning of the application, load configuration from different sources.
 	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	loadConfig(ctx)
+	wait := loadConfig(ctx)
+	defer func() {
+		cancel()
+		wait()
+	}()
 
 	// ... 2,000 lines of code ...
 
@@ -44,7 +49,7 @@ func Example() {
 	})
 
 	// This should not be part of the application. It's just for verification.
-	time.Sleep(25 * time.Second) // Wait for at lease two watch polls.
+	time.Sleep(42 * time.Second) // Wait for at lease two watch polls.
 
 	fmt.Println()
 	fmt.Println("konf.source:", config.Source)
@@ -52,6 +57,8 @@ func Example() {
 	fmt.Println(konf.Explain("konf.source"))
 	// Output:
 	//
+	// load executed: loader=https://konftest.blob.core.windows.net/konf-test/config.yaml, changed=false, error=<nil>
+	// load executed: loader=https://konftest.azconfig.io, changed=false, error=<nil>
 	// load executed: loader=https://konftest.blob.core.windows.net/konf-test/config.yaml, changed=false, error=<nil>
 	// load executed: loader=https://konftest.azconfig.io, changed=false, error=<nil>
 	//
@@ -63,7 +70,7 @@ func Example() {
 	//   - Embedded FS(fs:///config/config.yaml)
 }
 
-func loadConfig(ctx context.Context) {
+func loadConfig(ctx context.Context) func() {
 	config := konf.New(konf.WithOnStatus(func(loader konf.Loader, changed bool, err error) {
 		fmt.Printf("load executed: loader=%v, changed=%v, error=%v\n", loader, changed, err)
 	}))
@@ -78,20 +85,23 @@ func loadConfig(ctx context.Context) {
 	}
 
 	// Load configuration from Azure Blob Storage.
-	if err := config.Load(azblob.New(
+	blobLoader := azblob.New(
 		"https://konftest.blob.core.windows.net", "konf-test", "config.yaml",
 		azblob.WithUnmarshal(yaml.Unmarshal),
 		azblob.WithPollInterval(15*time.Second),
-	)); err != nil {
+	)
+	if err := config.Load(blobLoader); err != nil {
 		panic(err) // handle error
 	}
 	// Load configuration from Azure App Configuration.
-	if err := config.Load(azappconfig.New(
+	appconfigLoader := azappconfig.New(
 		"https://konftest.azconfig.io",
 		azappconfig.WithPollInterval(20*time.Second),
-	)); err != nil {
+	)
+	if err := config.Load(appconfigLoader); err != nil {
 		panic(err) // handle error
 	}
+	konf.SetDefault(config)
 
 	// Watch the changes of configuration.
 	go func() {
@@ -99,8 +109,21 @@ func loadConfig(ctx context.Context) {
 			panic(err) // handle error
 		}
 	}()
+	// Notify the changes of configuration.
+	notifier := azservicebus.NewNotifier("konf-test.servicebus.windows.net", "konf-test")
+	notifier.Register(blobLoader, appconfigLoader)
+	var waitGroup sync.WaitGroup
+	waitGroup.Add(1)
+	go func() {
+		defer waitGroup.Done()
+		if err := notifier.Start(ctx); err != nil {
+			panic(err) // handle error
+		}
+	}()
 
-	konf.SetDefault(config)
+	return func() {
+		waitGroup.Wait()
+	}
 }
 
 //go:embed config
