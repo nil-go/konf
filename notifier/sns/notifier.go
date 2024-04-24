@@ -59,14 +59,14 @@ func NewNotifier(topic string, opts ...Option) *Notifier {
 }
 
 // Register registers a loader to the Notifier.
-func (n *Notifier) Register(loader loader) {
+func (n *Notifier) Register(loaders ...loader) {
 	if n == nil {
 		return
 	}
 
 	n.loadersMutex.Lock()
 	defer n.loadersMutex.Unlock()
-	n.loaders = append(n.loaders, loader)
+	n.loaders = append(n.loaders, loaders...)
 }
 
 var errNil = errors.New("nil Notifier")
