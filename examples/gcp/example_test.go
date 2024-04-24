@@ -7,11 +7,13 @@ import (
 	"context"
 	"embed"
 	"fmt"
+	"sync"
 	"time"
 
 	"gopkg.in/yaml.v3"
 
 	"github.com/nil-go/konf"
+	"github.com/nil-go/konf/notifier/pubsub"
 	"github.com/nil-go/konf/provider/env"
 	"github.com/nil-go/konf/provider/fs"
 	"github.com/nil-go/konf/provider/gcs"
@@ -21,8 +23,11 @@ import (
 func Example() {
 	// At the beginning of the application, load configuration from different sources.
 	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	loadConfig(ctx)
+	wait := loadConfig(ctx)
+	defer func() {
+		cancel()
+		wait()
+	}()
 
 	// ... 2,000 lines of code ...
 
@@ -44,13 +49,15 @@ func Example() {
 	})
 
 	// This should not be part of the application. It's just for verification.
-	time.Sleep(25 * time.Second) // Wait for at lease two watch polls.
+	time.Sleep(42 * time.Second) // Wait for at lease two watch polls.
 
 	fmt.Println()
 	fmt.Println("konf.source:", config.Source)
 	fmt.Println()
 	fmt.Println(konf.Explain("konf.source"))
 	// Output:
+	// load executed: loader=gs://konf-test/config.yaml, changed=false, error=<nil>
+	// load executed: loader=secret-manager://konf-test, changed=false, error=<nil>
 	// load executed: loader=gs://konf-test/config.yaml, changed=false, error=<nil>
 	// load executed: loader=secret-manager://konf-test, changed=false, error=<nil>
 	//
@@ -62,7 +69,7 @@ func Example() {
 	//   - Embedded FS(fs:///config/config.yaml)
 }
 
-func loadConfig(ctx context.Context) {
+func loadConfig(ctx context.Context) func() {
 	config := konf.New(konf.WithOnStatus(func(loader konf.Loader, changed bool, err error) {
 		fmt.Printf("load executed: loader=%v, changed=%v, error=%v\n", loader, changed, err)
 	}))
@@ -77,20 +84,23 @@ func loadConfig(ctx context.Context) {
 	}
 
 	// Load configuration from GCP Cloud Storage.
-	if err := config.Load(gcs.New(
+	gcsLoader := gcs.New(
 		"gs://konf-test/config.yaml",
 		gcs.WithUnmarshal(yaml.Unmarshal),
 		gcs.WithPollInterval(15*time.Second),
-	)); err != nil {
+	)
+	if err := config.Load(gcsLoader); err != nil {
 		panic(err) // handle error
 	}
 	// Load configuration from GCP Secret Manager.
-	if err := config.Load(secretmanager.New(
+	secretManagerLoader := secretmanager.New(
 		secretmanager.WithProject("konf-test"),
 		secretmanager.WithPollInterval(20*time.Second),
-	)); err != nil {
+	)
+	if err := config.Load(secretManagerLoader); err != nil {
 		panic(err) // handle error
 	}
+	konf.SetDefault(config)
 
 	// Watch the changes of configuration.
 	go func() {
@@ -99,7 +109,21 @@ func loadConfig(ctx context.Context) {
 		}
 	}()
 
-	konf.SetDefault(config)
+	// Notify the changes of configuration.
+	notifier := pubsub.NewNotifier("konf-test", pubsub.WithProject("konf-test"))
+	notifier.Register(gcsLoader, secretManagerLoader)
+	var waitGroup sync.WaitGroup
+	waitGroup.Add(1)
+	go func() {
+		defer waitGroup.Done()
+		if err := notifier.Start(ctx); err != nil {
+			panic(err) // handle error
+		}
+	}()
+
+	return func() {
+		waitGroup.Wait()
+	}
 }
 
 //go:embed config
