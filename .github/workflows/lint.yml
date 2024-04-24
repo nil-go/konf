@@ -21,12 +21,13 @@ jobs:
           - 'notifier/sns'
           - 'provider/azappconfig'
           - 'provider/azblob'
+          - 'notifier/azservicebus'
           - 'provider/secretmanager'
           - 'provider/gcs'
+          - 'notifier/pubsub'
           - 'examples/aws'
           - 'examples/azure'
           - 'examples/gcp'
-          - 'notifier/pubsub'
     name: Lint
     runs-on: ubuntu-latest
     steps:

@@ -21,6 +21,7 @@ jobs:
           - 'notifier/sns'
           - 'provider/azappconfig'
           - 'provider/azblob'
+          - 'notifier/azservicebus'
           - 'provider/secretmanager'
           - 'provider/gcs'
           - 'notifier/pubsub'
