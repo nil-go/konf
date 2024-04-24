@@ -118,8 +118,7 @@ For example, the `sns` notifier notifies the changes of `appconfig`  and `s3` pr
 
 ```
 	notifier := sns.NewNotifier("konf-test")
-	notifier.Register(s3Loader)
-	notifier.Register(appConfigLoader)
+	notifier.Register(s3Loader, appConfigLoader)
 	go func() {
 		if err := notifier.Start(ctx); err != nil {
 			// handle error
