@@ -24,7 +24,6 @@ import (
 	"fmt"
 	"io"
 	"reflect"
-	"strings"
 	"sync/atomic"
 	"time"
 
@@ -139,17 +138,25 @@ func (b *Blob) load(ctx context.Context) (map[string]any, bool, error) {
 	return values, true, nil
 }
 
+var errNonBytesData = errors.New("event data should be []byte")
+
 func (b *Blob) OnEvent(event messaging.CloudEvent) error {
 	if b == nil {
 		return errNil
 	}
 
-	var account string
-	if strings.Contains(b.client.endpoint, ".blob.core.windows.net") {
-		account, _, _ = strings.Cut(strings.TrimPrefix(b.client.endpoint, "https://"), ".blob.core.windows.net")
+	var data struct {
+		URL string `json:"url"`
 	}
-	if strings.HasSuffix(event.Source, account) &&
-		*event.Subject == "/blobServices/default/containers/"+b.client.container+"/blobs/"+b.client.blob {
+	bytes, ok := event.Data.([]byte)
+	if !ok {
+		return errNonBytesData
+	}
+	if e := json.Unmarshal(bytes, &data); e != nil {
+		return fmt.Errorf("unmarshal event data: %w", e)
+	}
+
+	if data.URL == b.String() {
 		if event.Type == "Microsoft.Storage.BlobCreated" {
 			b.changed()
 		}
@@ -165,7 +172,7 @@ func (b *Blob) Status(onStatus func(bool, error)) {
 }
 
 func (b *Blob) String() string {
-	return b.client.endpoint + "/" + b.client.container + "/" + b.client.blob
+	return b.client.url()
 }
 
 type clientProxy struct {
@@ -228,4 +235,8 @@ func (p *clientProxy) load(ctx context.Context) ([]byte, bool, error) { //nolint
 	}
 
 	return bytes, true, nil
+}
+
+func (p *clientProxy) url() string {
+	return p.endpoint + "/" + p.container + "/" + p.blob
 }
