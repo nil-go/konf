@@ -41,60 +41,60 @@ but may needs multiple Get(s) in Viper and Koanf.
 Somewhere, early in an application's life, it will make a decision about which
 configuration source(s) (implementation) it actually wants to use. Something like:
 
-```
-    //go:embed config
-    var config embed.FS
+```go
+//go:embed config
+var config embed.FS
 
-    func main() {
-        var config konf.Config
+func main() {
+    var config konf.Config
 
-        // Load configuration from embed file system.
-        if err := config.Load(fs.New(config, "config/config.json")); err != nil {
-            // Handle error here.
-        }
-        // Load configuration from environment variables.
-        if err := config.Load(env.New(env.WithPrefix("server"))); err != nil {
-            // Handle error here.
-        }
-
-        // Watch the changes of configuration.
-        go func() {
-          if err := config.Watch(ctx); err != nil {
-            // Handle error here.
-          }
-        }
-
-        konf.SetDefault(config)
-
-        // ... other setup code ...
+    // Load configuration from embed file system.
+    if err := config.Load(fs.New(config, "config/config.json")); err != nil {
+        // Handle error here.
     }
+    // Load configuration from environment variables.
+    if err := config.Load(env.New(env.WithPrefix("server"))); err != nil {
+        // Handle error here.
+    }
+
+    // Watch the changes of configuration.
+    go func() {
+      if err := config.Watch(ctx); err != nil {
+        // Handle error here.
+      }
+    }
+
+    konf.SetDefault(config)
+
+    // ... other setup code ...
+}
 ```
 
 Outside of this early setup, no other packages need to know about the choice of
 configuration source(s). They read configuration in terms of functions in package `konf`:
 
-```
-    func (app *appObject) Run() {
-        // Server configuration with default values.
-        serverConfig := struct {
-            Host string
-            Port int
-        }{
-            Host: "localhost",
-            Port: "8080",
-        }
-        // Read the server configuration.
-        if err := konf.Unmarshal("server", &serverConfig);  err != nil {
-            // Handle error here.
-        }
-
-        // Register callbacks while server configuration changes.
-        konf.OnChange(func() {
-          // Reconfig the application object.
-        }, "server")
-
-        // ... use cfg in app code ...
+```go
+func (app *appObject) Run() {
+    // Server configuration with default values.
+    serverConfig := struct {
+        Host string
+        Port int
+    }{
+        Host: "localhost",
+        Port: "8080",
     }
+    // Read the server configuration.
+    if err := konf.Unmarshal("server", &serverConfig);  err != nil {
+        // Handle error here.
+    }
+
+    // Register callbacks while server configuration changes.
+    konf.OnChange(func() {
+      // Reconfig the application object.
+    }, "server")
+
+    // ... use cfg in app code ...
+}
 ```
 
 ## Design
@@ -116,14 +116,14 @@ The providers for loading configuration from clouds periodically poll the config
 It also supports watching the changes of configuration using corresponding notifier.
 For example, the `sns` notifier notifies the changes of `appconfig`  and `s3` provider:
 
-```
-	notifier := sns.NewNotifier("konf-test")
-	notifier.Register(s3Loader, appConfigLoader)
-	go func() {
-		if err := notifier.Start(ctx); err != nil {
-			// handle error
-		}
-	}()
+```go
+notifier := sns.NewNotifier("konf-test")
+notifier.Register(s3Loader, appConfigLoader)
+go func() {
+  if err := notifier.Start(ctx); err != nil {
+    // handle error
+  }
+}()
 ```
 
 ## Understand the configuration
