@@ -62,7 +62,7 @@ func main() {
       if err := config.Watch(ctx); err != nil {
         // Handle error here.
       }
-    })()
+    }()
 
     konf.SetDefault(config)
 
