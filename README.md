@@ -58,7 +58,7 @@ func main() {
     }
 
     // Watch the changes of configuration.
-    go (func() {
+    go func() {
       if err := config.Watch(ctx); err != nil {
         // Handle error here.
       }
