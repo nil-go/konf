@@ -102,7 +102,6 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 				defer waitGroup.Done()
 
 				onChange := func(values map[string]any) {
-					c.transformKeys(values)
 					oldValues := provider.values
 					newValues := values
 					provider.values = newValues

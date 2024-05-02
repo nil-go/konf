@@ -5,18 +5,30 @@ package maps
 
 import "strings"
 
-func Sub(values map[string]any, path string, delimiter string) any {
+func Sub(values map[string]any, path string, delimiter string, keyMap func(string) string) any {
 	if path == "" {
 		return values
 	}
 
 	key, path, _ := strings.Cut(path, delimiter)
-	if path == "" {
-		return values[key]
+	value, ok := values[key]
+	if !ok && keyMap != nil {
+		key = keyMap(key)
+		for k, v := range values {
+			k = keyMap(k)
+			if k == key {
+				value = v
+
+				break
+			}
+		}
 	}
 
-	if mp, ok := values[key].(map[string]any); ok {
-		return Sub(mp, path, delimiter)
+	if path == "" {
+		return value
+	}
+	if mp, ok := value.(map[string]any); ok {
+		return Sub(mp, path, delimiter, keyMap)
 	}
 
 	return nil

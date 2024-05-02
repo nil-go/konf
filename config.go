@@ -103,7 +103,6 @@ func (c *Config) Load(loader Loader) error {
 	if err != nil {
 		return fmt.Errorf("load configuration: %w", err)
 	}
-	c.transformKeys(values)
 
 	prd := provider{
 		loader: loader,
@@ -146,11 +145,12 @@ func (c *Config) log(ctx context.Context, level slog.Level, message string, attr
 }
 
 func (c *Config) sub(values map[string]any, path string) any {
+	var keyMap func(s string) string
 	if !c.caseSensitive {
-		path = toLower(path)
+		keyMap = toLower
 	}
 
-	return maps.Sub(values, path, c.delim())
+	return maps.Sub(values, path, c.delim(), keyMap)
 }
 
 func (c *Config) delim() string {
@@ -159,12 +159,6 @@ func (c *Config) delim() string {
 	}
 
 	return c.delimiter
-}
-
-func (c *Config) transformKeys(m map[string]any) {
-	if !c.caseSensitive {
-		maps.TransformKeys(m, toLower)
-	}
 }
 
 func toLower(s string) string {
