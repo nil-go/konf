@@ -84,6 +84,15 @@ func TestConfig_Unmarshal(t *testing.T) {
 			},
 		},
 		{
+			description: "config for map",
+			loaders:     []konf.Loader{mapLoader{"Config": "struct"}},
+			assert: func(config *konf.Config) {
+				var value map[string]string
+				assert.NoError(t, config.Unmarshal("", &value))
+				assert.Equal(t, "struct", value["Config"])
+			},
+		},
+		{
 			description: "config for struct",
 			loaders:     []konf.Loader{mapLoader{"config": "struct"}},
 			assert: func(config *konf.Config) {

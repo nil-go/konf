@@ -33,7 +33,7 @@ func TestTransformKeys(t *testing.T) {
 			description: "transform keys",
 			src:         map[string]any{"A": map[string]any{"X": 1, "y": 2}},
 			keyMap:      strings.ToLower,
-			expected:    map[string]any{"a": map[string]any{"x": 1, "y": 2}},
+			expected:    map[string]any{"a": maps.Pack("A", map[string]any{"x": maps.Pack("X", 1), "y": 2})},
 		},
 	}
 

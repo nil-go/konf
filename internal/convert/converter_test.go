@@ -650,7 +650,7 @@ func TestConverter(t *testing.T) { //nolint:maintidx
 		},
 		{
 			description: "map to map (key convert error)",
-			from:        map[string]int{"-2": -42},
+			from:        map[string]int{"-2": 42},
 			to:          pointer(map[uint]uint(nil)),
 			err:         "cannot parse '[-2]' as uint: strconv.ParseUint: parsing \"-2\": invalid syntax",
 		},

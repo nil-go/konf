@@ -11,11 +11,12 @@ func Sub(values map[string]any, path string, delimiter string) any {
 	}
 
 	key, path, _ := strings.Cut(path, delimiter)
+	_, value := Unpack(values[key])
 	if path == "" {
-		return values[key]
+		return value
 	}
 
-	if mp, ok := values[key].(map[string]any); ok {
+	if mp, ok := value.(map[string]any); ok {
 		return Sub(mp, path, delimiter)
 	}
 
