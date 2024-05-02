@@ -14,7 +14,6 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
-	"unicode"
 
 	"github.com/nil-go/konf/internal"
 	"github.com/nil-go/konf/internal/convert"
@@ -147,7 +146,7 @@ func (c *Config) log(ctx context.Context, level slog.Level, message string, attr
 
 func (c *Config) sub(values map[string]any, path string) any {
 	if !c.caseSensitive {
-		path = toLower(path)
+		path = strings.ToLower(path)
 	}
 
 	return maps.Sub(values, path, c.delim())
@@ -163,12 +162,8 @@ func (c *Config) delim() string {
 
 func (c *Config) transformKeys(m map[string]any) {
 	if !c.caseSensitive {
-		maps.TransformKeys(m, toLower)
+		maps.TransformKeys(m, strings.ToLower)
 	}
-}
-
-func toLower(s string) string {
-	return strings.Map(unicode.ToLower, s)
 }
 
 // Explain provides information about how Config resolve each value
@@ -246,7 +241,7 @@ type provider struct {
 //nolint:gochecknoglobals
 var (
 	defaultTagName = convert.WithTagName("konf")
-	defaultKeyMap  = convert.WithKeyMapper(toLower)
+	defaultKeyMap  = convert.WithKeyMapper(strings.ToLower)
 	defaultHooks   = []convert.Option{
 		convert.WithHook[string, time.Duration](time.ParseDuration),
 		convert.WithHook[string, []string](func(f string) ([]string, error) {

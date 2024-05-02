@@ -10,6 +10,7 @@ import (
 	"log/slog"
 	"reflect"
 	"slices"
+	"strings"
 	"sync"
 	"time"
 
@@ -175,7 +176,7 @@ func (c *Config) OnChange(onChange func(*Config), paths ...string) {
 	}
 	for _, path := range paths {
 		if !c.caseSensitive {
-			path = toLower(path)
+			path = strings.ToLower(path)
 		}
 		c.onChanges[path] = append(c.onChanges[path], onChange)
 	}
