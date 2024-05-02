@@ -14,7 +14,7 @@ func TransformKeys(src map[string]interface{}, keyMap func(string) string) {
 		newKey := keyMap(key)
 		if newKey != key {
 			delete(src, key)
-			src[newKey] = value
+			src[newKey] = KeyValue{Key: key, Value: value}
 		}
 	}
 }
