@@ -189,12 +189,13 @@ func (c *Config) Explain(path string) string {
 
 func (c *Config) explain(explanation *strings.Builder, path string, value any) {
 	if values, ok := value.(map[string]any); ok {
-		for k, v := range values {
-			if path != "" {
-				path += c.delim()
+		for key, val := range values {
+			newPath := path
+			if newPath != "" {
+				newPath += c.delim()
 			}
-			path += k
-			c.explain(explanation, path, v)
+			newPath += key
+			c.explain(explanation, newPath, val)
 		}
 
 		return
