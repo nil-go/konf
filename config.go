@@ -14,7 +14,6 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
-	"unicode"
 
 	"github.com/nil-go/konf/internal"
 	"github.com/nil-go/konf/internal/convert"
@@ -148,11 +147,7 @@ func (c *Config) keyMap() func(string) string {
 		return nil
 	}
 
-	return toLower
-}
-
-func toLower(s string) string {
-	return strings.Map(unicode.ToLower, s)
+	return strings.ToLower
 }
 
 func (c *Config) delim() string {
@@ -238,7 +233,7 @@ type provider struct {
 //nolint:gochecknoglobals
 var (
 	defaultTagName = convert.WithTagName("konf")
-	defaultKeyMap  = convert.WithKeyMapper(toLower)
+	defaultKeyMap  = convert.WithKeyMapper(strings.ToLower)
 	defaultHooks   = []convert.Option{
 		convert.WithHook[string, time.Duration](time.ParseDuration),
 		convert.WithHook[string, []string](func(f string) ([]string, error) {
