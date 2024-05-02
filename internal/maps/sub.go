@@ -5,10 +5,18 @@ package maps
 
 import "strings"
 
-func Sub(values map[string]any, path string, delimiter string) any {
+func Sub(values map[string]any, path string, delimiter string) (value any) { //nolint:nonamedreturns
 	if path == "" {
 		return values
 	}
+
+	defer func() {
+		switch v := value.(type) {
+		case KeyValue:
+			value = v.Value
+		default:
+		}
+	}()
 
 	key, path, _ := strings.Cut(path, delimiter)
 	if path == "" {

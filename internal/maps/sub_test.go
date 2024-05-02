@@ -56,6 +56,12 @@ func TestSub(t *testing.T) {
 			expected:    1,
 		},
 		{
+			description: "keyvalue",
+			values:      map[string]any{"a": maps.KeyValue{Key: "A", Value: 1}},
+			path:        "a",
+			expected:    1,
+		},
+		{
 			description: "value not exist",
 			values:      map[string]any{"a": 1},
 			path:        "a.b",
