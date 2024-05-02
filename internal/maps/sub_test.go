@@ -16,61 +16,61 @@ func TestSub(t *testing.T) {
 	testcases := []struct {
 		description string
 		values      map[string]any
-		path        string
+		path        []string
 		expected    any
 	}{
 		{
 			description: "nil values",
 			values:      nil,
-			path:        "a.b",
+			path:        []string{"a", "b"},
 			expected:    nil,
 		},
 		{
 			description: "empty values",
 			values:      map[string]any{},
-			path:        "a.b",
+			path:        []string{"a", "b"},
 			expected:    nil,
 		},
 		{
 			description: "empty keys",
 			values:      map[string]any{"a": 1},
-			path:        "",
+			path:        nil,
 			expected:    map[string]any{"a": 1},
 		},
 		{
 			description: "blank keys",
 			values:      map[string]any{"a": 1},
-			path:        "",
+			path:        []string{""},
 			expected:    map[string]any{"a": 1},
 		},
 		{
 			description: "lower case keys",
 			values:      map[string]any{"a": 1, "b": 2},
-			path:        "a",
+			path:        []string{"a"},
 			expected:    1,
 		},
 		{
 			description: "upper case keys",
 			values:      map[string]any{"A": 1},
-			path:        "A",
+			path:        []string{"A"},
 			expected:    1,
 		},
 		{
 			description: "value not exist",
 			values:      map[string]any{"a": 1},
-			path:        "a.b",
+			path:        []string{"a", "b"},
 			expected:    nil,
 		},
 		{
 			description: "nest map",
 			values:      map[string]any{"a": map[string]any{"x": 1, "y": 2}},
-			path:        "a.y",
+			path:        []string{"a", "y"},
 			expected:    2,
 		},
 		{
 			description: "non-map value",
 			values:      map[string]any{"a": map[string]any{"x": 1}},
-			path:        "x.y",
+			path:        []string{"x", "y"},
 			expected:    nil,
 		},
 	}
@@ -80,7 +80,7 @@ func TestSub(t *testing.T) {
 		t.Run(testcase.description, func(t *testing.T) {
 			t.Parallel()
 
-			actual := maps.Sub(testcase.values, testcase.path, ".", nil)
+			actual := maps.Sub(testcase.values, testcase.path, nil)
 			assert.Equal(t, testcase.expected, actual)
 		})
 	}

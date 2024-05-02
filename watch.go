@@ -8,11 +8,12 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"maps"
 	"reflect"
 	"slices"
 	"sync"
 	"time"
+
+	"github.com/nil-go/konf/internal"
 )
 
 // Watch watches and updates configuration when it changes.
@@ -50,9 +51,9 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 		for {
 			select {
 			case onChanges := <-onChangesChannel:
-				values := make(map[string]any)
+				values := internal.NewStore(make(map[string]any), c.delim(), c.keyMap())
 				for _, w := range c.providers {
-					c.merge(values, w.values)
+					values.Merge(w.values)
 				}
 				c.values = values
 				c.log(ctx, slog.LevelDebug, "Configuration has been updated with change.")
@@ -102,7 +103,7 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 
 				onChange := func(values map[string]any) {
 					oldValues := provider.values
-					newValues := maps.Clone(values)
+					newValues := internal.NewStore(values, c.delim(), c.keyMap())
 					provider.values = newValues
 
 					// Find the onChanges should be triggered.
@@ -112,8 +113,8 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 
 						var callbacks []func(*Config)
 						for path, onChanges := range c.onChanges {
-							oldVal := c.sub(oldValues, path)
-							newVal := c.sub(newValues, path)
+							oldVal := oldValues.Sub(path)
+							newVal := newValues.Sub(path)
 							if !reflect.DeepEqual(oldVal, newVal) {
 								callbacks = append(callbacks, onChanges...)
 							}

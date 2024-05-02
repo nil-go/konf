@@ -3,14 +3,16 @@
 
 package maps
 
-import "strings"
+func Sub(values map[string]any, path []string, keyMap func(string) string) any {
+	for len(path) > 0 && path[0] == "" {
+		path = path[1:]
+	}
 
-func Sub(values map[string]any, path string, delimiter string, keyMap func(string) string) any {
-	if path == "" {
+	if len(path) == 0 {
 		return values
 	}
 
-	key, path, _ := strings.Cut(path, delimiter)
+	key := path[0]
 	value, ok := values[key]
 	if !ok && keyMap != nil {
 		key = keyMap(key)
@@ -24,11 +26,11 @@ func Sub(values map[string]any, path string, delimiter string, keyMap func(strin
 		}
 	}
 
-	if path == "" {
+	if len(path) == 1 {
 		return value
 	}
 	if mp, ok := value.(map[string]any); ok {
-		return Sub(mp, path, delimiter, keyMap)
+		return Sub(mp, path[1:], keyMap)
 	}
 
 	return nil

@@ -5,7 +5,6 @@ package konf
 
 import (
 	"context"
-	"strings"
 )
 
 // Loader is the interface that wraps the Load method.
@@ -42,5 +41,5 @@ func (c *Config) Exists(path []string) bool {
 
 	c.nocopy.Check()
 
-	return c.sub(c.values, strings.Join(path, c.delim())) != nil
+	return c.values.Exist(path)
 }

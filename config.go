@@ -8,7 +8,6 @@ import (
 	"encoding"
 	"fmt"
 	"log/slog"
-	"maps"
 	"reflect"
 	"slices"
 	"strings"
@@ -20,7 +19,6 @@ import (
 	"github.com/nil-go/konf/internal"
 	"github.com/nil-go/konf/internal/convert"
 	"github.com/nil-go/konf/internal/credential"
-	kmaps "github.com/nil-go/konf/internal/maps"
 )
 
 // Config reads configuration from appropriate sources.
@@ -37,7 +35,7 @@ type Config struct {
 	converter     convert.Converter
 
 	// Loaded configuration.
-	values    map[string]any
+	values    *internal.Store
 	providers []provider
 
 	// For watching changes.
@@ -61,9 +59,7 @@ func New(opts ...Option) *Config {
 	} else {
 		option.hooks = append(option.hooks, convert.WithTagName(option.tagName))
 	}
-	if !option.caseSensitive {
-		option.hooks = append(option.hooks, defaultKeyMap)
-	}
+	option.hooks = append(option.hooks, convert.WithKeyMapper(option.keyMap()))
 	option.converter = convert.New(option.hooks...)
 
 	return &(option.Config)
@@ -79,9 +75,8 @@ func (c *Config) Load(loader Loader) error {
 	if loader == nil {
 		return nil
 	}
-
 	if c.values == nil {
-		c.values = make(map[string]any)
+		c.values = internal.NewStore(make(map[string]any), c.delim(), c.keyMap())
 	}
 
 	if statuser, ok := loader.(Statuser); ok {
@@ -107,10 +102,10 @@ func (c *Config) Load(loader Loader) error {
 
 	prd := provider{
 		loader: loader,
-		values: maps.Clone(values),
+		values: internal.NewStore(values, c.delim(), c.keyMap()),
 	}
 	c.providers = append(c.providers, prd)
-	c.merge(c.values, prd.values)
+	c.values.Merge(prd.values)
 
 	return nil
 }
@@ -122,6 +117,9 @@ func (c *Config) Unmarshal(path string, target any) error {
 	if c == nil {
 		return nil
 	}
+	if c.values == nil {
+		c.values = internal.NewStore(make(map[string]any), c.delim(), c.keyMap())
+	}
 
 	c.nocopy.Check()
 
@@ -130,7 +128,7 @@ func (c *Config) Unmarshal(path string, target any) error {
 		converter = defaultConverter
 	}
 
-	if err := converter.Convert(c.sub(c.values, path), target); err != nil {
+	if err := converter.Convert(c.values.Sub(path), target); err != nil {
 		return fmt.Errorf("decode: %w", err)
 	}
 
@@ -145,22 +143,12 @@ func (c *Config) log(ctx context.Context, level slog.Level, message string, attr
 	logger.LogAttrs(ctx, level, message, attrs...)
 }
 
-func (c *Config) merge(dst, src map[string]any) {
-	var keyMap func(s string) string
-	if !c.caseSensitive {
-		keyMap = toLower
+func (c *Config) keyMap() func(string) string {
+	if c.caseSensitive {
+		return nil
 	}
 
-	kmaps.Merge(dst, src, keyMap)
-}
-
-func (c *Config) sub(values map[string]any, path string) any {
-	var keyMap func(s string) string
-	if !c.caseSensitive {
-		keyMap = toLower
-	}
-
-	return kmaps.Sub(values, path, c.delim(), keyMap)
+	return toLower
 }
 
 func toLower(s string) string {
@@ -186,7 +174,7 @@ func (c *Config) Explain(path string) string {
 	c.nocopy.Check()
 
 	explanation := &strings.Builder{}
-	c.explain(explanation, path, c.sub(c.values, path))
+	c.explain(explanation, path, c.values.Sub(path))
 
 	return explanation.String()
 }
@@ -211,7 +199,7 @@ func (c *Config) explain(explanation *strings.Builder, path string, value any) {
 	}
 	var loaders []loaderValue
 	for _, provider := range c.providers {
-		if v := c.sub(provider.values, path); v != nil {
+		if v := provider.values.Sub(path); v != nil {
 			loaders = append(loaders, loaderValue{provider.loader, v})
 		}
 	}
@@ -244,7 +232,7 @@ func (c *Config) explain(explanation *strings.Builder, path string, value any) {
 
 type provider struct {
 	loader Loader
-	values map[string]any
+	values *internal.Store
 }
 
 //nolint:gochecknoglobals
