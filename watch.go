@@ -12,8 +12,6 @@ import (
 	"slices"
 	"sync"
 	"time"
-
-	"github.com/nil-go/konf/internal/maps"
 )
 
 // Watch watches and updates configuration when it changes.
@@ -53,7 +51,7 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 			case onChanges := <-onChangesChannel:
 				values := make(map[string]any)
 				for _, w := range c.providers {
-					maps.Merge(values, w.values)
+					c.merge(values, w.values)
 				}
 				c.values = values
 				c.log(ctx, slog.LevelDebug, "Configuration has been updated with change.")

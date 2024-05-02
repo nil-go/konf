@@ -109,7 +109,7 @@ func (c *Config) Load(loader Loader) error {
 		values: values,
 	}
 	c.providers = append(c.providers, prd)
-	maps.Merge(c.values, prd.values)
+	c.merge(c.values, prd.values)
 
 	return nil
 }
@@ -142,6 +142,15 @@ func (c *Config) log(ctx context.Context, level slog.Level, message string, attr
 		logger = slog.Default()
 	}
 	logger.LogAttrs(ctx, level, message, attrs...)
+}
+
+func (c *Config) merge(dst, src map[string]any) {
+	var keyMap func(s string) string
+	if !c.caseSensitive {
+		keyMap = toLower
+	}
+
+	maps.Merge(dst, src, keyMap)
 }
 
 func (c *Config) sub(values map[string]any, path string) any {

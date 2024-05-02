@@ -81,7 +81,7 @@ func TestMerge(t *testing.T) {
 		t.Run(testcase.description, func(t *testing.T) {
 			t.Parallel()
 
-			maps.Merge(testcase.dst, testcase.src)
+			maps.Merge(testcase.dst, testcase.src, nil)
 			assert.Equal(t, testcase.expected, testcase.dst)
 		})
 	}

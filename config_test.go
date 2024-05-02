@@ -84,6 +84,15 @@ func TestConfig_Unmarshal(t *testing.T) {
 			},
 		},
 		{
+			description: "config for map",
+			loaders:     []konf.Loader{mapLoader{"Config": "struct"}},
+			assert: func(config *konf.Config) {
+				var value map[string]string
+				assert.NoError(t, config.Unmarshal("", &value))
+				assert.Equal(t, "struct", value["Config"])
+			},
+		},
+		{
 			description: "config for struct",
 			loaders:     []konf.Loader{mapLoader{"config": "struct"}},
 			assert: func(config *konf.Config) {
@@ -287,7 +296,7 @@ func TestConfig_Explain(t *testing.T) {
 		"number":   123,
 		"password": "password",
 		"key":      []byte("AKIA9SKKLKSKKSKKSKK8"),
-		"config":   map[string]any{"nest": "map"},
+		"config":   map[string]any{"Nest": "map"},
 	})
 	assert.NoError(t, err)
 
@@ -319,7 +328,7 @@ func TestConfig_Explain(t *testing.T) {
 		{
 			description: "config",
 			path:        "config",
-			expected: `config.nest has value[map] that is loaded by loader[map].
+			expected: `config.Nest has value[map] that is loaded by loader[map].
 Here are other value(loader)s:
   - env(map)
 
