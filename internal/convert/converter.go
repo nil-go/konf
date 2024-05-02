@@ -519,10 +519,18 @@ func (c Converter) convertStruct(name string, fromVal, toVal reflect.Value) erro
 				}
 
 				keyName := fieldName
-				if c.keyMap != nil {
-					keyName = c.keyMap(keyName)
-				}
 				elemVal := fromVal.MapIndex(reflect.ValueOf(keyName))
+				if !elemVal.IsValid() && c.keyMap != nil {
+					keyName = c.keyMap(fieldName)
+					for _, keyVal := range fromVal.MapKeys() {
+						key := c.keyMap(keyVal.String())
+						if key == keyName {
+							elemVal = fromVal.MapIndex(keyVal)
+
+							break
+						}
+					}
+				}
 				if !elemVal.IsValid() {
 					// There was no matching key in the map for the value in the struct.
 					continue
