@@ -8,6 +8,7 @@ import (
 	"encoding"
 	"fmt"
 	"log/slog"
+	"maps"
 	"reflect"
 	"slices"
 	"strings"
@@ -19,7 +20,7 @@ import (
 	"github.com/nil-go/konf/internal"
 	"github.com/nil-go/konf/internal/convert"
 	"github.com/nil-go/konf/internal/credential"
-	"github.com/nil-go/konf/internal/maps"
+	kmaps "github.com/nil-go/konf/internal/maps"
 )
 
 // Config reads configuration from appropriate sources.
@@ -106,7 +107,7 @@ func (c *Config) Load(loader Loader) error {
 
 	prd := provider{
 		loader: loader,
-		values: values,
+		values: maps.Clone(values),
 	}
 	c.providers = append(c.providers, prd)
 	c.merge(c.values, prd.values)
@@ -150,7 +151,7 @@ func (c *Config) merge(dst, src map[string]any) {
 		keyMap = toLower
 	}
 
-	maps.Merge(dst, src, keyMap)
+	kmaps.Merge(dst, src, keyMap)
 }
 
 func (c *Config) sub(values map[string]any, path string) any {
@@ -159,7 +160,11 @@ func (c *Config) sub(values map[string]any, path string) any {
 		keyMap = toLower
 	}
 
-	return maps.Sub(values, path, c.delim(), keyMap)
+	return kmaps.Sub(values, path, c.delim(), keyMap)
+}
+
+func toLower(s string) string {
+	return strings.Map(unicode.ToLower, s)
 }
 
 func (c *Config) delim() string {
@@ -168,10 +173,6 @@ func (c *Config) delim() string {
 	}
 
 	return c.delimiter
-}
-
-func toLower(s string) string {
-	return strings.Map(unicode.ToLower, s)
 }
 
 // Explain provides information about how Config resolve each value

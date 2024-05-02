@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"maps"
 	"reflect"
 	"slices"
 	"sync"
@@ -101,7 +102,7 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 
 				onChange := func(values map[string]any) {
 					oldValues := provider.values
-					newValues := values
+					newValues := maps.Clone(values)
 					provider.values = newValues
 
 					// Find the onChanges should be triggered.
@@ -171,9 +172,6 @@ func (c *Config) OnChange(onChange func(*Config), paths ...string) {
 		c.onChanges = make(map[string][]func(*Config))
 	}
 	for _, path := range paths {
-		if !c.caseSensitive {
-			path = toLower(path)
-		}
 		c.onChanges[path] = append(c.onChanges[path], onChange)
 	}
 }
