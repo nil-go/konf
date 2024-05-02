@@ -522,10 +522,11 @@ func (c Converter) convertStruct(name string, fromVal, toVal reflect.Value) erro
 				elemVal := fromVal.MapIndex(reflect.ValueOf(keyName))
 				if !elemVal.IsValid() && c.keyMap != nil {
 					keyName = c.keyMap(fieldName)
-					for _, keyVal := range fromVal.MapKeys() {
-						key := c.keyMap(keyVal.String())
+					iter := fromVal.MapRange()
+					for iter.Next() {
+						key := c.keyMap(iter.Key().String())
 						if key == keyName {
-							elemVal = fromVal.MapIndex(keyVal)
+							elemVal = iter.Value()
 
 							break
 						}
