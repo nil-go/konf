@@ -7,6 +7,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.1.1] - 2024-05-02
+
 ### Fixed
 
 - Explain supports empty string as path (#314).
