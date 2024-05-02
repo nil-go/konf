@@ -57,7 +57,7 @@ func TestSub(t *testing.T) {
 		},
 		{
 			description: "keyvalue",
-			values:      map[string]any{"a": maps.KeyValue{Key: "A", Value: 1}},
+			values:      map[string]any{"a": maps.Pack("A", 1)},
 			path:        "a",
 			expected:    1,
 		},

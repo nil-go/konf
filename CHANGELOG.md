@@ -10,6 +10,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Fixed
 
 - Explain supports empty string as path (#314).
+- Reserve the case for key of map when unmarshalling (#318).
 
 ## [1.1.0] - 2024-04-24
 

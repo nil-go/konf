@@ -7,3 +7,15 @@ type KeyValue struct {
 	Key   string
 	Value any
 }
+
+func Pack(key string, value any) KeyValue {
+	return KeyValue{Key: key, Value: value}
+}
+
+func Unpack(value any) (string, any) {
+	if v, ok := value.(KeyValue); ok {
+		return v.Key, v.Value
+	}
+
+	return "", value
+}

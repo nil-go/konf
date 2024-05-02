@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/nil-go/konf/internal"
+	"github.com/nil-go/konf/internal/maps"
 )
 
 type Converter struct {
@@ -348,16 +349,21 @@ func (c Converter) convertMap(name string, fromVal, toVal reflect.Value) error {
 		errs := make([]error, 0, toVal.Len())
 		for _, fromKeyVal := range fromVal.MapKeys() {
 			fieldName := name + "[" + fromKeyVal.String() + "]"
-			toKeyVal := reflect.New(toKeyType)
-			if err := c.convert(fieldName, fromKeyVal.Interface(), pointer(toKeyVal)); err != nil {
+
+			fromValueVal := fromVal.MapIndex(fromKeyVal)
+			toValueVal := reflect.New(toValueType)
+			key, value := maps.Unpack(fromValueVal.Interface())
+			if err := c.convert(fieldName, value, pointer(toValueVal)); err != nil {
 				errs = append(errs, err)
 
 				continue
 			}
 
-			fromValueVal := fromVal.MapIndex(fromKeyVal)
-			toValueVal := reflect.New(toValueType)
-			if err := c.convert(fieldName, fromValueVal.Interface(), pointer(toValueVal)); err != nil {
+			if key == "" {
+				key = fromKeyVal.String()
+			}
+			toKeyVal := reflect.New(toKeyType)
+			if err := c.convert(fieldName, key, pointer(toKeyVal)); err != nil {
 				errs = append(errs, err)
 
 				continue
@@ -531,7 +537,8 @@ func (c Converter) convertStruct(name string, fromVal, toVal reflect.Value) erro
 				if name != "" {
 					fieldName = name + "." + fieldName
 				}
-				if err := c.convert(fieldName, elemVal.Interface(), pointer(fieldVal)); err != nil {
+				_, value := maps.Unpack(elemVal.Interface())
+				if err := c.convert(fieldName, value, pointer(fieldVal)); err != nil {
 					errs = append(errs, err)
 				}
 			}

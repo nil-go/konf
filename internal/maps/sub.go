@@ -11,11 +11,7 @@ func Sub(values map[string]any, path string, delimiter string) (value any) { //n
 	}
 
 	defer func() {
-		switch v := value.(type) {
-		case KeyValue:
-			value = v.Value
-		default:
-		}
+		_, value = Unpack(value)
 	}()
 
 	key, path, _ := strings.Cut(path, delimiter)
