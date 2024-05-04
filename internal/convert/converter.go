@@ -93,7 +93,7 @@ func (c Converter) convert(name string, from any, toVal reflect.Value) error { /
 		return c.convertStruct(name, fromVal, toVal)
 	default:
 		// If it reached here then it weren't able to convert it.
-		return fmt.Errorf("%s: unsupported type: %s", name, toVal.Kind()) //nolint:goerr113
+		return fmt.Errorf("%s: unsupported type: %s", name, toVal.Kind()) //nolint:err113
 	}
 }
 
@@ -121,7 +121,7 @@ func (c Converter) convertBool(name string, fromVal, toVal reflect.Value) error 
 			toVal.SetBool(b)
 		}
 	default:
-		return fmt.Errorf( //nolint:goerr113
+		return fmt.Errorf( //nolint:err113
 			"'%s' expected type '%s', got unconvertible type '%s', value: '%v'",
 			name, toVal.Type(), fromVal.Type(), fromVal.Interface(),
 		)
@@ -158,7 +158,7 @@ func (c Converter) convertInt(name string, fromVal, toVal reflect.Value) error {
 			toVal.SetInt(i)
 		}
 	default:
-		return fmt.Errorf( //nolint:goerr113
+		return fmt.Errorf( //nolint:err113
 			"'%s' expected type '%s', got unconvertible type '%s', value: '%v'",
 			name, toVal.Type(), fromVal.Type(), fromVal.Interface(),
 		)
@@ -178,7 +178,7 @@ func (c Converter) convertUint(name string, fromVal, toVal reflect.Value) error 
 	case fromVal.CanInt():
 		i := fromVal.Int()
 		if i < 0 {
-			return fmt.Errorf("cannot parse '%s', %d overflows uint", name, i) //nolint:goerr113
+			return fmt.Errorf("cannot parse '%s', %d overflows uint", name, i) //nolint:err113
 		}
 		toVal.SetUint(uint64(i))
 	case fromVal.CanUint():
@@ -186,13 +186,13 @@ func (c Converter) convertUint(name string, fromVal, toVal reflect.Value) error 
 	case fromVal.CanFloat():
 		f := fromVal.Float()
 		if f < 0 {
-			return fmt.Errorf("cannot parse '%s', %f overflows uint", name, f) //nolint:goerr113
+			return fmt.Errorf("cannot parse '%s', %f overflows uint", name, f) //nolint:err113
 		}
 		toVal.SetUint(uint64(f))
 	case fromVal.CanComplex():
 		r := real(fromVal.Complex())
 		if r < 0 {
-			return fmt.Errorf("cannot parse '%s', %f overflows uint", name, r) //nolint:goerr113
+			return fmt.Errorf("cannot parse '%s', %f overflows uint", name, r) //nolint:err113
 		}
 		toVal.SetUint(uint64(r))
 	case fromVal.Kind() == reflect.String:
@@ -207,7 +207,7 @@ func (c Converter) convertUint(name string, fromVal, toVal reflect.Value) error 
 			toVal.SetUint(i)
 		}
 	default:
-		return fmt.Errorf( //nolint:goerr113
+		return fmt.Errorf( //nolint:err113
 			"'%s' expected type '%s', got unconvertible type '%s', value: '%v'",
 			name, toVal.Type(), fromVal.Type(), fromVal.Interface(),
 		)
@@ -244,7 +244,7 @@ func (c Converter) convertFloat(name string, fromVal, toVal reflect.Value) error
 			toVal.SetFloat(i)
 		}
 	default:
-		return fmt.Errorf( //nolint:goerr113
+		return fmt.Errorf( //nolint:err113
 			"'%s' expected type '%s', got unconvertible type '%s', value: '%v'",
 			name, toVal.Type(), fromVal.Type(), fromVal.Interface(),
 		)
@@ -281,7 +281,7 @@ func (c Converter) convertComplex(name string, fromVal, toVal reflect.Value) err
 			toVal.SetComplex(i)
 		}
 	default:
-		return fmt.Errorf( //nolint:goerr113
+		return fmt.Errorf( //nolint:err113
 			"'%s' expected type '%s', got unconvertible type '%s', value: '%v'",
 			name, toVal.Type(), fromVal.Type(), fromVal.Interface(),
 		)
@@ -294,7 +294,7 @@ func (c Converter) convertArray(name string, fromVal, toVal reflect.Value) error
 	switch fromVal.Kind() {
 	case reflect.Array, reflect.Slice:
 		if fromVal.Len() > toVal.Len() {
-			return fmt.Errorf( //nolint:goerr113
+			return fmt.Errorf( //nolint:err113
 				"'%s': expected source data to have length less or equal to %d, got %d",
 				name, toVal.Len(), fromVal.Len(),
 			)
@@ -374,7 +374,7 @@ func (c Converter) convertMap(name string, fromVal, toVal reflect.Value) error {
 
 		return errors.Join(errs...)
 	default:
-		return fmt.Errorf("'%s' expected a map, got '%s'", name, fromVal.Kind()) //nolint:goerr113
+		return fmt.Errorf("'%s' expected a map, got '%s'", name, fromVal.Kind()) //nolint:err113
 	}
 }
 
@@ -456,7 +456,7 @@ func (c Converter) convertString(name string, fromVal, toVal reflect.Value) erro
 	case fromVal.CanFloat():
 		toVal.SetString(strconv.FormatFloat(fromVal.Float(), 'f', -1, 64))
 	case fromVal.CanComplex():
-		toVal.SetString(strconv.FormatComplex(fromVal.Complex(), 'f', -1, 128)) //nolint:gomnd
+		toVal.SetString(strconv.FormatComplex(fromVal.Complex(), 'f', -1, 128)) //nolint:mnd
 	case fromVal.Kind() == reflect.String:
 		toVal.SetString(fromVal.String())
 	case fromVal.Kind() == reflect.Array && fromVal.Type().Elem().Kind() == reflect.Uint8:
@@ -466,7 +466,7 @@ func (c Converter) convertString(name string, fromVal, toVal reflect.Value) erro
 	case fromVal.Kind() == reflect.Slice && fromVal.Type().Elem().Kind() == reflect.Uint8:
 		toVal.SetString(internal.ByteSlice2String(fromVal.Bytes()))
 	default:
-		return fmt.Errorf( //nolint:goerr113
+		return fmt.Errorf( //nolint:err113
 			"'%s' expected type '%s', got unconvertible type '%s', value: '%v'",
 			name, toVal.Type(), fromVal.Type(), fromVal.Interface(),
 		)
@@ -479,7 +479,7 @@ func (c Converter) convertStruct(name string, fromVal, toVal reflect.Value) erro
 	switch fromVal.Kind() {
 	case reflect.Map:
 		if fromVal.Type().Key().Kind() != reflect.String {
-			return fmt.Errorf( //nolint:goerr113
+			return fmt.Errorf( //nolint:err113
 				"'%s' needs a map with string keys, has '%s' keys",
 				name, fromVal.Type().Key().Kind(),
 			)
@@ -488,7 +488,7 @@ func (c Converter) convertStruct(name string, fromVal, toVal reflect.Value) erro
 		// This slice will keep track of all the structs it'll be decoding.
 		// There can be more than one struct if there are embedded structs
 		// that are squashed.
-		structs := make([]reflect.Value, 0, 5) //nolint:gomnd
+		structs := make([]reflect.Value, 0, 5) //nolint:mnd
 		structs = append(structs, toVal)
 
 		var errs []error
@@ -513,7 +513,7 @@ func (c Converter) convertStruct(name string, fromVal, toVal reflect.Value) erro
 				}
 				if tag == "squash" {
 					if fieldVal.Kind() != reflect.Struct {
-						errs = append(errs, fmt.Errorf( //nolint:goerr113
+						errs = append(errs, fmt.Errorf( //nolint:err113
 							"%s: unsupported type for squash: %s",
 							fieldType.Name, fieldVal.Kind(),
 						))
@@ -546,7 +546,7 @@ func (c Converter) convertStruct(name string, fromVal, toVal reflect.Value) erro
 
 		return errors.Join(errs...)
 	default:
-		return fmt.Errorf("'%s' expected a map, got '%s'", name, fromVal.Kind()) //nolint:goerr113
+		return fmt.Errorf("'%s' expected a map, got '%s'", name, fromVal.Kind()) //nolint:err113
 	}
 }
 

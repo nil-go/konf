@@ -66,7 +66,7 @@ func New(uri string, opts ...Option) *S3 {
 	for _, opt := range opts {
 		opt(option)
 	}
-	option.client.timeout = option.pollInterval / 2 //nolint:gomnd
+	option.client.timeout = option.pollInterval / 2 //nolint:mnd
 
 	return (*S3)(option)
 }
@@ -235,7 +235,7 @@ func (p *clientProxy) load(ctx context.Context) ([]byte, bool, error) {
 		p.client = s3.NewFromConfig(p.config)
 	}
 
-	ctx, cancel := context.WithTimeout(ctx, max(p.timeout, 10*time.Second)) //nolint:gomnd
+	ctx, cancel := context.WithTimeout(ctx, max(p.timeout, 10*time.Second)) //nolint:mnd
 	defer cancel()
 
 	resp, err := p.client.GetObject(ctx, &s3.GetObjectInput{

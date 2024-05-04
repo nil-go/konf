@@ -136,7 +136,7 @@ func (n *Notifier) Start(ctx context.Context) error { //nolint:cyclop,funlen,goc
 		case <-ctx.Done():
 			return nil
 		case <-timer.C:
-			messages, err := receiver.ReceiveMessages(ctx, 10, nil) //nolint:gomnd // default maximum.
+			messages, err := receiver.ReceiveMessages(ctx, 10, nil) //nolint:mnd // default maximum.
 			if err != nil {
 				if !errors.Is(err, context.Canceled) {
 					logger.LogAttrs(ctx, slog.LevelWarn,
@@ -145,7 +145,7 @@ func (n *Notifier) Start(ctx context.Context) error { //nolint:cyclop,funlen,goc
 						slog.Any("error", err),
 					)
 				}
-				timer.Reset(20 * time.Second) //nolint:gomnd // Retry after 20 seconds to avoid busy loop.
+				timer.Reset(20 * time.Second) //nolint:mnd // Retry after 20 seconds to avoid busy loop.
 
 				continue
 			}

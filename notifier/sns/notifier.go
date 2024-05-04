@@ -212,8 +212,8 @@ func (n *Notifier) Start(ctx context.Context) error { //nolint:cyclop,funlen,goc
 		case <-timer.C:
 			messages, err := sqsClient.ReceiveMessage(ctx, &sqs.ReceiveMessageInput{
 				QueueUrl:            queue.QueueUrl,
-				MaxNumberOfMessages: 10, //nolint:gomnd // The maximum number of messages to return.
-				WaitTimeSeconds:     20, //nolint:gomnd // The maximum amount of time for waiting messages.
+				MaxNumberOfMessages: 10, //nolint:mnd // The maximum number of messages to return.
+				WaitTimeSeconds:     20, //nolint:mnd // The maximum amount of time for waiting messages.
 			})
 			if err != nil {
 				if !errors.Is(err, context.Canceled) {
@@ -223,7 +223,7 @@ func (n *Notifier) Start(ctx context.Context) error { //nolint:cyclop,funlen,goc
 						slog.Any("error", err),
 					)
 				}
-				timer.Reset(20 * time.Second) //nolint:gomnd // Retry after 20 seconds to avoid busy loop.
+				timer.Reset(20 * time.Second) //nolint:mnd // Retry after 20 seconds to avoid busy loop.
 
 				continue
 			}

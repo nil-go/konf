@@ -62,7 +62,7 @@ func New(endpoint string, opts ...Option) *AppConfig {
 	for _, opt := range opts {
 		opt(option)
 	}
-	option.client.timeout = option.pollInterval / 2 //nolint:gomnd
+	option.client.timeout = option.pollInterval / 2 //nolint:mnd
 
 	return (*AppConfig)(option)
 }
@@ -216,7 +216,7 @@ func (p *clientProxy) load(ctx context.Context) (map[string]string, bool, error)
 		eTags  = make(map[string]azcore.ETag)
 
 		nextPage = func(ctx context.Context) error {
-			ctx, cancel := context.WithTimeout(ctx, max(p.timeout, 10*time.Second)) //nolint:gomnd
+			ctx, cancel := context.WithTimeout(ctx, max(p.timeout, 10*time.Second)) //nolint:mnd
 			defer cancel()
 
 			page, err := pager.NextPage(ctx)
