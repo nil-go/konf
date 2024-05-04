@@ -160,7 +160,7 @@ func testcases() []testcase {
 				azblob.WithCredential(nil),
 			},
 			handler: func(writer http.ResponseWriter, _ *http.Request) {
-				writer.Header().Set("ETag", "k42")
+				writer.Header().Set("Etag", "k42")
 				_, _ = writer.Write([]byte(`{"k":"v"}`))
 			},
 			expected: map[string]any{
@@ -191,7 +191,7 @@ download blob error
 				azblob.WithCredential(nil),
 			},
 			handler: func(writer http.ResponseWriter, _ *http.Request) {
-				writer.Header().Set("ETag", "k42")
+				writer.Header().Set("Etag", "k42")
 				_, _ = writer.Write([]byte(`{"k":"v"}`))
 			},
 			unmarshal: func([]byte, any) error {
@@ -214,7 +214,7 @@ func watchcases() []testcase {
 				azblob.WithCredential(nil),
 			},
 			handler: func(writer http.ResponseWriter, _ *http.Request) {
-				writer.Header().Set("ETag", "k42")
+				writer.Header().Set("Etag", "k42")
 				_, _ = writer.Write([]byte(`{"k":"v"}`))
 			},
 			event: messaging.CloudEvent{
@@ -231,7 +231,7 @@ func watchcases() []testcase {
 				azblob.WithCredential(nil),
 			},
 			handler: func(writer http.ResponseWriter, _ *http.Request) {
-				writer.Header().Set("ETag", "k42")
+				writer.Header().Set("Etag", "k42")
 				_, _ = writer.Write([]byte(`{"k":"v"}`))
 			},
 			event: messaging.CloudEvent{
@@ -248,7 +248,7 @@ func watchcases() []testcase {
 				azblob.WithCredential(nil),
 			},
 			handler: func(writer http.ResponseWriter, _ *http.Request) {
-				writer.Header().Set("ETag", "k42")
+				writer.Header().Set("Etag", "k42")
 				_, _ = writer.Write([]byte(`{"k":"v"}`))
 			},
 			event: messaging.CloudEvent{

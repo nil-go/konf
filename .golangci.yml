@@ -38,6 +38,7 @@ linters:
     - asciicheck
     - bidichk
     - bodyclose
+    - canonicalheader
     - containedctx
     - contextcheck
     # copyloopvar // go 1.22
@@ -48,14 +49,15 @@ linters:
     - dupl
     - durationcheck
     - dupword
+    - err113
     - errcheck
     - errchkjson
     - errname
     - errorlint
-    - execinquery
     - exportloopref
     - exhaustive
     # exhaustruct
+    - fatcontext
     - forbidigo
     - forcetypeassert
     - funlen
@@ -71,12 +73,10 @@ linters:
     - gocyclo
     - godot
     - godox
-    - goerr113
     - gofmt
     - gofumpt
     - goheader
     - goimports
-    - gomnd
     - gomoddirectives
     - gomodguard
     - goprintffuncname
@@ -97,6 +97,7 @@ linters:
     - makezero
     - mirror
     - misspell
+    - mnd
     # musttag
     - nakedret
     - nestif
@@ -150,11 +151,11 @@ issues:
       linters:
         - contextcheck
         - cyclop
+        - err113
         - forcetypeassert
         - funlen
         - gochecknoglobals
-        - gochecknoinits
         - goconst
-        - goerr113
+        - init
         - lll
         - wrapcheck
