@@ -165,6 +165,11 @@ There are providers for the following configuration sources.
 | [`secretmanager`](provider/secretmanager) | [GCP Secret Manager](https://cloud.google.com/security/products/secret-manager)         |       ✓       | [pubsub](notifier/pubsub) |
 | [`gcs`](provider/gcs)                     | [GCP Cloud Storage](https://cloud.google.com/storage)                                   |       ✓       | [pubsub](notifier/pubsub) |
 
+[cobra](https://github.com/spf13/cobra) is supported through the [`pflag`](provider/pflag) loader, with the `WithFlagSet` option:  
+```go
+config.Load(kflag.New(&config, kflag.WithFlagSet(yourCobraCmd.Flags())))
+```
+
 ## Custom Configuration Providers
 
 You can Custom provider by implementing the `Loader` for static configuration loader (e.g [`fs`](provider/fs))
