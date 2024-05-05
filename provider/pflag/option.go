@@ -21,7 +21,6 @@ func WithPrefix(prefix string) Option {
 // WithFlagSet provides the [pflag.FlagSet] that loads configuration from.
 //
 // The default flag set is [pflag.CommandLine] plus [flag.CommandLine].
-// WithFlagSet allows to use spf13/cobra and pass the flag set to the pflag loader.
 func WithFlagSet(set *pflag.FlagSet) Option {
 	return func(options *options) {
 		options.set = set
