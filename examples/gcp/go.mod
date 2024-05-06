@@ -3,10 +3,10 @@ module github.com/nil-go/konf/examples/gcp
 go 1.22
 
 require (
-	github.com/nil-go/konf v1.1.0
-	github.com/nil-go/konf/notifier/pubsub v1.1.0
-	github.com/nil-go/konf/provider/gcs v1.1.0
-	github.com/nil-go/konf/provider/secretmanager v1.1.0
+	github.com/nil-go/konf v1.1.1
+	github.com/nil-go/konf/notifier/pubsub v1.1.1
+	github.com/nil-go/konf/provider/gcs v1.1.1
+	github.com/nil-go/konf/provider/secretmanager v1.1.1
 	gopkg.in/yaml.v3 v3.0.1
 )
 
