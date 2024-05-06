@@ -3,11 +3,11 @@ module github.com/nil-go/konf/examples/aws
 go 1.22
 
 require (
-	github.com/nil-go/konf v1.1.0
-	github.com/nil-go/konf/notifier/sns v1.1.0
-	github.com/nil-go/konf/provider/appconfig v1.1.0
-	github.com/nil-go/konf/provider/parameterstore v1.1.0
-	github.com/nil-go/konf/provider/s3 v1.1.0
+	github.com/nil-go/konf v1.1.1
+	github.com/nil-go/konf/notifier/sns v1.1.1
+	github.com/nil-go/konf/provider/appconfig v1.1.1
+	github.com/nil-go/konf/provider/parameterstore v1.1.1
+	github.com/nil-go/konf/provider/s3 v1.1.1
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -30,7 +30,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.53.1 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sns v1.29.4 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sqs v1.31.4 // indirect
-	github.com/aws/aws-sdk-go-v2/service/ssm v1.49.5 // indirect
+	github.com/aws/aws-sdk-go-v2/service/ssm v1.50.0 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sso v1.20.5 // indirect
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.23.4 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sts v1.28.6 // indirect
