@@ -156,6 +156,6 @@ issues:
         - funlen
         - gochecknoglobals
         - goconst
-        - init
+        - gochecknoinits
         - lll
         - wrapcheck
