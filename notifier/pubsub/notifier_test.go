@@ -107,7 +107,7 @@ level=WARN msg="Fail to delete pubsub subscription." topic=topic subscription=pr
 			assert.NoError(t, err)
 
 			// Connect to the server without using TLS.
-			conn, err := grpc.Dial(srv.Addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+			conn, err := grpc.NewClient(srv.Addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 			assert.NoError(t, err)
 			defer func() {
 				_ = conn.Close()
