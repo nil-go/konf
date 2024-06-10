@@ -7,6 +7,13 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.2.0] - 2024-06-10
+
+### Changed
+
+- [Breaking] The map key is case insensitive now. If you would like to keep it case sensitive.
+  please add konf.WithMapKeyCaseSensitive option (#365).
+
 ## [1.1.1] - 2024-05-02
 
 ### Fixed

@@ -28,11 +28,12 @@ type Config struct {
 	nocopy internal.NoCopy[Config]
 
 	// Options.
-	caseSensitive bool
-	delimiter     string
-	logger        *slog.Logger
-	onStatus      func(loader Loader, changed bool, err error)
-	converter     convert.Converter
+	caseSensitive       bool
+	mapKeyCaseSensitive bool
+	delimiter           string
+	logger              *slog.Logger
+	onStatus            func(loader Loader, changed bool, err error)
+	converter           convert.Converter
 
 	// Loaded configuration.
 	values    map[string]any
@@ -162,7 +163,7 @@ func (c *Config) delim() string {
 
 func (c *Config) transformKeys(m map[string]any) {
 	if !c.caseSensitive {
-		maps.TransformKeys(m, strings.ToLower)
+		maps.TransformKeys(m, strings.ToLower, c.mapKeyCaseSensitive)
 	}
 }
 

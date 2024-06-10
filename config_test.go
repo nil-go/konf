@@ -89,6 +89,16 @@ func TestConfig_Unmarshal(t *testing.T) {
 			assert: func(config *konf.Config) {
 				var value map[string]string
 				assert.NoError(t, config.Unmarshal("", &value))
+				assert.Equal(t, "struct", value["config"])
+			},
+		},
+		{
+			description: "config for map (case sensitive)",
+			loaders:     []konf.Loader{mapLoader{"Config": "struct"}},
+			opts:        []konf.Option{konf.WithMapKeyCaseSensitive()},
+			assert: func(config *konf.Config) {
+				var value map[string]string
+				assert.NoError(t, config.Unmarshal("", &value))
 				assert.Equal(t, "struct", value["Config"])
 			},
 		},
