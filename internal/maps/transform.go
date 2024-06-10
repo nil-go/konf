@@ -3,18 +3,22 @@
 
 package maps
 
-func TransformKeys(src map[string]interface{}, keyMap func(string) string) {
+func TransformKeys(src map[string]interface{}, keyMap func(string) string, mapKeyCaseSensitive bool) {
 	if src == nil || keyMap == nil {
 		return
 	}
 	for key, value := range src {
 		if m, ok := value.(map[string]interface{}); ok {
-			TransformKeys(m, keyMap)
+			TransformKeys(m, keyMap, mapKeyCaseSensitive)
 		}
 		newKey := keyMap(key)
 		if newKey != key {
 			delete(src, key)
-			src[newKey] = Pack(key, value)
+			if mapKeyCaseSensitive {
+				src[newKey] = Pack(key, value)
+			} else {
+				src[newKey] = value
+			}
 		}
 	}
 }

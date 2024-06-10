@@ -68,6 +68,13 @@ func WithCaseSensitive() Option {
 	}
 }
 
+// WithMapKeyCaseSensitive enables the case sensitivity of the map keys.
+func WithMapKeyCaseSensitive() Option {
+	return func(options *options) {
+		options.mapKeyCaseSensitive = true
+	}
+}
+
 type (
 	// Option configures a Config with specific options.
 	Option  func(*options)

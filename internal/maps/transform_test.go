@@ -15,10 +15,11 @@ func TestTransformKeys(t *testing.T) {
 	t.Parallel()
 
 	testcases := []struct {
-		description string
-		src         map[string]any
-		keyMap      func(string) string
-		expected    map[string]any
+		description         string
+		src                 map[string]any
+		keyMap              func(string) string
+		mapKeyCaseSensitive bool
+		expected            map[string]any
 	}{
 		{
 			description: "nil map",
@@ -33,7 +34,14 @@ func TestTransformKeys(t *testing.T) {
 			description: "transform keys",
 			src:         map[string]any{"A": map[string]any{"X": 1, "y": 2}},
 			keyMap:      strings.ToLower,
-			expected:    map[string]any{"a": maps.Pack("A", map[string]any{"x": maps.Pack("X", 1), "y": 2})},
+			expected:    map[string]any{"a": map[string]any{"x": 1, "y": 2}},
+		},
+		{
+			description:         "transform keys",
+			src:                 map[string]any{"A": map[string]any{"X": 1, "y": 2}},
+			keyMap:              strings.ToLower,
+			mapKeyCaseSensitive: true,
+			expected:            map[string]any{"a": maps.Pack("A", map[string]any{"x": maps.Pack("X", 1), "y": 2})},
 		},
 	}
 
@@ -42,7 +50,7 @@ func TestTransformKeys(t *testing.T) {
 		t.Run(tc.description, func(t *testing.T) {
 			t.Parallel()
 
-			maps.TransformKeys(tc.src, tc.keyMap)
+			maps.TransformKeys(tc.src, tc.keyMap, tc.mapKeyCaseSensitive)
 			assert.Equal(t, tc.expected, tc.src)
 		})
 	}
