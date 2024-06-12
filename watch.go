@@ -70,14 +70,13 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 							}
 						}()
 
-						var tcancel context.CancelFunc
-						ctx, tcancel = context.WithTimeout(ctx, time.Minute)
+						tctx, tcancel := context.WithTimeout(ctx, time.Minute)
 						defer tcancel()
 						select {
 						case <-done:
 							c.log(ctx, slog.LevelDebug, "Configuration has been applied to onChanges.")
-						case <-ctx.Done():
-							if errors.Is(ctx.Err(), context.DeadlineExceeded) {
+						case <-tctx.Done():
+							if errors.Is(tctx.Err(), context.DeadlineExceeded) {
 								c.log(
 									ctx, slog.LevelWarn,
 									"Configuration has not been fully applied to onChanges due to timeout."+
