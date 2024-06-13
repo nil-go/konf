@@ -7,6 +7,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- Overwriting parent context in `*Config.Watch()` what led to unwanted routine exit.
+
 ## [1.2.0] - 2024-06-10
 
 ### Changed
