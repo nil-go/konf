@@ -10,6 +10,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Fixed
 
 - Overwriting parent context in `*Config.Watch()` what led to unwanted routine exit.
+- Fixed data race occurred in `*Config.values`, `*Config.providers` and `provider.values`. See related PR for details.
 
 ## [1.2.0] - 2024-06-10
 
