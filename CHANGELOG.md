@@ -9,7 +9,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
-- Overwriting parent context in `*Config.Watch()` what led to unwanted routine exit.
+- Overwriting parent context in `*Config.Watch()` what led to unwanted routine exit (#370).
+- Use atomic.Pointer for Config.values and provider.values to avoid race condition (#378).
 
 ## [1.2.0] - 2024-06-10
 

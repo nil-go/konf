@@ -42,5 +42,5 @@ func (c *Config) Exists(path []string) bool {
 
 	c.nocopy.Check()
 
-	return c.sub(c.values, strings.Join(path, c.delim())) != nil
+	return c.sub(*c.values.Load(), strings.Join(path, c.delim())) != nil
 }
