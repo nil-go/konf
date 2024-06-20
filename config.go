@@ -36,8 +36,8 @@ type Config struct {
 	converter           convert.Converter
 
 	// Loaded configuration.
-	values    map[string]any
-	providers []provider
+	values    atomic.Pointer[map[string]any]
+	providers []*provider
 
 	// For watching changes.
 	onChanges      map[string][]func(*Config)
@@ -79,8 +79,8 @@ func (c *Config) Load(loader Loader) error {
 		return nil
 	}
 
-	if c.values == nil {
-		c.values = make(map[string]any)
+	if c.values.Load() == nil {
+		c.values.Store(&map[string]any{})
 	}
 
 	if statuser, ok := loader.(Statuser); ok {
@@ -107,10 +107,10 @@ func (c *Config) Load(loader Loader) error {
 
 	prd := provider{
 		loader: loader,
-		values: values,
 	}
-	c.providers = append(c.providers, prd)
-	maps.Merge(c.values, prd.values)
+	prd.values.Store(&values)
+	c.providers = append(c.providers, &prd)
+	maps.Merge(*c.values.Load(), *prd.values.Load())
 
 	return nil
 }
@@ -119,7 +119,7 @@ func (c *Config) Load(loader Loader) error {
 // and decodes it into the given object pointed to by target.
 // The path is case-insensitive unless konf.WithCaseSensitive is set.
 func (c *Config) Unmarshal(path string, target any) error {
-	if c == nil {
+	if c == nil || c.values.Load() == nil {
 		return nil
 	}
 
@@ -130,7 +130,7 @@ func (c *Config) Unmarshal(path string, target any) error {
 		converter = defaultConverter
 	}
 
-	if err := converter.Convert(c.sub(c.values, path), target); err != nil {
+	if err := converter.Convert(c.sub(*c.values.Load(), path), target); err != nil {
 		return fmt.Errorf("decode: %w", err)
 	}
 
@@ -178,7 +178,7 @@ func (c *Config) Explain(path string) string {
 	c.nocopy.Check()
 
 	explanation := &strings.Builder{}
-	c.explain(explanation, path, c.sub(c.values, path))
+	c.explain(explanation, path, c.sub(*c.values.Load(), path))
 
 	return explanation.String()
 }
@@ -203,7 +203,7 @@ func (c *Config) explain(explanation *strings.Builder, path string, value any) {
 	}
 	var loaders []loaderValue
 	for _, provider := range c.providers {
-		if v := c.sub(provider.values, path); v != nil {
+		if v := c.sub(*provider.values.Load(), path); v != nil {
 			loaders = append(loaders, loaderValue{provider.loader, v})
 		}
 	}
@@ -236,7 +236,7 @@ func (c *Config) explain(explanation *strings.Builder, path string, value any) {
 
 type provider struct {
 	loader Loader
-	values map[string]any
+	values atomic.Pointer[map[string]any]
 }
 
 //nolint:gochecknoglobals

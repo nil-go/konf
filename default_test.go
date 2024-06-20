@@ -80,7 +80,7 @@ func TestOnChange(t *testing.T) {
 		assert.NoError(t, konf.Unmarshal("config", &value))
 		newValue <- value
 	}, "config")
-	watcher.change("changed")
+	watcher.change()
 	assert.Equal(t, "changed", <-newValue)
 }
 

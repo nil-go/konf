@@ -54,7 +54,50 @@ func TestConfig_Watch(t *testing.T) {
 		assert.NoError(t, config.Unmarshal("config", &value))
 		newValue <- value
 	}, "config")
-	watcher.change("changed")
+	watcher.change()
+	assert.Equal(t, "changed", <-newValue)
+}
+
+func TestConfig_Watch_race(t *testing.T) {
+	t.Parallel()
+
+	var config konf.Config
+	watcher := stringWatcher{key: "Config", value: make(chan string)}
+	err := config.Load(watcher)
+	assert.NoError(t, err)
+
+	var value string
+	assert.NoError(t, config.Unmarshal("config", &value))
+	assert.Equal(t, "", value)
+
+	stopped := make(chan struct{})
+	ctx, cancel := context.WithCancel(context.Background())
+	defer func() {
+		cancel()
+		<-stopped
+	}()
+	go func() {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+			var v string
+			_ = config.Unmarshal("config", &v)
+		}
+	}()
+	go func() {
+		defer close(stopped)
+
+		assert.NoError(t, config.Watch(ctx))
+	}()
+
+	newValue := make(chan string)
+	config.OnChange(func(config *konf.Config) {
+		var value string
+		assert.NoError(t, config.Unmarshal("config", &value))
+		newValue <- value
+	}, "config")
+	watcher.change()
 	assert.Equal(t, "changed", <-newValue)
 }
 
@@ -76,7 +119,7 @@ func TestConfig_Watch_onchange_block(t *testing.T) {
 	go func() {
 		assert.NoError(t, config.Watch(ctx))
 	}()
-	watcher.change("changed")
+	watcher.change()
 
 	<-ctx.Done()
 	time.Sleep(10 * time.Millisecond) // Wait for log to be written
@@ -204,8 +247,8 @@ func (m stringWatcher) Watch(ctx context.Context, fn func(map[string]any)) error
 	}
 }
 
-func (m stringWatcher) change(values string) {
-	m.value <- values
+func (m stringWatcher) change() {
+	m.value <- "changed"
 }
 
 func (m stringWatcher) String() string {

@@ -25,7 +25,7 @@ import (
 func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocognit
 	c.nocopy.Check()
 
-	if hasWatcher := slices.ContainsFunc(c.providers, func(provider provider) bool {
+	if hasWatcher := slices.ContainsFunc(c.providers, func(provider *provider) bool {
 		_, ok := provider.loader.(Watcher)
 
 		return ok
@@ -54,9 +54,9 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 			case onChanges := <-onChangesChannel:
 				values := make(map[string]any)
 				for _, w := range c.providers {
-					maps.Merge(values, w.values)
+					maps.Merge(values, *w.values.Load())
 				}
-				c.values = values
+				c.values.Store(&values)
 				c.log(ctx, slog.LevelDebug, "Configuration has been updated with change.")
 
 				if len(onChanges) > 0 {
@@ -94,7 +94,7 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 	}()
 
 	for i := range c.providers {
-		provider := &c.providers[i] // Use pointer for later modification.
+		provider := c.providers[i] // Use pointer for later modification.
 
 		if watcher, ok := provider.loader.(Watcher); ok {
 			waitGroup.Add(1)
@@ -103,9 +103,7 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 
 				onChange := func(values map[string]any) {
 					c.transformKeys(values)
-					oldValues := provider.values
-					newValues := values
-					provider.values = newValues
+					oldValues := *provider.values.Swap(&values)
 
 					// Find the onChanges should be triggered.
 					onChanges := func() []func(*Config) {
@@ -115,7 +113,7 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 						var callbacks []func(*Config)
 						for path, onChanges := range c.onChanges {
 							oldVal := c.sub(oldValues, path)
-							newVal := c.sub(newValues, path)
+							newVal := c.sub(values, path)
 							if !reflect.DeepEqual(oldVal, newVal) {
 								callbacks = append(callbacks, onChanges...)
 							}
