@@ -36,8 +36,10 @@ type Config struct {
 	converter           convert.Converter
 
 	// Loaded configuration.
-	values    map[string]any
-	providers []provider
+	values         map[string]any
+	valuesMutex    sync.RWMutex
+	providers      []provider
+	providersMutex sync.RWMutex
 
 	// For watching changes.
 	onChanges      map[string][]func(*Config)
@@ -79,9 +81,11 @@ func (c *Config) Load(loader Loader) error {
 		return nil
 	}
 
+	c.valuesMutex.Lock()
 	if c.values == nil {
 		c.values = make(map[string]any)
 	}
+	c.valuesMutex.Unlock()
 
 	if statuser, ok := loader.(Statuser); ok {
 		statuser.Status(func(changed bool, err error) {
@@ -106,11 +110,20 @@ func (c *Config) Load(loader Loader) error {
 	c.transformKeys(values)
 
 	prd := provider{
-		loader: loader,
-		values: values,
+		loader:      loader,
+		values:      values,
+		valuesMutex: &sync.RWMutex{},
 	}
+
+	c.providersMutex.Lock()
 	c.providers = append(c.providers, prd)
+	c.providersMutex.Unlock()
+
+	prd.valuesMutex.RLock()
+	c.valuesMutex.Lock()
 	maps.Merge(c.values, prd.values)
+	prd.valuesMutex.RUnlock()
+	c.valuesMutex.Unlock()
 
 	return nil
 }
@@ -129,6 +142,9 @@ func (c *Config) Unmarshal(path string, target any) error {
 	if reflect.ValueOf(converter).IsZero() {
 		converter = defaultConverter
 	}
+
+	c.valuesMutex.RLock()
+	defer c.valuesMutex.RUnlock()
 
 	if err := converter.Convert(c.sub(c.values, path), target); err != nil {
 		return fmt.Errorf("decode: %w", err)
@@ -149,6 +165,9 @@ func (c *Config) sub(values map[string]any, path string) any {
 	if !c.caseSensitive {
 		path = strings.ToLower(path)
 	}
+
+	c.valuesMutex.RLock()
+	defer c.valuesMutex.RUnlock()
 
 	return maps.Sub(values, path, c.delim())
 }
@@ -178,6 +197,10 @@ func (c *Config) Explain(path string) string {
 	c.nocopy.Check()
 
 	explanation := &strings.Builder{}
+
+	c.valuesMutex.RLock()
+	defer c.valuesMutex.RUnlock()
+
 	c.explain(explanation, path, c.sub(c.values, path))
 
 	return explanation.String()
@@ -202,11 +225,17 @@ func (c *Config) explain(explanation *strings.Builder, path string, value any) {
 		value  any
 	}
 	var loaders []loaderValue
+
+	c.providersMutex.RLock()
 	for _, provider := range c.providers {
+		provider.valuesMutex.RLock()
 		if v := c.sub(provider.values, path); v != nil {
 			loaders = append(loaders, loaderValue{provider.loader, v})
 		}
+		provider.valuesMutex.RUnlock()
 	}
+	c.providersMutex.RUnlock()
+
 	slices.Reverse(loaders)
 
 	if len(loaders) == 0 {
@@ -235,8 +264,9 @@ func (c *Config) explain(explanation *strings.Builder, path string, value any) {
 }
 
 type provider struct {
-	loader Loader
-	values map[string]any
+	loader      Loader
+	values      map[string]any
+	valuesMutex *sync.RWMutex
 }
 
 //nolint:gochecknoglobals

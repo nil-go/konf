@@ -25,13 +25,18 @@ import (
 func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocognit
 	c.nocopy.Check()
 
+	c.providersMutex.RLock()
 	if hasWatcher := slices.ContainsFunc(c.providers, func(provider provider) bool {
 		_, ok := provider.loader.(Watcher)
 
 		return ok
 	}); !hasWatcher {
+		c.providersMutex.RUnlock()
+
 		return nil
 	}
+
+	c.providersMutex.RUnlock()
 
 	if watched := c.watched.Swap(true); watched {
 		c.log(ctx, slog.LevelWarn, "Config has been watched, call Watch again has no effects.")
@@ -53,10 +58,17 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 			select {
 			case onChanges := <-onChangesChannel:
 				values := make(map[string]any)
+
+				c.providersMutex.RLock()
 				for _, w := range c.providers {
 					maps.Merge(values, w.values)
 				}
+				c.providersMutex.RUnlock()
+
+				c.valuesMutex.Lock()
 				c.values = values
+				c.valuesMutex.Unlock()
+
 				c.log(ctx, slog.LevelDebug, "Configuration has been updated with change.")
 
 				if len(onChanges) > 0 {
@@ -93,6 +105,7 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 		}
 	}()
 
+	c.providersMutex.RLock()
 	for i := range c.providers {
 		provider := &c.providers[i] // Use pointer for later modification.
 
@@ -103,9 +116,12 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 
 				onChange := func(values map[string]any) {
 					c.transformKeys(values)
+
+					provider.valuesMutex.Lock()
 					oldValues := provider.values
 					newValues := values
 					provider.values = newValues
+					provider.valuesMutex.Unlock()
 
 					// Find the onChanges should be triggered.
 					onChanges := func() []func(*Config) {
@@ -138,6 +154,7 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 			}(ctx)
 		}
 	}
+	c.providersMutex.RUnlock()
 	waitGroup.Wait()
 
 	if err := context.Cause(ctx); err != nil && !errors.Is(err, ctx.Err()) {
