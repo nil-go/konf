@@ -171,7 +171,7 @@ func (c *Config) transformKeys(m map[string]any) {
 // from loaders for the given path. It blur sensitive information.
 // The path is case-insensitive unless konf.WithCaseSensitive is set.
 func (c *Config) Explain(path string) string {
-	if c == nil {
+	if c == nil || c.values.Load() == nil {
 		return path + " has no configuration.\n\n"
 	}
 

@@ -7,6 +7,12 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.2.2] - 2024-07-08
+
+### Fixed
+
+- Allow Config.Explain on empty Config (#408).
+
 ## [1.2.1] - 2024-06-20
 
 ### Fixed

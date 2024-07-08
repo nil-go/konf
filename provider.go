@@ -36,7 +36,7 @@ type Statuser interface {
 //
 // It's used by the loader to check if the configuration has been set by other loaders.
 func (c *Config) Exists(path []string) bool {
-	if c == nil {
+	if c == nil || c.values.Load() == nil {
 		return false
 	}
 
