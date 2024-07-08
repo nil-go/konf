@@ -20,6 +20,14 @@ func TestConfig_nil(t *testing.T) {
 	var value string
 	assert.NoError(t, config.Unmarshal("key", &value))
 	assert.Equal(t, "", value)
+	assert.True(t, len(config.Explain("key")) > 0)
+
+	config = konf.New()
+	assert.True(t, !config.Exists([]string{"key"}))
+	assert.Equal(t, "key has no configuration.\n\n", config.Explain("key"))
+	assert.NoError(t, config.Unmarshal("key", &value))
+	assert.Equal(t, "", value)
+	assert.True(t, len(config.Explain("key")) > 0)
 }
 
 func TestConfig_Load(t *testing.T) {
