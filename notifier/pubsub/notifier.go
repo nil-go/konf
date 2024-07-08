@@ -76,7 +76,7 @@ func (n *Notifier) Start(ctx context.Context) error { //nolint:cyclop,funlen
 	project := n.project
 	if project == "" {
 		var err error
-		if project, err = metadata.ProjectID(); err != nil {
+		if project, err = metadata.ProjectIDWithContext(ctx); err != nil {
 			return fmt.Errorf("get GCP project ID: %w", err)
 		}
 	}
