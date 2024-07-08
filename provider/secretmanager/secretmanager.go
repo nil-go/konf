@@ -197,10 +197,10 @@ type clientProxy struct {
 func (p *clientProxy) load(ctx context.Context) (map[string]string, bool, error) { //nolint:cyclop,funlen
 	if p.project == "" {
 		var err error
-		if p.project, err = metadata.ProjectID(); err != nil {
+		if p.project, err = metadata.ProjectIDWithContext(ctx); err != nil {
 			return nil, false, fmt.Errorf("get GCP project ID: %w", err)
 		}
-		projectNumer, err := metadata.NumericProjectID()
+		projectNumer, err := metadata.NumericProjectIDWithContext(ctx)
 		if err != nil {
 			return nil, false, fmt.Errorf("get GCP numeric project ID: %w", err)
 		}
