@@ -91,7 +91,6 @@ level=WARN msg="Fail to delete pubsub subscription." topic=topic subscription=pr
 	}
 
 	for _, testcase := range testcases {
-		testcase := testcase
 		t.Run(testcase.description, func(t *testing.T) {
 			t.Parallel()
 

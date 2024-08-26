@@ -924,8 +924,6 @@ func TestConverter(t *testing.T) { //nolint:maintidx
 	}
 
 	for _, testcase := range testcases {
-		testcase := testcase
-
 		t.Run(testcase.description, func(t *testing.T) {
 			t.Parallel()
 

@@ -45,13 +45,12 @@ func TestTransformKeys(t *testing.T) {
 		},
 	}
 
-	for _, tc := range testcases {
-		tc := tc
-		t.Run(tc.description, func(t *testing.T) {
+	for _, testcase := range testcases {
+		t.Run(testcase.description, func(t *testing.T) {
 			t.Parallel()
 
-			maps.TransformKeys(tc.src, tc.keyMap, tc.mapKeyCaseSensitive)
-			assert.Equal(t, tc.expected, tc.src)
+			maps.TransformKeys(testcase.src, testcase.keyMap, testcase.mapKeyCaseSensitive)
+			assert.Equal(t, testcase.expected, testcase.src)
 		})
 	}
 }
