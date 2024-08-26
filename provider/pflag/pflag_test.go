@@ -138,7 +138,6 @@ func TestPFlag_String(t *testing.T) {
 	}
 
 	for _, testcase := range testcases {
-
 		t.Run(testcase.description, func(t *testing.T) {
 			t.Parallel()
 
