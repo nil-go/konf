@@ -17,6 +17,6 @@ func (c *NoCopy[T]) Check() {
 	}
 
 	if c.addr != c {
-		panic("illegal use of non-zero " + reflect.TypeOf((*T)(nil)).Elem().Name() + " copied by value")
+		panic("illegal use of non-zero " + reflect.TypeFor[T]().Name() + " copied by value")
 	}
 }

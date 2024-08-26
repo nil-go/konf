@@ -49,8 +49,6 @@ func TestConfig_Load(t *testing.T) {
 	}
 
 	for _, testcase := range testcases {
-		testcase := testcase
-
 		t.Run(testcase.description, func(t *testing.T) {
 			t.Parallel()
 
@@ -260,8 +258,6 @@ func TestConfig_Unmarshal(t *testing.T) {
 	}
 
 	for _, testcase := range testcases {
-		testcase := testcase
-
 		t.Run(testcase.description, func(t *testing.T) {
 			t.Parallel()
 
@@ -355,8 +351,6 @@ Here are other value(loader)s:
 	}
 
 	for _, testcase := range testcases {
-		testcase := testcase
-
 		t.Run(testcase.description, func(t *testing.T) {
 			t.Parallel()
 

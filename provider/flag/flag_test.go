@@ -103,8 +103,6 @@ func TestFlag_Load(t *testing.T) {
 
 	parse()
 	for _, testcase := range testcases {
-		testcase := testcase
-
 		t.Run(testcase.description, func(t *testing.T) {
 			t.Parallel()
 
@@ -135,8 +133,6 @@ func TestFlag_String(t *testing.T) {
 	}
 
 	for _, testcase := range testcases {
-		testcase := testcase
-
 		t.Run(testcase.description, func(t *testing.T) {
 			t.Parallel()
 

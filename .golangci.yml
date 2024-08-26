@@ -14,6 +14,10 @@ linters-settings:
       Use of this source code is governed by a MIT license found in the LICENSE file.
   goimports:
     local-prefixes: github.com/nil-go/konf
+  gosec:
+    excludes:
+      # Flags for potentially-unsafe casting of ints, similar problem to globally-disabled G103
+      - G115
   govet:
     enable:
       - shadow
@@ -41,7 +45,7 @@ linters:
     - canonicalheader
     - containedctx
     - contextcheck
-    # copyloopvar // go 1.22
+    - copyloopvar
     - cyclop
     - decorder
     # depguard
@@ -54,7 +58,6 @@ linters:
     - errchkjson
     - errname
     - errorlint
-    - exportloopref
     - exhaustive
     # exhaustruct
     - fatcontext
