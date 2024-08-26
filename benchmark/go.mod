@@ -1,6 +1,6 @@
 module github.com/nil-go/konf/benchmark
 
-go 1.21
+go 1.22
 
 require (
 	github.com/knadh/koanf/providers/env v0.1.0

@@ -7,6 +7,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Removed
+
+- Remove support for Golang 1.21 (#457).
+
 ## [1.2.2] - 2024-07-08
 
 ### Fixed
