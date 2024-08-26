@@ -247,8 +247,6 @@ func (p *clientProxy) load(ctx context.Context) (map[string]string, bool, error)
 	var waitGroup sync.WaitGroup
 	waitGroup.Add(len(eTags))
 	for name := range eTags {
-		name := name
-
 		go func() {
 			defer waitGroup.Done()
 
