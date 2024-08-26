@@ -46,8 +46,8 @@ func withHookFunc[F, T any](hookFunc func(F, T) error) Option {
 		}
 
 		options.hooks = append(options.hooks, hook{
-			fromType: reflect.TypeOf((*F)(nil)).Elem(),
-			toType:   reflect.TypeOf((*T)(nil)).Elem(),
+			fromType: reflect.TypeFor[F](),
+			toType:   reflect.TypeFor[T](),
 			hook: func(f, t any) error {
 				from, ok := f.(F)
 				if !ok {

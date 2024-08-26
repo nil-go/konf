@@ -767,7 +767,6 @@ level=WARN msg="Fail to delete sqs message." queue=https://sqs.us-west-2.amazona
 	}
 
 	for _, testcase := range testcases {
-		testcase := testcase
 		t.Run(testcase.description, func(t *testing.T) {
 			t.Parallel()
 
