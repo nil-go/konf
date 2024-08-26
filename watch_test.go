@@ -210,8 +210,6 @@ func TestConfig_Watch_panic(t *testing.T) {
 	}
 
 	for _, testcase := range testcases {
-		testcase := testcase
-
 		t.Run(testcase.description, func(t *testing.T) {
 			t.Parallel()
 

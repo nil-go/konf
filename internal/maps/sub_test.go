@@ -81,13 +81,12 @@ func TestSub(t *testing.T) {
 		},
 	}
 
-	for _, tc := range testcases {
-		tc := tc
-		t.Run(tc.description, func(t *testing.T) {
+	for _, testcase := range testcases {
+		t.Run(testcase.description, func(t *testing.T) {
 			t.Parallel()
 
-			actual := maps.Sub(tc.values, tc.path, ".")
-			assert.Equal(t, tc.expected, actual)
+			actual := maps.Sub(testcase.values, testcase.path, ".")
+			assert.Equal(t, testcase.expected, actual)
 		})
 	}
 }
