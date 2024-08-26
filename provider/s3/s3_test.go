@@ -37,8 +37,6 @@ func TestS3_Load(t *testing.T) {
 	t.Parallel()
 
 	for _, testcase := range testcases() {
-		testcase := testcase
-
 		t.Run(testcase.description, func(t *testing.T) {
 			t.Parallel()
 
@@ -77,8 +75,6 @@ func TestS3_Watch(t *testing.T) {
 	t.Parallel()
 
 	for _, testcase := range append(testcases(), watchcases()...) {
-		testcase := testcase
-
 		t.Run(testcase.description, func(t *testing.T) {
 			t.Parallel()
 
