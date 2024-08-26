@@ -45,8 +45,6 @@ func TestBlob_Load(t *testing.T) {
 	t.Parallel()
 
 	for _, testcase := range testcases() {
-		testcase := testcase
-
 		t.Run(testcase.description, func(t *testing.T) {
 			t.Parallel()
 
@@ -77,7 +75,6 @@ func TestBlob_Watch(t *testing.T) {
 	t.Parallel()
 
 	for _, testcase := range append(testcases(), watchcases()...) {
-		testcase := testcase
 
 		t.Run(testcase.description, func(t *testing.T) {
 			t.Parallel()
