@@ -7,6 +7,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- Support converting unmarshalled configurations to `interface{}`.
+
 ## [1.3.0] - 2024-08-26
 
 ### Removed

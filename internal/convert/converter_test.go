@@ -896,13 +896,37 @@ func TestConverter(t *testing.T) { //nolint:maintidx
 			to:          pointer(OuterStruct{}),
 			err:         "'' expected a map, got 'string'",
 		},
-		// unsupported.
 		{
-			description: "to interface (unsupported)",
+			description: "int to interface",
+			from:        42,
+			to:          pointer(any(nil)),
+			expected:    pointer(any(42)),
+		},
+		{
+			description: "string to interface",
 			from:        "str",
 			to:          pointer(any(nil)),
-			err:         ": unsupported type: interface",
+			expected:    pointer(any("str")),
 		},
+		{
+			description: "float to interface",
+			from:        42.42,
+			to:          pointer(any(nil)),
+			expected:    pointer(any(42.42)),
+		},
+		{
+			description: "map to interface",
+			from:        map[string]int{"key": 42},
+			to:          pointer(any(nil)),
+			expected:    pointer(any(map[string]int{"key": 42})),
+		},
+		{
+			description: "slice to interface",
+			from:        []int{1, 2, 3},
+			to:          pointer(any(nil)),
+			expected:    pointer(any([]int{1, 2, 3})),
+		},
+		// unsupported.
 		{
 			description: "to func (unsupported)",
 			from:        "str",

@@ -42,7 +42,7 @@ func (c Converter) Convert(from, to any) error {
 	return c.convert("", from, toVal)
 }
 
-func (c Converter) convert(name string, from any, toVal reflect.Value) error { //nolint:cyclop
+func (c Converter) convert(name string, from any, toVal reflect.Value) error { //nolint:cyclop,funlen
 	if from == nil {
 		return nil // Do nothing if from is nil.
 	}
@@ -91,6 +91,10 @@ func (c Converter) convert(name string, from any, toVal reflect.Value) error { /
 		return c.convertString(name, fromVal, toVal)
 	case toVal.Kind() == reflect.Struct:
 		return c.convertStruct(name, fromVal, toVal)
+	case toVal.Kind() == reflect.Interface: // Right after all other checks.
+		toVal.Set(fromVal)
+
+		return nil
 	default:
 		// If it reached here then it weren't able to convert it.
 		return fmt.Errorf("%s: unsupported type: %s", name, toVal.Kind()) //nolint:err113
