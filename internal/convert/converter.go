@@ -92,9 +92,7 @@ func (c Converter) convert(name string, from any, toVal reflect.Value) error { /
 	case toVal.Kind() == reflect.Struct:
 		return c.convertStruct(name, fromVal, toVal)
 	case toVal.Kind() == reflect.Interface: // Right after all other checks.
-		toVal.Set(fromVal)
-
-		return nil
+		return c.convertInterface(name, fromVal, toVal)
 	default:
 		// If it reached here then it weren't able to convert it.
 		return fmt.Errorf("%s: unsupported type: %s", name, toVal.Kind()) //nolint:err113
@@ -551,6 +549,55 @@ func (c Converter) convertStruct(name string, fromVal, toVal reflect.Value) erro
 		return errors.Join(errs...)
 	default:
 		return fmt.Errorf("'%s' expected a map, got '%s'", name, fromVal.Kind()) //nolint:err113
+	}
+}
+
+func (c Converter) convertInterface(name string, fromVal, toVal reflect.Value) error {
+	switch fromVal.Kind() {
+	case reflect.Map:
+		if fromVal.IsNil() {
+			toVal.SetZero()
+
+			return nil
+		}
+
+		if toVal.IsNil() {
+			toVal.Set(reflect.MakeMapWithSize(fromVal.Type(), fromVal.Len()))
+		}
+
+		fromKeyType := fromVal.Type().Key()
+		fromValueType := fromVal.Type().Elem()
+		errs := make([]error, 0, fromVal.Len())
+		for _, fromKeyVal := range fromVal.MapKeys() {
+			fieldName := name + "[" + fromKeyVal.String() + "]"
+
+			fromValueVal := fromVal.MapIndex(fromKeyVal)
+			toValueVal := reflect.New(fromValueType)
+			key, value := maps.Unpack(fromValueVal.Interface())
+			if err := c.convert(fieldName, value, pointer(toValueVal)); err != nil {
+				errs = append(errs, err)
+
+				continue
+			}
+
+			if key == "" {
+				key = fromKeyVal.String()
+			}
+			toKeyVal := reflect.New(fromKeyType)
+			if err := c.convert(fieldName, key, pointer(toKeyVal)); err != nil {
+				errs = append(errs, err)
+
+				continue
+			}
+
+			toVal.Elem().SetMapIndex(reflect.Indirect(toKeyVal), reflect.Indirect(toValueVal))
+		}
+
+		return errors.Join(errs...)
+	default:
+		toVal.Set(fromVal)
+
+		return nil
 	}
 }
 

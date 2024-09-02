@@ -975,6 +975,21 @@ func TestConverter(t *testing.T) { //nolint:maintidx
 			}),
 		},
 		{
+			description: "packed KV and field to interface{}",
+			from: map[string]interface{}{
+				"key1": maps.KeyValue{
+					Key:   "key1",
+					Value: "value1",
+				},
+				"key2": "value2",
+			},
+			to: pointer(any(nil)),
+			expected: pointer(any(map[string]interface{}{
+				"key1": "value1",
+				"key2": "value2",
+			})),
+		},
+		{
 			description: "slice to interface",
 			from:        []int{1, 2, 3},
 			to:          pointer(any(nil)),
