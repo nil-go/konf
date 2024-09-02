@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/nil-go/konf/internal/maps"
 	"strings"
 	"testing"
 	"time"
@@ -921,9 +922,57 @@ func TestConverter(t *testing.T) { //nolint:maintidx
 		},
 		{
 			description: "map to interface",
-			from:        map[string]int{"key": 42},
+			from:        map[string]int{"key": 42, "keySensitive": 43},
 			to:          pointer(any(nil)),
-			expected:    pointer(any(map[string]int{"key": 42})),
+			expected:    pointer(any(map[string]int{"key": 42, "keySensitive": 43})),
+		},
+		{
+			description: "map to interface (with keyMap)", // Probably redundant.
+			opts: []convert.Option{
+				convert.WithKeyMapper(strings.ToLower),
+			},
+			from:     map[string]int{"key": 42, "keysensitive": 43},
+			to:       pointer(any(nil)),
+			expected: pointer(any(map[string]int{"key": 42, "keysensitive": 43})),
+		},
+		{
+			description: "packed KV and field to map[string]interface{}",
+			from: map[string]interface{}{
+				"key1": maps.KeyValue{
+					Key:   "key1",
+					Value: "value1",
+				},
+				"key2": "value2",
+			},
+			to: pointer(map[string]interface{}{}),
+			expected: pointer(map[string]interface{}{
+				"key1": "value1",
+				"key2": "value2",
+			}),
+		},
+		{
+			description: "packed KV and field to struct (with keyMap)",
+			opts: []convert.Option{
+				convert.WithKeyMapper(strings.ToLower),
+			},
+			from: map[string]interface{}{
+				"key1": maps.KeyValue{
+					Key:   "key1",
+					Value: "value1",
+				},
+				"key2": "value2",
+			},
+			to: pointer(struct {
+				Key1 interface{}
+				Key2 interface{}
+			}{}),
+			expected: pointer(struct {
+				Key1 interface{}
+				Key2 interface{}
+			}{
+				Key1: "value1",
+				Key2: "value2",
+			}),
 		},
 		{
 			description: "slice to interface",
