@@ -835,18 +835,20 @@ func TestConverter(t *testing.T) { //nolint:maintidx
 				}),
 			},
 			from: map[string]any{
-				"Enum":         "sky",
-				"OuterField":   "outer",
-				"PrivateField": "private",
-				"InnerField":   "squash",
-				"Inner":        map[string]any{"InnerField": "inner"},
+				"Enum":           "sky",
+				"OuterField":     "outer",
+				"PrivateField":   "private",
+				"InterfaceField": "interface{}",
+				"InnerField":     "squash",
+				"Inner":          map[string]any{"InnerField": "inner"},
 			},
 			to: pointer(OuterStruct{}),
 			expected: pointer(OuterStruct{
-				Enum:        Sky,
-				OuterField:  "outer",
-				InnerStruct: InnerStruct{InnerField: "squash"},
-				Inner:       &InnerStruct{InnerField: "inner"},
+				Enum:           Sky,
+				OuterField:     "outer",
+				InterfaceField: "interface{}",
+				InnerStruct:    InnerStruct{InnerField: "squash"},
+				Inner:          &InnerStruct{InnerField: "inner"},
 			}),
 		},
 		{
@@ -854,15 +856,18 @@ func TestConverter(t *testing.T) { //nolint:maintidx
 			opts: []convert.Option{
 				convert.WithKeyMapper(strings.ToLower),
 			},
-			from: map[string]string{"innerfield": "inner"},
+			from: map[string]string{"innerfield": "inner", "interfacefield": "interface{}"},
 			to: pointer(struct {
-				InnerField string
+				InnerField     string
+				InterfaceField interface{}
 			}{}),
 			expected: pointer(
 				struct {
-					InnerField string
+					InnerField     string
+					InterfaceField interface{}
 				}{
-					InnerField: "inner",
+					InnerField:     "inner",
+					InterfaceField: "interface{}",
 				}),
 		},
 		{
@@ -990,9 +995,10 @@ func (e *Enum) UnmarshalText(text []byte) error {
 
 type (
 	OuterStruct struct {
-		Enum         Enum
-		OuterField   string
-		privateField string //nolint:unused
+		Enum           Enum
+		OuterField     string
+		privateField   string //nolint:unused
+		InterfaceField interface{}
 
 		InnerStruct `konf:",squash"`
 		Inner       *InnerStruct
