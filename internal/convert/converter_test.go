@@ -990,6 +990,12 @@ func TestConverter(t *testing.T) { //nolint:maintidx
 			})),
 		},
 		{
+			description: "nil map to interface{}",
+			from:        map[string]interface{}(nil),
+			to:          pointer(any(nil)),
+			expected:    pointer(any(nil)),
+		},
+		{
 			description: "slice to interface",
 			from:        []int{1, 2, 3},
 			to:          pointer(any(nil)),
