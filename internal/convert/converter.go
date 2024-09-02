@@ -561,39 +561,9 @@ func (c Converter) convertInterface(name string, fromVal, toVal reflect.Value) e
 			return nil
 		}
 
-		if toVal.IsNil() {
-			toVal.Set(reflect.MakeMapWithSize(fromVal.Type(), fromVal.Len()))
-		}
+		toVal.Set(reflect.MakeMapWithSize(fromVal.Type(), fromVal.Len()))
 
-		fromKeyType := fromVal.Type().Key()
-		fromValueType := fromVal.Type().Elem()
-		errs := make([]error, 0, fromVal.Len())
-		for _, fromKeyVal := range fromVal.MapKeys() {
-			fieldName := name + "[" + fromKeyVal.String() + "]"
-
-			fromValueVal := fromVal.MapIndex(fromKeyVal)
-			toValueVal := reflect.New(fromValueType)
-			key, value := maps.Unpack(fromValueVal.Interface())
-			if err := c.convert(fieldName, value, pointer(toValueVal)); err != nil {
-				errs = append(errs, err)
-
-				continue
-			}
-
-			if key == "" {
-				key = fromKeyVal.String()
-			}
-			toKeyVal := reflect.New(fromKeyType)
-			if err := c.convert(fieldName, key, pointer(toKeyVal)); err != nil {
-				errs = append(errs, err)
-
-				continue
-			}
-
-			toVal.Elem().SetMapIndex(reflect.Indirect(toKeyVal), reflect.Indirect(toValueVal))
-		}
-
-		return errors.Join(errs...)
+		return c.convertMap(name, fromVal, toVal.Elem())
 	default:
 		toVal.Set(fromVal)
 
