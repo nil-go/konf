@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/nil-go/konf/internal/maps"
 	"strings"
 	"testing"
 	"time"
@@ -16,6 +15,7 @@ import (
 
 	"github.com/nil-go/konf/internal/assert"
 	"github.com/nil-go/konf/internal/convert"
+	"github.com/nil-go/konf/internal/maps"
 )
 
 func TestConverter(t *testing.T) { //nolint:maintidx
