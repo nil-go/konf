@@ -42,7 +42,7 @@ func (c Converter) Convert(from, to any) error {
 	return c.convert("", from, toVal)
 }
 
-func (c Converter) convert(name string, from any, toVal reflect.Value) error { //nolint:cyclop
+func (c Converter) convert(name string, from any, toVal reflect.Value) error { //nolint:cyclop,funlen
 	if from == nil {
 		return nil // Do nothing if from is nil.
 	}
@@ -91,6 +91,8 @@ func (c Converter) convert(name string, from any, toVal reflect.Value) error { /
 		return c.convertString(name, fromVal, toVal)
 	case toVal.Kind() == reflect.Struct:
 		return c.convertStruct(name, fromVal, toVal)
+	case toVal.Kind() == reflect.Interface: // Right after all other checks.
+		return c.convertInterface(name, fromVal, toVal)
 	default:
 		// If it reached here then it weren't able to convert it.
 		return fmt.Errorf("%s: unsupported type: %s", name, toVal.Kind()) //nolint:err113
@@ -547,6 +549,25 @@ func (c Converter) convertStruct(name string, fromVal, toVal reflect.Value) erro
 		return errors.Join(errs...)
 	default:
 		return fmt.Errorf("'%s' expected a map, got '%s'", name, fromVal.Kind()) //nolint:err113
+	}
+}
+
+func (c Converter) convertInterface(name string, fromVal, toVal reflect.Value) error {
+	switch fromVal.Kind() {
+	case reflect.Map:
+		if fromVal.IsNil() {
+			toVal.SetZero()
+
+			return nil
+		}
+
+		toVal.Set(reflect.MakeMapWithSize(fromVal.Type(), fromVal.Len()))
+
+		return c.convertMap(name, fromVal, toVal.Elem())
+	default:
+		toVal.Set(fromVal)
+
+		return nil
 	}
 }
 

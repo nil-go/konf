@@ -15,6 +15,7 @@ import (
 
 	"github.com/nil-go/konf/internal/assert"
 	"github.com/nil-go/konf/internal/convert"
+	"github.com/nil-go/konf/internal/maps"
 )
 
 func TestConverter(t *testing.T) { //nolint:maintidx
@@ -835,18 +836,20 @@ func TestConverter(t *testing.T) { //nolint:maintidx
 				}),
 			},
 			from: map[string]any{
-				"Enum":         "sky",
-				"OuterField":   "outer",
-				"PrivateField": "private",
-				"InnerField":   "squash",
-				"Inner":        map[string]any{"InnerField": "inner"},
+				"Enum":           "sky",
+				"OuterField":     "outer",
+				"PrivateField":   "private",
+				"InterfaceField": "interface{}",
+				"InnerField":     "squash",
+				"Inner":          map[string]any{"InnerField": "inner"},
 			},
 			to: pointer(OuterStruct{}),
 			expected: pointer(OuterStruct{
-				Enum:        Sky,
-				OuterField:  "outer",
-				InnerStruct: InnerStruct{InnerField: "squash"},
-				Inner:       &InnerStruct{InnerField: "inner"},
+				Enum:           Sky,
+				OuterField:     "outer",
+				InterfaceField: "interface{}",
+				InnerStruct:    InnerStruct{InnerField: "squash"},
+				Inner:          &InnerStruct{InnerField: "inner"},
 			}),
 		},
 		{
@@ -854,15 +857,18 @@ func TestConverter(t *testing.T) { //nolint:maintidx
 			opts: []convert.Option{
 				convert.WithKeyMapper(strings.ToLower),
 			},
-			from: map[string]string{"innerfield": "inner"},
+			from: map[string]string{"innerfield": "inner", "interfacefield": "interface{}"},
 			to: pointer(struct {
-				InnerField string
+				InnerField     string
+				InterfaceField interface{}
 			}{}),
 			expected: pointer(
 				struct {
-					InnerField string
+					InnerField     string
+					InterfaceField interface{}
 				}{
-					InnerField: "inner",
+					InnerField:     "inner",
+					InterfaceField: "interface{}",
 				}),
 		},
 		{
@@ -896,13 +902,106 @@ func TestConverter(t *testing.T) { //nolint:maintidx
 			to:          pointer(OuterStruct{}),
 			err:         "'' expected a map, got 'string'",
 		},
-		// unsupported.
 		{
-			description: "to interface (unsupported)",
+			description: "int to interface",
+			from:        42,
+			to:          pointer(any(nil)),
+			expected:    pointer(any(42)),
+		},
+		{
+			description: "string to interface",
 			from:        "str",
 			to:          pointer(any(nil)),
-			err:         ": unsupported type: interface",
+			expected:    pointer(any("str")),
 		},
+		{
+			description: "float to interface",
+			from:        42.42,
+			to:          pointer(any(nil)),
+			expected:    pointer(any(42.42)),
+		},
+		{
+			description: "map to interface",
+			from:        map[string]int{"key": 42, "keySensitive": 43},
+			to:          pointer(any(nil)),
+			expected:    pointer(any(map[string]int{"key": 42, "keySensitive": 43})),
+		},
+		{
+			description: "map to interface (with keyMap)", // Probably redundant.
+			opts: []convert.Option{
+				convert.WithKeyMapper(strings.ToLower),
+			},
+			from:     map[string]int{"key": 42, "keysensitive": 43},
+			to:       pointer(any(nil)),
+			expected: pointer(any(map[string]int{"key": 42, "keysensitive": 43})),
+		},
+		{
+			description: "packed KV and field to map[string]interface{}",
+			from: map[string]interface{}{
+				"key1": maps.KeyValue{
+					Key:   "key1",
+					Value: "value1",
+				},
+				"key2": "value2",
+			},
+			to: pointer(map[string]interface{}{}),
+			expected: pointer(map[string]interface{}{
+				"key1": "value1",
+				"key2": "value2",
+			}),
+		},
+		{
+			description: "packed KV and field to struct (with keyMap)",
+			opts: []convert.Option{
+				convert.WithKeyMapper(strings.ToLower),
+			},
+			from: map[string]interface{}{
+				"key1": maps.KeyValue{
+					Key:   "key1",
+					Value: "value1",
+				},
+				"key2": "value2",
+			},
+			to: pointer(struct {
+				Key1 interface{}
+				Key2 interface{}
+			}{}),
+			expected: pointer(struct {
+				Key1 interface{}
+				Key2 interface{}
+			}{
+				Key1: "value1",
+				Key2: "value2",
+			}),
+		},
+		{
+			description: "packed KV and field to interface{}",
+			from: map[string]interface{}{
+				"key1": maps.KeyValue{
+					Key:   "key1",
+					Value: "value1",
+				},
+				"key2": "value2",
+			},
+			to: pointer(any(nil)),
+			expected: pointer(any(map[string]interface{}{
+				"key1": "value1",
+				"key2": "value2",
+			})),
+		},
+		{
+			description: "nil map to interface{}",
+			from:        map[string]interface{}(nil),
+			to:          pointer(any(nil)),
+			expected:    pointer(any(nil)),
+		},
+		{
+			description: "slice to interface",
+			from:        []int{1, 2, 3},
+			to:          pointer(any(nil)),
+			expected:    pointer(any([]int{1, 2, 3})),
+		},
+		// unsupported.
 		{
 			description: "to func (unsupported)",
 			from:        "str",
@@ -966,9 +1065,10 @@ func (e *Enum) UnmarshalText(text []byte) error {
 
 type (
 	OuterStruct struct {
-		Enum         Enum
-		OuterField   string
-		privateField string //nolint:unused
+		Enum           Enum
+		OuterField     string
+		privateField   string //nolint:unused
+		InterfaceField interface{}
 
 		InnerStruct `konf:",squash"`
 		Inner       *InnerStruct
