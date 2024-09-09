@@ -13,7 +13,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - Support converting unmarshalled configurations to `interface{}`.
 Defaults to `map[string]interface{}` for now if the source has nested values and
-the destination is just an `interface{}`.
+the destination is just an `interface{}` (#460).
 
 ## [1.3.0] - 2024-08-26
 
