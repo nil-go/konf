@@ -3,16 +3,16 @@ module github.com/nil-go/konf/notifier/pubsub
 go 1.22
 
 require (
-	cloud.google.com/go/compute/metadata v0.5.1
+	cloud.google.com/go/compute/metadata v0.5.2
 	cloud.google.com/go/pubsub v1.43.0
 	github.com/google/uuid v1.6.0
-	google.golang.org/api v0.198.0
+	google.golang.org/api v0.199.0
 	google.golang.org/grpc v1.67.0
 )
 
 require (
 	cloud.google.com/go v0.115.1 // indirect
-	cloud.google.com/go/auth v0.9.4 // indirect
+	cloud.google.com/go/auth v0.9.5 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.4 // indirect
 	cloud.google.com/go/iam v1.2.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
