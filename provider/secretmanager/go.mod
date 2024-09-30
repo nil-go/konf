@@ -3,16 +3,16 @@ module github.com/nil-go/konf/provider/secretmanager
 go 1.22
 
 require (
-	cloud.google.com/go/compute/metadata v0.5.1
+	cloud.google.com/go/compute/metadata v0.5.2
 	cloud.google.com/go/secretmanager v1.14.1
 	github.com/stretchr/testify v1.9.0
-	google.golang.org/api v0.198.0
-	google.golang.org/grpc v1.66.2
+	google.golang.org/api v0.199.0
+	google.golang.org/grpc v1.67.0
 	google.golang.org/protobuf v1.34.2
 )
 
 require (
-	cloud.google.com/go/auth v0.9.4 // indirect
+	cloud.google.com/go/auth v0.9.5 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.4 // indirect
 	cloud.google.com/go/iam v1.2.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
