@@ -3,7 +3,7 @@ module github.com/nil-go/konf/provider/azappconfig
 go 1.22
 
 require (
-	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.14.0
+	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.16.0
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.8.0
 	github.com/Azure/azure-sdk-for-go/sdk/data/azappconfig v1.1.0
 )
