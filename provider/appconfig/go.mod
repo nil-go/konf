@@ -5,7 +5,7 @@ go 1.22
 require (
 	github.com/aws/aws-sdk-go-v2 v1.32.2
 	github.com/aws/aws-sdk-go-v2/config v1.28.0
-	github.com/aws/aws-sdk-go-v2/service/appconfig v1.34.2
+	github.com/aws/aws-sdk-go-v2/service/appconfig v1.35.0
 	github.com/aws/aws-sdk-go-v2/service/appconfigdata v1.18.2
 	github.com/aws/smithy-go v1.22.0
 )
