@@ -111,7 +111,7 @@ func isZeroValue(flg *flag.Flag) bool {
 		val = reflect.Zero(typ)
 	}
 
-	return flg.DefValue == val.Interface().(flag.Value).String() //nolint:forcetypeassert
+	return flg.DefValue == val.Interface().(flag.Value).String() //nolint:errcheck,forcetypeassert
 }
 
 func (f Flag) String() string {
