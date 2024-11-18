@@ -1,15 +1,13 @@
 module github.com/nil-go/konf/notifier/pubsub
 
-go 1.22.7
-
-toolchain go1.23.3
+go 1.22
 
 require (
 	cloud.google.com/go/compute/metadata v0.5.2
 	cloud.google.com/go/pubsub v1.45.1
 	github.com/google/uuid v1.6.0
 	google.golang.org/api v0.206.0
-	google.golang.org/grpc v1.68.0
+	google.golang.org/grpc v1.67.1
 )
 
 require (
@@ -27,12 +25,12 @@ require (
 	github.com/googleapis/gax-go/v2 v2.14.0 // indirect
 	go.einride.tech/aip v0.68.0 // indirect
 	go.opencensus.io v0.24.0 // indirect
-	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.57.0 // indirect
-	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.57.0 // indirect
-	go.opentelemetry.io/otel v1.32.0 // indirect
-	go.opentelemetry.io/otel/metric v1.32.0 // indirect
+	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.54.0 // indirect
+	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.54.0 // indirect
+	go.opentelemetry.io/otel v1.29.0 // indirect
+	go.opentelemetry.io/otel/metric v1.29.0 // indirect
 	go.opentelemetry.io/otel/sdk v1.29.0 // indirect
-	go.opentelemetry.io/otel/trace v1.32.0 // indirect
+	go.opentelemetry.io/otel/trace v1.29.0 // indirect
 	golang.org/x/crypto v0.29.0 // indirect
 	golang.org/x/net v0.31.0 // indirect
 	golang.org/x/oauth2 v0.24.0 // indirect
