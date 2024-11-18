@@ -7,6 +7,10 @@ updates:
       - Skip-Changelog
     schedule:
       interval: weekly
+    groups:
+      dependencies:
+        patterns:
+          - "*"
 
   - package-ecosystem: gomod
     directory: /provider/file
@@ -14,6 +18,10 @@ updates:
       - Skip-Changelog
     schedule:
       interval: weekly
+    groups:
+      dependencies:
+        patterns:
+          - "*"
 
   - package-ecosystem: gomod
     directory: /provider/pflag
@@ -21,6 +29,10 @@ updates:
       - Skip-Changelog
     schedule:
       interval: weekly
+    groups:
+      dependencies:
+        patterns:
+          - "*"
 
   - package-ecosystem: gomod
     directory: /provider/appconfig
@@ -29,10 +41,9 @@ updates:
     schedule:
       interval: weekly
     groups:
-      aws-sdk-go:
+      dependencies:
         patterns:
-          - github.com/aws/aws-sdk-go-v2*
-          - github.com/aws/smithy-go
+          - "*"
 
   - package-ecosystem: gomod
     directory: /provider/s3
@@ -41,10 +52,9 @@ updates:
     schedule:
       interval: weekly
     groups:
-      aws-sdk-go:
+      dependencies:
         patterns:
-          - github.com/aws/aws-sdk-go-v2*
-          - github.com/aws/smithy-go
+          - "*"
 
   - package-ecosystem: gomod
     directory: /provider/parameterstore
@@ -53,10 +63,9 @@ updates:
     schedule:
       interval: weekly
     groups:
-      aws-sdk-go:
+      dependencies:
         patterns:
-          - github.com/aws/aws-sdk-go-v2*
-          - github.com/aws/smithy-go
+          - "*"
 
   - package-ecosystem: gomod
     directory: /notifier/sns
@@ -65,10 +74,9 @@ updates:
     schedule:
       interval: weekly
     groups:
-      aws-sdk-go:
+      dependencies:
         patterns:
-          - github.com/aws/aws-sdk-go-v2*
-          - github.com/aws/smithy-go
+          - "*"
 
   - package-ecosystem: gomod
     directory: /provider/azappconfig
@@ -77,9 +85,9 @@ updates:
     schedule:
       interval: weekly
     groups:
-      azure-sdk-for-go:
+      dependencies:
         patterns:
-          - github.com/Azure/azure-sdk-for-go/sdk/*
+          - "*"
 
   - package-ecosystem: gomod
     directory: /provider/azblob
@@ -88,9 +96,9 @@ updates:
     schedule:
       interval: weekly
     groups:
-      azure-sdk-for-go:
+      dependencies:
         patterns:
-          - github.com/Azure/azure-sdk-for-go/sdk/*
+          - "*"
 
   - package-ecosystem: gomod
     directory: /notifier/azservicebus
@@ -99,9 +107,9 @@ updates:
     schedule:
       interval: weekly
     groups:
-      azure-sdk-for-go:
+      dependencies:
         patterns:
-          - github.com/Azure/azure-sdk-for-go/sdk/*
+          - "*"
 
   - package-ecosystem: gomod
     directory: /provider/secretmanager
@@ -110,12 +118,9 @@ updates:
     schedule:
       interval: weekly
     groups:
-      cloud.google.com/go:
+      dependencies:
         patterns:
-          - cloud.google.com/go/*
-          - google.golang.org/api
-          - google.golang.org/grpc
-          - google.golang.org/protobuf
+          - "*"
 
   - package-ecosystem: gomod
     directory: /provider/gcs
@@ -124,10 +129,9 @@ updates:
     schedule:
       interval: weekly
     groups:
-      cloud.google.com/go:
+      dependencies:
         patterns:
-          - cloud.google.com/go/*
-          - google.golang.org/api
+          - "*"
 
   - package-ecosystem: gomod
     directory: /notifier/pubsub
@@ -136,10 +140,9 @@ updates:
     schedule:
       interval: weekly
     groups:
-      cloud.google.com/go:
+      dependencies:
         patterns:
-          - cloud.google.com/go/*
-          - google.golang.org/api
+          - "*"
 
   - package-ecosystem: gomod
     directory: /examples/aws
@@ -148,9 +151,9 @@ updates:
     schedule:
       interval: weekly
     groups:
-      github.com/nil-go/konf:
+      dependencies:
         patterns:
-          - github.com/nil-go/konf*
+          - "*"
 
   - package-ecosystem: gomod
     directory: /examples/azure
@@ -159,9 +162,9 @@ updates:
     schedule:
       interval: weekly
     groups:
-      github.com/nil-go/konf:
+      dependencies:
         patterns:
-          - github.com/nil-go/konf*
+          - "*"
 
   - package-ecosystem: gomod
     directory: /examples/gcp
@@ -170,9 +173,9 @@ updates:
     schedule:
       interval: weekly
     groups:
-      github.com/nil-go/konf:
+      dependencies:
         patterns:
-          - github.com/nil-go/konf*
+          - "*"
 
   - package-ecosystem: github-actions
     directory: /
