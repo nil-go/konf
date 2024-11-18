@@ -304,7 +304,7 @@ func (c Converter) convertArray(name string, fromVal, toVal reflect.Value) error
 
 		toVal.SetZero()
 		errs := make([]error, 0, toVal.Len())
-		for i := 0; i < fromVal.Len(); i++ {
+		for i := range fromVal.Len() {
 			fieldName := name + "[" + strconv.Itoa(i) + "]"
 			fromElemVal := fromVal.Index(i)
 			toElemVal := toVal.Index(i)
@@ -412,7 +412,7 @@ func (c Converter) convertSlice(name string, fromVal, toVal reflect.Value) error
 		toVal.SetCap(fromVal.Len())
 
 		errs := make([]error, 0, toVal.Len())
-		for i := 0; i < fromVal.Len(); i++ {
+		for i := range fromVal.Len() {
 			fieldName := name + "[" + strconv.Itoa(i) + "]"
 			fromElemVal := fromVal.Index(i)
 			toElemVal := toVal.Index(i)
@@ -499,7 +499,7 @@ func (c Converter) convertStruct(name string, fromVal, toVal reflect.Value) erro
 			structs = structs[1:]
 
 			structType := structVal.Type()
-			for i := 0; i < structType.NumField(); i++ {
+			for i := range structType.NumField() {
 				fieldType := structType.Field(i)
 				fieldVal := structVal.Field(i)
 				if !fieldVal.CanSet() {
