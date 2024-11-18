@@ -88,11 +88,12 @@ linters:
     - gosmopolitan
     - govet
     - grouper
+    - iface
     - importas
     - inamedparam
     - ineffassign
     - interfacebloat
-    # intrange // go 1.22
+    - intrange
     - ireturn
     - lll
     # loggercheck
@@ -118,6 +119,7 @@ linters:
     - promlinter
     - protogetter
     - reassign
+    - recvcheck
     - revive
     - rowserrcheck
     - sloglint
@@ -155,6 +157,7 @@ issues:
         - contextcheck
         - cyclop
         - err113
+        - errcheck
         - forcetypeassert
         - funlen
         - gochecknoglobals
