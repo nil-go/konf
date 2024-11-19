@@ -36,11 +36,14 @@ type Statuser interface {
 //
 // It's used by the loader to check if the configuration has been set by other loaders.
 func (c *Config) Exists(path []string) bool {
-	if c == nil || c.values.Load() == nil {
+	if c == nil { // To support nil Pointer
 		return false
 	}
-
 	c.nocopy.Check()
+
+	if c.values.Load() == nil {
+		return false
+	}
 
 	return c.sub(*c.values.Load(), strings.Join(path, c.delim())) != nil
 }

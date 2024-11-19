@@ -119,11 +119,14 @@ func (c *Config) Load(loader Loader) error {
 // and decodes it into the given object pointed to by target.
 // The path is case-insensitive unless konf.WithCaseSensitive is set.
 func (c *Config) Unmarshal(path string, target any) error {
-	if c == nil || c.values.Load() == nil {
+	if c == nil { // To support nil pointer.
 		return nil
 	}
-
 	c.nocopy.Check()
+
+	if c.values.Load() == nil {
+		return nil
+	}
 
 	converter := c.converter
 	if reflect.ValueOf(converter).IsZero() {
@@ -171,11 +174,14 @@ func (c *Config) transformKeys(m map[string]any) {
 // from loaders for the given path. It blur sensitive information.
 // The path is case-insensitive unless konf.WithCaseSensitive is set.
 func (c *Config) Explain(path string) string {
-	if c == nil || c.values.Load() == nil {
+	if c == nil { // To support nil pointer
 		return path + " has no configuration.\n\n"
 	}
-
 	c.nocopy.Check()
+
+	if c.values.Load() == nil {
+		return path + " has no configuration.\n\n"
+	}
 
 	explanation := &strings.Builder{}
 	c.explain(explanation, path, c.sub(*c.values.Load(), path))
