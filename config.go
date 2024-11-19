@@ -125,20 +125,15 @@ func (c *Config) Load(loader Loader) error {
 // and decodes it into the given object pointed to by target.
 // The path is case-insensitive unless konf.WithCaseSensitive is set.
 func (c *Config) Unmarshal(path string, target any) error {
-	if c == nil { // To support nil pointer.
+	if c == nil || c.values.Load() == nil { // To support nil or zero Config
 		return nil
 	}
 	c.nocopy.Check()
 
-	if c.values.Load() == nil {
-		return nil
-	}
-
 	converter := c.converter
-	if converter == nil {
+	if converter == nil { // To support zero Config
 		converter = defaultConverter
 	}
-
 	if err := converter.Convert(c.sub(*c.values.Load(), path), target); err != nil {
 		return fmt.Errorf("decode: %w", err)
 	}
@@ -148,7 +143,7 @@ func (c *Config) Unmarshal(path string, target any) error {
 
 func (c *Config) log(ctx context.Context, level slog.Level, message string, attrs ...slog.Attr) {
 	logger := c.logger
-	if c.logger == nil {
+	if c.logger == nil { // To support zero Config
 		logger = slog.Default()
 	}
 	logger.LogAttrs(ctx, level, message, attrs...)
@@ -163,7 +158,7 @@ func (c *Config) sub(values map[string]any, path string) any {
 }
 
 func (c *Config) delim() string {
-	if c.delimiter == "" {
+	if c.delimiter == "" { // To support zero Config
 		return "."
 	}
 
@@ -180,14 +175,10 @@ func (c *Config) transformKeys(m map[string]any) {
 // from loaders for the given path. It blur sensitive information.
 // The path is case-insensitive unless konf.WithCaseSensitive is set.
 func (c *Config) Explain(path string) string {
-	if c == nil { // To support nil pointer
+	if c == nil || c.values.Load() == nil { // To support nil or zero Config
 		return path + " has no configuration.\n\n"
 	}
 	c.nocopy.Check()
-
-	if c.values.Load() == nil {
-		return path + " has no configuration.\n\n"
-	}
 
 	explanation := &strings.Builder{}
 	c.explain(explanation, path, c.sub(*c.values.Load(), path))
