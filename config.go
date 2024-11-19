@@ -110,6 +110,14 @@ func (c *Config) Load(loader Loader) error {
 	c.providers = append(c.providers, &prd)
 	maps.Merge(*c.values.Load(), *prd.values.Load())
 
+	if _, ok := loader.(Watcher); ok && c.watched.Load() {
+		c.log(context.Background(),
+			slog.LevelWarn,
+			"The Watch on loader has no effect as Config.Watch has been executed.",
+			slog.Any("loader", loader),
+		)
+	}
+
 	return nil
 }
 

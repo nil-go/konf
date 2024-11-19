@@ -161,6 +161,30 @@ func TestConfig_Watch_twice(t *testing.T) {
 	assert.Equal(t, expected, buf.String())
 }
 
+func TestConfig_Watch_with_later_load(t *testing.T) {
+	t.Parallel()
+
+	buf := &buffer{}
+	config := konf.New(konf.WithLogHandler(logHandler(buf)))
+	assert.NoError(t, config.Load(stringWatcher{key: "Config", value: make(chan string)}))
+
+	stopped := make(chan struct{})
+	ctx, cancel := context.WithCancel(context.Background())
+	defer func() {
+		cancel()
+		<-stopped
+	}()
+	go func() {
+		defer close(stopped)
+		assert.NoError(t, config.Watch(ctx))
+	}()
+	time.Sleep(100 * time.Millisecond) // Wait for watch to start
+
+	assert.NoError(t, config.Load(stringWatcher{key: "Config", value: make(chan string)}))
+	expected := "level=WARN msg=\"The Watch on loader has no effect as Config.Watch has been executed.\" loader=stringWatcher\n"
+	assert.Equal(t, expected, buf.String())
+}
+
 func TestConfig_Watch_status(t *testing.T) {
 	t.Parallel()
 
