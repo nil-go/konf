@@ -39,7 +39,7 @@ func WithTagName(tagName string) Option {
 // and string to encoding.TextUnmarshaler.
 func WithDecodeHook[F, T any, FN func(F) (T, error) | func(F, T) error](hook FN) Option {
 	return func(options *options) {
-		options.hooks = append(options.hooks, convert.WithHook[F, T](hook))
+		options.convertOpts = append(options.convertOpts, convert.WithHook[F, T](hook))
 	}
 }
 
@@ -81,7 +81,7 @@ type (
 	options struct {
 		Config
 
-		tagName string
-		hooks   []convert.Option
+		tagName     string
+		convertOpts []convert.Option
 	}
 )

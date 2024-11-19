@@ -51,17 +51,17 @@ func New(opts ...Option) *Config {
 		opt(option)
 	}
 
-	if len(option.hooks) == 0 {
-		option.hooks = defaultHooks
+	if len(option.convertOpts) == 0 {
+		option.convertOpts = defaultHooks
 	}
 	if option.tagName == "" {
 		option.tagName = defaultTagName
 	}
-	option.hooks = append(option.hooks, convert.WithTagName(option.tagName))
+	option.convertOpts = append(option.convertOpts, convert.WithTagName(option.tagName))
 	if !option.caseSensitive {
-		option.hooks = append(option.hooks, convert.WithKeyMapper(defaultKeyMap))
+		option.convertOpts = append(option.convertOpts, convert.WithKeyMapper(defaultKeyMap))
 	}
-	option.converter = convert.New(option.hooks...)
+	option.converter = convert.New(option.convertOpts...)
 
 	return &(option.Config)
 }
