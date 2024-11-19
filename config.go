@@ -55,12 +55,11 @@ func New(opts ...Option) *Config {
 		option.hooks = defaultHooks
 	}
 	if option.tagName == "" {
-		option.hooks = append(option.hooks, defaultTagName)
-	} else {
-		option.hooks = append(option.hooks, convert.WithTagName(option.tagName))
+		option.tagName = defaultTagName
 	}
+	option.hooks = append(option.hooks, convert.WithTagName(option.tagName))
 	if !option.caseSensitive {
-		option.hooks = append(option.hooks, defaultKeyMap)
+		option.hooks = append(option.hooks, convert.WithKeyMapper(defaultKeyMap))
 	}
 	option.converter = convert.New(option.hooks...)
 
@@ -149,7 +148,7 @@ func (c *Config) log(ctx context.Context, level slog.Level, message string, attr
 
 func (c *Config) sub(values map[string]any, path string) any {
 	if !c.caseSensitive {
-		path = strings.ToLower(path)
+		path = defaultKeyMap(path)
 	}
 
 	return maps.Sub(values, path, c.delim())
@@ -165,7 +164,7 @@ func (c *Config) delim() string {
 
 func (c *Config) transformKeys(m map[string]any) {
 	if !c.caseSensitive {
-		maps.TransformKeys(m, strings.ToLower, c.mapKeyCaseSensitive)
+		maps.TransformKeys(m, defaultKeyMap, c.mapKeyCaseSensitive)
 	}
 }
 
@@ -246,9 +245,10 @@ type provider struct {
 
 //nolint:gochecknoglobals
 var (
-	defaultTagName = convert.WithTagName("konf")
-	defaultKeyMap  = convert.WithKeyMapper(strings.ToLower)
-	defaultHooks   = []convert.Option{
+	defaultTagName = "konf"
+	defaultKeyMap  = strings.ToLower
+
+	defaultHooks = []convert.Option{
 		convert.WithHook[string, time.Duration](time.ParseDuration),
 		convert.WithHook[string, []string](func(f string) ([]string, error) {
 			return strings.Split(f, ","), nil
@@ -258,6 +258,6 @@ var (
 		}),
 	}
 	defaultConverter = convert.New(
-		append(defaultHooks, defaultTagName, defaultKeyMap)...,
+		append(defaultHooks, convert.WithTagName(defaultTagName), convert.WithKeyMapper(defaultKeyMap))...,
 	)
 )
