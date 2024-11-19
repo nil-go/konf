@@ -20,13 +20,13 @@ type Converter struct {
 	keyMap  func(string) string
 }
 
-func New(opts ...Option) Converter {
+func New(opts ...Option) *Converter {
 	option := &options{}
 	for _, opt := range opts {
 		opt(option)
 	}
 
-	return Converter(*option)
+	return (*Converter)(option)
 }
 
 func (c Converter) Convert(from, to any) error {

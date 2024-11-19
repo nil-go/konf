@@ -8,7 +8,6 @@ import (
 	"encoding"
 	"fmt"
 	"log/slog"
-	"reflect"
 	"slices"
 	"strings"
 	"sync"
@@ -33,7 +32,7 @@ type Config struct {
 	delimiter           string
 	logger              *slog.Logger
 	onStatus            func(loader Loader, changed bool, err error)
-	converter           convert.Converter
+	converter           *convert.Converter
 
 	// Loaded configuration.
 	values    atomic.Pointer[map[string]any]
@@ -129,7 +128,7 @@ func (c *Config) Unmarshal(path string, target any) error {
 	}
 
 	converter := c.converter
-	if reflect.ValueOf(converter).IsZero() {
+	if converter == nil {
 		converter = defaultConverter
 	}
 
