@@ -41,9 +41,10 @@ func (c *Config) Exists(path []string) bool {
 	}
 	c.nocopy.Check()
 
-	if c.values.Load() == nil {
+	value := c.providers.value()
+	if value == nil {
 		return false // To support zero Config
 	}
 
-	return c.sub(*c.values.Load(), strings.Join(path, c.delim())) != nil
+	return c.sub(value, strings.Join(path, c.delim())) != nil
 }
