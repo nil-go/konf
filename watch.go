@@ -94,6 +94,7 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 	}()
 
 	// Start a watching goroutine for each watcher registered.
+	c.providersMutex.RLock()
 	for i := range c.providers {
 		provider := c.providers[i] // Use pointer for later modification.
 
@@ -137,6 +138,7 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 			}(ctx)
 		}
 	}
+	c.providersMutex.RUnlock()
 	waitGroup.Wait()
 
 	if err := context.Cause(ctx); err != nil && !errors.Is(err, ctx.Err()) {

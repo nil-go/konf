@@ -35,8 +35,9 @@ type Config struct {
 	converter           *convert.Converter
 
 	// Loaded configuration.
-	values    atomic.Pointer[map[string]any]
-	providers []*provider
+	values         atomic.Pointer[map[string]any]
+	providers      []*provider
+	providersMutex sync.RWMutex
 
 	// For watching changes.
 	onChanges      map[string][]func(*Config)
@@ -87,7 +88,9 @@ func (c *Config) Load(loader Loader) error {
 		loader: loader,
 	}
 	prd.values.Store(&values)
+	c.providersMutex.Lock()
 	c.providers = append(c.providers, &prd)
+	c.providersMutex.Unlock()
 
 	// Merge loaded values into values map.
 	if c.values.Load() == nil {
