@@ -125,7 +125,7 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 // The register function must be non-blocking and usually completes instantly.
 // If it requires a long time to complete, it should be executed in a separate goroutine.
 //
-// This method is concurrency-safe.
+// This method is concurrent-safe.
 func (c *Config) OnChange(onChange func(*Config), paths ...string) {
 	if onChange == nil {
 		return // Do nothing is onchange is nil.

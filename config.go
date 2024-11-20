@@ -65,7 +65,7 @@ func New(opts ...Option) *Config {
 // Load loads configuration from the given loader.
 // Each loader takes precedence over the loaders before it.
 //
-// This method is concurrency-safe.
+// This method is concurrent-safe.
 func (c *Config) Load(loader Loader) error {
 	if loader == nil {
 		return nil
