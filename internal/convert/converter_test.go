@@ -1026,10 +1026,7 @@ func TestConverter(t *testing.T) { //nolint:maintidx
 		t.Run(testcase.description, func(t *testing.T) {
 			t.Parallel()
 
-			var converter convert.Converter
-			if len(testcase.opts) > 0 {
-				converter = convert.New(testcase.opts...)
-			}
+			converter := convert.New(testcase.opts...)
 			err := converter.Convert(testcase.from, testcase.to)
 			if err != nil {
 				assert.EqualError(t, err, testcase.err)

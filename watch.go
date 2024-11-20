@@ -10,7 +10,6 @@ import (
 	"log/slog"
 	"reflect"
 	"slices"
-	"strings"
 	"sync"
 	"time"
 
@@ -39,12 +38,13 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 		return nil
 	}
 
-	onChangesChannel := make(chan []func(*Config), 1)
-	defer close(onChangesChannel)
 	ctx, cancel := context.WithCancelCause(ctx)
 	defer cancel(nil)
-
 	var waitGroup sync.WaitGroup
+
+	// Start a goroutine to update the configuration while it has changes from watchers.
+	onChangesChannel := make(chan []func(*Config), 1)
+	defer close(onChangesChannel)
 	waitGroup.Add(1)
 	go func() {
 		defer waitGroup.Done()
@@ -93,6 +93,8 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 		}
 	}()
 
+	// Start a watching goroutine for each watcher registered.
+	c.providersMutex.RLock()
 	for i := range c.providers {
 		provider := c.providers[i] // Use pointer for later modification.
 
@@ -136,6 +138,7 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 			}(ctx)
 		}
 	}
+	c.providersMutex.RUnlock()
 	waitGroup.Wait()
 
 	if err := context.Cause(ctx); err != nil && !errors.Is(err, ctx.Err()) {
@@ -155,11 +158,10 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 //
 // This method is concurrency-safe.
 func (c *Config) OnChange(onChange func(*Config), paths ...string) {
-	c.nocopy.Check()
-
 	if onChange == nil {
 		return // Do nothing is onchange is nil.
 	}
+	c.nocopy.Check()
 
 	if len(paths) == 0 {
 		paths = []string{""}
@@ -168,12 +170,12 @@ func (c *Config) OnChange(onChange func(*Config), paths ...string) {
 	c.onChangesMutex.Lock()
 	defer c.onChangesMutex.Unlock()
 
-	if c.onChanges == nil {
+	if c.onChanges == nil { // To support zero Config
 		c.onChanges = make(map[string][]func(*Config))
 	}
 	for _, path := range paths {
 		if !c.caseSensitive {
-			path = strings.ToLower(path)
+			path = defaultKeyMap(path)
 		}
 		c.onChanges[path] = append(c.onChanges[path], onChange)
 	}

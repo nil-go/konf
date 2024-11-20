@@ -27,7 +27,7 @@ type Watcher interface {
 
 // Statuser is the interface that wraps the Status method.
 //
-// Status enables providers report the status of configuration loading/watching.
+// Status enables providers report the status of configuration watching.
 type Statuser interface {
 	Status(onStatus func(changed bool, err error))
 }
@@ -36,11 +36,14 @@ type Statuser interface {
 //
 // It's used by the loader to check if the configuration has been set by other loaders.
 func (c *Config) Exists(path []string) bool {
-	if c == nil || c.values.Load() == nil {
+	if c == nil { // To support nil
 		return false
 	}
-
 	c.nocopy.Check()
+
+	if c.values.Load() == nil {
+		return false // To support zero Config
+	}
 
 	return c.sub(*c.values.Load(), strings.Join(path, c.delim())) != nil
 }
