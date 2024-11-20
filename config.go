@@ -51,6 +51,7 @@ func New(opts ...Option) *Config {
 		opt(option)
 	}
 
+	// Build converter from options.
 	if len(option.convertOpts) == 0 {
 		option.convertOpts = defaultHooks
 	}
@@ -71,14 +72,42 @@ func New(opts ...Option) *Config {
 //
 // This method can be called multiple times but it is not concurrency-safe.
 func (c *Config) Load(loader Loader) error {
-	c.nocopy.Check()
-
 	if loader == nil {
 		return nil
 	}
+	c.nocopy.Check()
 
+	// Load values into a new provider.
+	values, err := loader.Load()
+	if err != nil {
+		return fmt.Errorf("load configuration: %w", err)
+	}
+	c.transformKeys(values)
+	prd := provider{
+		loader: loader,
+	}
+	prd.values.Store(&values)
+	c.providers = append(c.providers, &prd)
+
+	// Merge loaded values into values map.
 	if c.values.Load() == nil {
 		c.values.Store(&map[string]any{})
+	}
+	maps.Merge(*c.values.Load(), *prd.values.Load())
+
+	if _, ok := loader.(Watcher); !ok {
+		return nil
+	}
+
+	// Special handling if loader is also watcher.
+	if c.watched.Load() {
+		c.log(context.Background(),
+			slog.LevelWarn,
+			"The Watch on loader has no effect as Config.Watch has been executed.",
+			slog.Any("loader", loader),
+		)
+
+		return nil
 	}
 
 	if statuser, ok := loader.(Statuser); ok {
@@ -97,27 +126,6 @@ func (c *Config) Load(loader Loader) error {
 		})
 	}
 
-	values, err := loader.Load()
-	if err != nil {
-		return fmt.Errorf("load configuration: %w", err)
-	}
-	c.transformKeys(values)
-
-	prd := provider{
-		loader: loader,
-	}
-	prd.values.Store(&values)
-	c.providers = append(c.providers, &prd)
-	maps.Merge(*c.values.Load(), *prd.values.Load())
-
-	if _, ok := loader.(Watcher); ok && c.watched.Load() {
-		c.log(context.Background(),
-			slog.LevelWarn,
-			"The Watch on loader has no effect as Config.Watch has been executed.",
-			slog.Any("loader", loader),
-		)
-	}
-
 	return nil
 }
 
@@ -125,10 +133,14 @@ func (c *Config) Load(loader Loader) error {
 // and decodes it into the given object pointed to by target.
 // The path is case-insensitive unless konf.WithCaseSensitive is set.
 func (c *Config) Unmarshal(path string, target any) error {
-	if c == nil || c.values.Load() == nil { // To support nil or zero Config
+	if c == nil { // To support nil
 		return nil
 	}
 	c.nocopy.Check()
+
+	if c.values.Load() == nil {
+		return nil // To support zero Config
+	}
 
 	converter := c.converter
 	if converter == nil { // To support zero Config
@@ -175,10 +187,14 @@ func (c *Config) transformKeys(m map[string]any) {
 // from loaders for the given path. It blur sensitive information.
 // The path is case-insensitive unless konf.WithCaseSensitive is set.
 func (c *Config) Explain(path string) string {
-	if c == nil || c.values.Load() == nil { // To support nil or zero Config
+	if c == nil { // To support nil
 		return path + " has no configuration.\n\n"
 	}
 	c.nocopy.Check()
+
+	if c.values.Load() == nil { // To support zero Config
+		return path + " has no configuration.\n\n"
+	}
 
 	explanation := &strings.Builder{}
 	c.explain(explanation, path, c.sub(*c.values.Load(), path))
