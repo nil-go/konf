@@ -34,15 +34,9 @@ type Config struct {
 	onStatus            func(loader Loader, changed bool, err error)
 	converter           *convert.Converter
 
-	// Loaded configuration.
-	values         atomic.Pointer[map[string]any]
-	providers      []*provider
-	providersMutex sync.RWMutex
-
-	// For watching changes.
-	onChanges      map[string][]func(*Config)
-	onChangesMutex sync.RWMutex
-	watched        atomic.Bool
+	providers providers
+	onChanges onChanges
+	watched   atomic.Bool
 }
 
 // New creates a new Config with the given Option(s).
@@ -71,7 +65,7 @@ func New(opts ...Option) *Config {
 // Load loads configuration from the given loader.
 // Each loader takes precedence over the loaders before it.
 //
-// This method can be called multiple times but it is not concurrency-safe.
+// This method is concurrent-safe.
 func (c *Config) Load(loader Loader) error {
 	if loader == nil {
 		return nil
@@ -84,19 +78,8 @@ func (c *Config) Load(loader Loader) error {
 		return fmt.Errorf("load configuration: %w", err)
 	}
 	c.transformKeys(values)
-	prd := provider{
-		loader: loader,
-	}
-	prd.values.Store(&values)
-	c.providersMutex.Lock()
-	c.providers = append(c.providers, &prd)
-	c.providersMutex.Unlock()
-
-	// Merge loaded values into values map.
-	if c.values.Load() == nil {
-		c.values.Store(&map[string]any{})
-	}
-	maps.Merge(*c.values.Load(), *prd.values.Load())
+	c.providers.append(loader, values)
+	c.providers.sync()
 
 	if _, ok := loader.(Watcher); !ok {
 		return nil
@@ -141,15 +124,16 @@ func (c *Config) Unmarshal(path string, target any) error {
 	}
 	c.nocopy.Check()
 
-	if c.values.Load() == nil {
-		return nil // To support zero Config
+	value := c.providers.value()
+	if value == nil { // To support zero Config
+		return nil
 	}
 
 	converter := c.converter
 	if converter == nil { // To support zero Config
 		converter = defaultConverter
 	}
-	if err := converter.Convert(c.sub(*c.values.Load(), path), target); err != nil {
+	if err := converter.Convert(c.sub(value, path), target); err != nil {
 		return fmt.Errorf("decode: %w", err)
 	}
 
@@ -195,12 +179,13 @@ func (c *Config) Explain(path string) string {
 	}
 	c.nocopy.Check()
 
-	if c.values.Load() == nil { // To support zero Config
+	value := c.providers.value()
+	if value == nil { // To support zero Config
 		return path + " has no configuration.\n\n"
 	}
 
 	explanation := &strings.Builder{}
-	c.explain(explanation, path, c.sub(*c.values.Load(), path))
+	c.explain(explanation, path, c.sub(value, path))
 
 	return explanation.String()
 }
@@ -224,11 +209,11 @@ func (c *Config) explain(explanation *strings.Builder, path string, value any) {
 		value  any
 	}
 	var loaders []loaderValue
-	for _, provider := range c.providers {
+	c.providers.traverse(func(provider *provider) {
 		if v := c.sub(*provider.values.Load(), path); v != nil {
 			loaders = append(loaders, loaderValue{provider.loader, v})
 		}
-	}
+	})
 	slices.Reverse(loaders)
 
 	if len(loaders) == 0 {
@@ -256,9 +241,54 @@ func (c *Config) explain(explanation *strings.Builder, path string, value any) {
 	explanation.WriteString("\n")
 }
 
-type provider struct {
-	loader Loader
-	values atomic.Pointer[map[string]any]
+type (
+	providers struct {
+		providers []*provider
+		values    atomic.Pointer[map[string]any]
+		mutex     sync.RWMutex
+	}
+	provider struct {
+		loader Loader
+		values atomic.Pointer[map[string]any]
+	}
+)
+
+func (p *providers) append(loader Loader, values map[string]any) {
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
+
+	provider := &provider{loader: loader}
+	provider.values.Store(&values)
+	p.providers = append(p.providers, provider)
+}
+
+func (p *providers) sync() {
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
+
+	values := make(map[string]any)
+	for _, w := range p.providers {
+		maps.Merge(values, *w.values.Load())
+	}
+	p.values.Store(&values)
+}
+
+func (p *providers) traverse(action func(*provider)) {
+	p.mutex.RLock()
+	defer p.mutex.RUnlock()
+
+	for _, provider := range p.providers {
+		action(provider)
+	}
+}
+
+func (p *providers) value() map[string]any {
+	val := p.values.Load()
+	if val == nil {
+		return nil
+	}
+
+	return *val
 }
 
 //nolint:gochecknoglobals

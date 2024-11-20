@@ -44,7 +44,7 @@ func Unmarshal(path string, target any) error {
 // The register function must be non-blocking and usually completes instantly.
 // If it requires a long time to complete, it should be executed in a separate goroutine.
 //
-// This method is concurrency-safe.
+// This method is concurrent-safe.
 func OnChange(onChange func(), paths ...string) {
 	defaultConfig.Load().OnChange(func(*Config) { onChange() }, paths...)
 }

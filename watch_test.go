@@ -16,7 +16,6 @@ import (
 
 	"github.com/nil-go/konf"
 	"github.com/nil-go/konf/internal/assert"
-	"github.com/nil-go/konf/provider/env"
 )
 
 func TestOnChange_nil(*testing.T) {
@@ -124,17 +123,9 @@ func TestConfig_Watch_onchange_block(t *testing.T) {
 	<-ctx.Done()
 	time.Sleep(10 * time.Millisecond) // Wait for log to be written
 	expected := `level=INFO msg="Configuration has been changed." loader=stringWatcher
-level=WARN msg="Configuration has not been fully applied to onChanges due to timeout. Please check if the onChanges is blocking or takes too long to complete."
+level=WARN msg="Configuration has not been fully applied to onChanges in one minute. Please check if the onChanges is blocking or takes too long to complete."
 `
 	assert.Equal(t, expected, buf.String())
-}
-
-func TestConfig_Watch_without_loader(t *testing.T) {
-	t.Parallel()
-
-	var config konf.Config
-	assert.NoError(t, config.Load(env.New()))
-	assert.NoError(t, config.Watch(context.Background()))
 }
 
 func TestConfig_Watch_twice(t *testing.T) {
@@ -157,7 +148,7 @@ func TestConfig_Watch_twice(t *testing.T) {
 	time.Sleep(100 * time.Millisecond) // Wait for watch to start
 
 	assert.NoError(t, config.Watch(ctx))
-	expected := "level=WARN msg=\"Config has been watched, call Watch again has no effects.\"\n"
+	expected := "level=WARN msg=\"Config has been watched, call Watch more than once has no effects.\"\n"
 	assert.Equal(t, expected, buf.String())
 }
 

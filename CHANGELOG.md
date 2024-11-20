@@ -7,6 +7,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- Config.Load now is concurrent-safe (#567).
+
 ## [1.3.1] - 2024-09-09
 
 ### Added
