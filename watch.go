@@ -106,24 +106,13 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 				onChange := func(values map[string]any) {
 					c.transformKeys(values)
 					oldValues := *provider.values.Swap(&values)
-
-					// Find the onChanges should be triggered.
-					onChanges := func() []func(*Config) {
-						c.onChangesMutex.RLock()
-						defer c.onChangesMutex.RUnlock()
-
-						var callbacks []func(*Config)
-						for path, onChanges := range c.onChanges {
+					onChangesChannel <- c.onChanges.get(
+						func(path string) bool {
 							oldVal := c.sub(oldValues, path)
 							newVal := c.sub(values, path)
-							if !reflect.DeepEqual(oldVal, newVal) {
-								callbacks = append(callbacks, onChanges...)
-							}
-						}
-
-						return callbacks
-					}
-					onChangesChannel <- onChanges()
+							return !reflect.DeepEqual(oldVal, newVal)
+						},
+					)
 
 					c.log(ctx, slog.LevelInfo,
 						"Configuration has been changed.",
@@ -163,20 +152,47 @@ func (c *Config) OnChange(onChange func(*Config), paths ...string) {
 	}
 	c.nocopy.Check()
 
+	if !c.caseSensitive {
+		for i := range len(paths) {
+			paths[i] = defaultKeyMap(paths[i])
+		}
+	}
+
+	if c.onChanges == nil { // To support zero Config
+		c.onChanges = &onChanges{
+			subscribers: make(map[string][]func(*Config)),
+		}
+	}
+	c.onChanges.register(onChange, paths)
+}
+
+type onChanges struct {
+	subscribers map[string][]func(*Config)
+	mutex       sync.RWMutex
+}
+
+func (o *onChanges) register(onChange func(*Config), paths []string) {
+	o.mutex.Lock()
+	defer o.mutex.Unlock()
+
 	if len(paths) == 0 {
 		paths = []string{""}
 	}
-
-	c.onChangesMutex.Lock()
-	defer c.onChangesMutex.Unlock()
-
-	if c.onChanges == nil { // To support zero Config
-		c.onChanges = make(map[string][]func(*Config))
-	}
 	for _, path := range paths {
-		if !c.caseSensitive {
-			path = defaultKeyMap(path)
-		}
-		c.onChanges[path] = append(c.onChanges[path], onChange)
+		o.subscribers[path] = append(o.subscribers[path], onChange)
 	}
+}
+
+func (o *onChanges) get(filter func(string) bool) []func(*Config) {
+	o.mutex.RLock()
+	defer o.mutex.RUnlock()
+
+	var callbacks []func(*Config)
+	for path, subscriber := range o.subscribers {
+		if filter(path) {
+			callbacks = append(callbacks, subscriber...)
+		}
+	}
+
+	return callbacks
 }

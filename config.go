@@ -40,9 +40,8 @@ type Config struct {
 	providersMutex sync.RWMutex
 
 	// For watching changes.
-	onChanges      map[string][]func(*Config)
-	onChangesMutex sync.RWMutex
-	watched        atomic.Bool
+	onChanges *onChanges
+	watched   atomic.Bool
 }
 
 // New creates a new Config with the given Option(s).
