@@ -553,6 +553,7 @@ func (c Converter) convertStruct(name string, fromVal, toVal reflect.Value) erro
 }
 
 func (c Converter) convertInterface(name string, fromVal, toVal reflect.Value) error {
+	// Copy the value from map and slice to avoid the original value being modified.
 	switch fromVal.Kind() {
 	case reflect.Map:
 		if fromVal.IsNil() {
@@ -564,11 +565,21 @@ func (c Converter) convertInterface(name string, fromVal, toVal reflect.Value) e
 		toVal.Set(reflect.MakeMapWithSize(fromVal.Type(), fromVal.Len()))
 
 		return c.convertMap(name, fromVal, toVal.Elem())
+	case reflect.Slice:
+		if fromVal.IsNil() {
+			toVal.SetZero()
+
+			return nil
+		}
+
+		newSlice := reflect.MakeSlice(fromVal.Type(), fromVal.Len(), fromVal.Len())
+		reflect.Copy(newSlice, fromVal)
+		toVal.Set(newSlice)
 	default:
 		toVal.Set(fromVal)
-
-		return nil
 	}
+
+	return nil
 }
 
 func pointer(val reflect.Value) reflect.Value {

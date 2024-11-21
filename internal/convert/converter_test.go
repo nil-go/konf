@@ -839,7 +839,7 @@ func TestConverter(t *testing.T) { //nolint:maintidx
 				"Enum":           "sky",
 				"OuterField":     "outer",
 				"PrivateField":   "private",
-				"InterfaceField": "interface{}",
+				"InterfaceField": "any",
 				"InnerField":     "squash",
 				"Inner":          map[string]any{"InnerField": "inner"},
 			},
@@ -847,7 +847,7 @@ func TestConverter(t *testing.T) { //nolint:maintidx
 			expected: pointer(OuterStruct{
 				Enum:           Sky,
 				OuterField:     "outer",
-				InterfaceField: "interface{}",
+				InterfaceField: "any",
 				InnerStruct:    InnerStruct{InnerField: "squash"},
 				Inner:          &InnerStruct{InnerField: "inner"},
 			}),
@@ -857,18 +857,18 @@ func TestConverter(t *testing.T) { //nolint:maintidx
 			opts: []convert.Option{
 				convert.WithKeyMapper(strings.ToLower),
 			},
-			from: map[string]string{"innerfield": "inner", "interfacefield": "interface{}"},
+			from: map[string]string{"innerfield": "inner", "interfacefield": "any"},
 			to: pointer(struct {
 				InnerField     string
-				InterfaceField interface{}
+				InterfaceField any
 			}{}),
 			expected: pointer(
 				struct {
 					InnerField     string
-					InterfaceField interface{}
+					InterfaceField any
 				}{
 					InnerField:     "inner",
-					InterfaceField: "interface{}",
+					InterfaceField: "any",
 				}),
 		},
 		{
@@ -909,6 +909,12 @@ func TestConverter(t *testing.T) { //nolint:maintidx
 			expected:    pointer(any(42)),
 		},
 		{
+			description: "zero int to interface",
+			from:        0,
+			to:          pointer(any(nil)),
+			expected:    pointer(any(0)),
+		},
+		{
 			description: "string to interface",
 			from:        "str",
 			to:          pointer(any(nil)),
@@ -936,16 +942,16 @@ func TestConverter(t *testing.T) { //nolint:maintidx
 			expected: pointer(any(map[string]int{"key": 42, "keysensitive": 43})),
 		},
 		{
-			description: "packed KV and field to map[string]interface{}",
-			from: map[string]interface{}{
+			description: "packed KV and field to map[string]any",
+			from: map[string]any{
 				"key1": maps.KeyValue{
 					Key:   "key1",
 					Value: "value1",
 				},
 				"key2": "value2",
 			},
-			to: pointer(map[string]interface{}{}),
-			expected: pointer(map[string]interface{}{
+			to: pointer(map[string]any{}),
+			expected: pointer(map[string]any{
 				"key1": "value1",
 				"key2": "value2",
 			}),
@@ -955,28 +961,32 @@ func TestConverter(t *testing.T) { //nolint:maintidx
 			opts: []convert.Option{
 				convert.WithKeyMapper(strings.ToLower),
 			},
-			from: map[string]interface{}{
+			from: map[string]any{
 				"key1": maps.KeyValue{
 					Key:   "key1",
 					Value: "value1",
 				},
 				"key2": "value2",
+				"key3": []int{1, 2},
 			},
 			to: pointer(struct {
-				Key1 interface{}
-				Key2 interface{}
+				Key1 any
+				Key2 any
+				Key3 any
 			}{}),
 			expected: pointer(struct {
-				Key1 interface{}
-				Key2 interface{}
+				Key1 any
+				Key2 any
+				Key3 any
 			}{
 				Key1: "value1",
 				Key2: "value2",
+				Key3: []int{1, 2},
 			}),
 		},
 		{
-			description: "packed KV and field to interface{}",
-			from: map[string]interface{}{
+			description: "packed KV and field to any",
+			from: map[string]any{
 				"key1": maps.KeyValue{
 					Key:   "key1",
 					Value: "value1",
@@ -984,14 +994,14 @@ func TestConverter(t *testing.T) { //nolint:maintidx
 				"key2": "value2",
 			},
 			to: pointer(any(nil)),
-			expected: pointer(any(map[string]interface{}{
+			expected: pointer(any(map[string]any{
 				"key1": "value1",
 				"key2": "value2",
 			})),
 		},
 		{
-			description: "nil map to interface{}",
-			from:        map[string]interface{}(nil),
+			description: "nil map to any",
+			from:        map[string]any(nil),
 			to:          pointer(any(nil)),
 			expected:    pointer(any(nil)),
 		},
@@ -1000,6 +1010,12 @@ func TestConverter(t *testing.T) { //nolint:maintidx
 			from:        []int{1, 2, 3},
 			to:          pointer(any(nil)),
 			expected:    pointer(any([]int{1, 2, 3})),
+		},
+		{
+			description: "nil slice to interface",
+			from:        []int(nil),
+			to:          pointer(any(nil)),
+			expected:    pointer(any(nil)),
 		},
 		// unsupported.
 		{
@@ -1065,7 +1081,7 @@ type (
 		Enum           Enum
 		OuterField     string
 		privateField   string //nolint:unused
-		InterfaceField interface{}
+		InterfaceField any
 
 		InnerStruct `konf:",squash"`
 		Inner       *InnerStruct
