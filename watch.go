@@ -29,6 +29,9 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 	defer close(onChangesChannel)
 	var waitGroup sync.WaitGroup
 	watchProvider := func(provider *provider) {
+		if !provider.watched.CompareAndSwap(false, true) {
+			return // Skip if the provider has been watched.
+		}
 		if watcher, ok := provider.loader.(Watcher); ok {
 			waitGroup.Add(1)
 			go func(ctx context.Context) {

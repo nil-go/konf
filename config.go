@@ -72,18 +72,6 @@ func (c *Config) Load(loader Loader) error {
 	}
 	c.nocopy.Check()
 
-	// Load values into a new provider.
-	values, err := loader.Load()
-	if err != nil {
-		return fmt.Errorf("load configuration: %w", err)
-	}
-	c.transformKeys(values)
-	provider := c.providers.append(loader, values)
-
-	if _, ok := loader.(Watcher); !ok {
-		return nil
-	}
-
 	// Register status callback if the loader is a Statuser.
 	if statuser, ok := loader.(Statuser); ok {
 		statuser.Status(func(changed bool, err error) {
@@ -101,10 +89,20 @@ func (c *Config) Load(loader Loader) error {
 		})
 	}
 
-	// Register watch callback if the loader is a Watcher and the watch is started.
-	// While Config.Watch is called, c.watched is set for registering the watch callback.
-	if watch := c.watched.Load(); watch != nil {
-		(*watch)(provider)
+	// Load values into a new provider.
+	values, err := loader.Load()
+	if err != nil {
+		return fmt.Errorf("load configuration: %w", err)
+	}
+	c.transformKeys(values)
+	provider := c.providers.append(loader, values)
+
+	if _, ok := loader.(Watcher); ok {
+		// Register watch callback if the loader is a Watcher and the watch is started.
+		// While Config.Watch is called, c.watched is set for registering the watch callback.
+		if watch := c.watched.Load(); watch != nil {
+			(*watch)(provider)
+		}
 	}
 
 	return nil
@@ -245,8 +243,9 @@ type (
 		mutex     sync.RWMutex
 	}
 	provider struct {
-		loader Loader
-		values atomic.Pointer[map[string]any]
+		loader  Loader
+		values  atomic.Pointer[map[string]any]
+		watched atomic.Bool
 	}
 )
 
