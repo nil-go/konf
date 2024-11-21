@@ -34,9 +34,9 @@ type Config struct {
 	onStatus            func(loader Loader, changed bool, err error)
 	converter           *convert.Converter
 
-	providers     providers
-	onChanges     onChanges
-	watchProvider atomic.Pointer[func(*provider)]
+	providers providers
+	onChanges onChanges
+	watched   atomic.Pointer[func(*provider)]
 }
 
 // New creates a new Config with the given Option(s).
@@ -84,7 +84,7 @@ func (c *Config) Load(loader Loader) error {
 		return nil
 	}
 
-	// Special handling if loader is also watcher.
+	// Register status callback if the loader is a Statuser.
 	if statuser, ok := loader.(Statuser); ok {
 		statuser.Status(func(changed bool, err error) {
 			if err != nil {
@@ -101,7 +101,9 @@ func (c *Config) Load(loader Loader) error {
 		})
 	}
 
-	if watch := c.watchProvider.Load(); watch != nil {
+	// Register watch callback if the loader is a Watcher and the watch is started.
+	// While Config.Watch is called, c.watched is set for registering the watch callback.
+	if watch := c.watched.Load(); watch != nil {
 		(*watch)(provider)
 	}
 
@@ -286,8 +288,10 @@ func (p *providers) traverse(action func(*provider)) {
 }
 
 func (p *providers) sub(path []string) any {
-	p.mutex.RLock()
-	defer p.mutex.RUnlock()
+	// Here does not need lock since p.values is atomic pointer.
+	// The map of configuration is just swapping in and out,
+	// but the map itself is immutable.
+	// So unmarshal isn't blocked by Config.Load or updating changes by Watch.
 
 	val := p.values.Load()
 	if val == nil { // To support zero Config
