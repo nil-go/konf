@@ -11,6 +11,8 @@ import (
 	"reflect"
 	"sync"
 	"time"
+
+	"github.com/nil-go/konf/internal/maps"
 )
 
 // Watch watches and updates configuration when it changes.
@@ -91,7 +93,9 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 					oldValues := *provider.values.Swap(&values)
 					onChangesChannel <- c.onChanges.get(
 						func(path string) bool {
-							return !reflect.DeepEqual(c.sub(oldValues, path), c.sub(values, path))
+							paths := c.splitPath(path)
+
+							return !reflect.DeepEqual(maps.Sub(oldValues, paths), maps.Sub(values, paths))
 						},
 					)
 
