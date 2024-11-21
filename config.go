@@ -288,8 +288,10 @@ func (p *providers) traverse(action func(*provider)) {
 }
 
 func (p *providers) sub(path []string) any {
-	p.mutex.RLock()
-	defer p.mutex.RUnlock()
+	// Here does not need lock since p.values is atomic pointer.
+	// The map of configuration is just swapping in and out,
+	// but the map itself is immutable.
+	// So unmarshal isn't blocked by Config.Load or updating changes by Watch.
 
 	val := p.values.Load()
 	if val == nil { // To support zero Config
