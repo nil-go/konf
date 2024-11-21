@@ -34,9 +34,9 @@ type Config struct {
 	onStatus            func(loader Loader, changed bool, err error)
 	converter           *convert.Converter
 
-	providers providers
-	onChanges onChanges
-	watched   atomic.Bool
+	providers     providers
+	onChanges     onChanges
+	watchProvider atomic.Pointer[func(*provider)]
 }
 
 // New creates a new Config with the given Option(s).
@@ -78,23 +78,13 @@ func (c *Config) Load(loader Loader) error {
 		return fmt.Errorf("load configuration: %w", err)
 	}
 	c.transformKeys(values)
-	c.providers.append(loader, values)
+	provider := c.providers.append(loader, values)
 
 	if _, ok := loader.(Watcher); !ok {
 		return nil
 	}
 
 	// Special handling if loader is also watcher.
-	if c.watched.Load() {
-		c.log(context.Background(),
-			slog.LevelWarn,
-			"The Watch on loader has no effect as Config.Watch has been executed.",
-			slog.Any("loader", loader),
-		)
-
-		return nil
-	}
-
 	if statuser, ok := loader.(Statuser); ok {
 		statuser.Status(func(changed bool, err error) {
 			if err != nil {
@@ -109,6 +99,10 @@ func (c *Config) Load(loader Loader) error {
 				c.onStatus(loader, changed, err)
 			}
 		})
+	}
+
+	if watch := c.watchProvider.Load(); watch != nil {
+		(*watch)(provider)
 	}
 
 	return nil
@@ -254,7 +248,7 @@ type (
 	}
 )
 
-func (p *providers) append(loader Loader, values map[string]any) {
+func (p *providers) append(loader Loader, values map[string]any) *provider {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 
@@ -263,6 +257,8 @@ func (p *providers) append(loader Loader, values map[string]any) {
 	p.providers = append(p.providers, provider)
 
 	p.sync()
+
+	return provider
 }
 
 func (p *providers) changed() {
