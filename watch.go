@@ -17,26 +17,54 @@ import (
 
 // Watch watches and updates configuration when it changes.
 // It blocks until ctx is done, or the service returns an error.
-// WARNING: All loaders passed in Load after calling Watch do not get watched.
 //
 // It only can be called once. Call after first has no effects.
 func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocognit
 	c.nocopy.Check()
 
-	if watched := c.watched.Swap(true); watched {
+	ctx, cancel := context.WithCancelCause(ctx)
+	defer cancel(nil)
+	// Start a goroutine to update the configuration while it has changes from watchers.
+	onChangesChannel := make(chan []func(*Config), 1)
+	defer close(onChangesChannel)
+	var waitGroup sync.WaitGroup
+	watchProvider := func(provider *provider) {
+		if watcher, ok := provider.loader.(Watcher); ok {
+			waitGroup.Add(1)
+			go func(ctx context.Context) {
+				defer waitGroup.Done()
+
+				onChange := func(values map[string]any) {
+					c.transformKeys(values)
+					oldValues := *provider.values.Swap(&values)
+					onChangesChannel <- c.onChanges.get(
+						func(path string) bool {
+							paths := c.splitPath(path)
+
+							return !reflect.DeepEqual(maps.Sub(oldValues, paths), maps.Sub(values, paths))
+						},
+					)
+
+					c.log(ctx, slog.LevelInfo,
+						"Configuration has been changed.",
+						slog.Any("loader", watcher),
+					)
+				}
+
+				c.log(ctx, slog.LevelDebug, "Watching configuration change.", slog.Any("loader", watcher))
+				if err := watcher.Watch(ctx, onChange); err != nil {
+					cancel(fmt.Errorf("watch configuration change on %v: %w", watcher, err))
+				}
+			}(ctx)
+		}
+	}
+
+	if !c.watchProvider.CompareAndSwap(nil, &watchProvider) {
 		c.log(ctx, slog.LevelWarn, "Config has been watched, call Watch more than once has no effects.")
 
 		return nil
 	}
 
-	ctx, cancel := context.WithCancelCause(ctx)
-	defer cancel(nil)
-
-	// Start a goroutine to update the configuration while it has changes from watchers.
-	onChangesChannel := make(chan []func(*Config), 1)
-	defer close(onChangesChannel)
-
-	var waitGroup sync.WaitGroup
 	waitGroup.Add(1)
 	go func() {
 		defer waitGroup.Done()
@@ -47,7 +75,7 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 				return
 
 			case onChanges := <-onChangesChannel:
-				c.providers.sync()
+				c.providers.changed()
 				c.log(ctx, slog.LevelDebug, "Configuration has been updated with change.")
 
 				if len(onChanges) > 0 {
@@ -82,36 +110,7 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 	}()
 
 	// Start a watching goroutine for each watcher registered.
-	c.providers.traverse(func(provider *provider) {
-		if watcher, ok := provider.loader.(Watcher); ok {
-			waitGroup.Add(1)
-			go func(ctx context.Context) {
-				defer waitGroup.Done()
-
-				onChange := func(values map[string]any) {
-					c.transformKeys(values)
-					oldValues := *provider.values.Swap(&values)
-					onChangesChannel <- c.onChanges.get(
-						func(path string) bool {
-							paths := c.splitPath(path)
-
-							return !reflect.DeepEqual(maps.Sub(oldValues, paths), maps.Sub(values, paths))
-						},
-					)
-
-					c.log(ctx, slog.LevelInfo,
-						"Configuration has been changed.",
-						slog.Any("loader", watcher),
-					)
-				}
-
-				c.log(ctx, slog.LevelDebug, "Watching configuration change.", slog.Any("loader", watcher))
-				if err := watcher.Watch(ctx, onChange); err != nil {
-					cancel(fmt.Errorf("watch configuration change on %v: %w", watcher, err))
-				}
-			}(ctx)
-		}
-	})
+	c.providers.traverse(watchProvider)
 	waitGroup.Wait()
 
 	if err := context.Cause(ctx); err != nil && !errors.Is(err, ctx.Err()) {

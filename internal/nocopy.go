@@ -5,18 +5,19 @@ package internal
 
 import (
 	"reflect"
+	"sync/atomic"
 )
 
 type NoCopy[T any] struct {
-	addr *NoCopy[T] // of receiver, to detect copies by value
+	addr atomic.Pointer[NoCopy[T]] // of receiver, to detect copies by value
 }
 
 func (c *NoCopy[T]) Check() {
-	if c.addr == nil {
-		c.addr = c
+	if c.addr.CompareAndSwap(nil, c) {
+		return
 	}
 
-	if c.addr != c {
+	if c.addr.Load() != c {
 		panic("illegal use of non-zero " + reflect.TypeFor[T]().Name() + " copied by value")
 	}
 }

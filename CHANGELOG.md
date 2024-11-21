@@ -10,6 +10,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Changed
 
 - Config.Load now is concurrent-safe (#567).
+- Removes the chronological order between Config.Load and Config.Watch,
+  so they can be called in different goroutines (#569).
 
 ## [1.3.1] - 2024-09-09
 

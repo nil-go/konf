@@ -17,7 +17,7 @@ func TestNoCopy(t *testing.T) {
 
 	var s1 s
 	s1.check()
-	s2 := s1
+	s2 := s1 //nolint:govet
 	s2.check()
 
 	t.Fail()
