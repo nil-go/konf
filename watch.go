@@ -59,7 +59,9 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 		}
 	}
 
-	if !c.watchProvider.CompareAndSwap(nil, &watchProvider) {
+	// Set c.watched so that the loader loaded after Watch can register the watch callback.
+	// It's also used for marker that Watch has been called.
+	if !c.watched.CompareAndSwap(nil, &watchProvider) {
 		c.log(ctx, slog.LevelWarn, "Config has been watched, call Watch more than once has no effects.")
 
 		return nil
