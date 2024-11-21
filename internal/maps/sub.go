@@ -3,21 +3,21 @@
 
 package maps
 
-import "strings"
+import "slices"
 
-func Sub(values map[string]any, path string, delimiter string) any {
-	if path == "" {
+func Sub(values map[string]any, path []string) any {
+	path = slices.Compact(path)
+	if len(path) == 0 {
 		return values
 	}
 
-	key, path, _ := strings.Cut(path, delimiter)
-	_, value := Unpack(values[key])
-	if path == "" {
+	_, value := Unpack(values[path[0]])
+	if len(path) == 1 {
 		return value
 	}
 
 	if mp, ok := value.(map[string]any); ok {
-		return Sub(mp, path, delimiter)
+		return Sub(mp, path[1:])
 	}
 
 	return nil

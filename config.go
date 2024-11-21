@@ -124,8 +124,8 @@ func (c *Config) Unmarshal(path string, target any) error {
 	}
 	c.nocopy.Check()
 
-	value := c.providers.value()
-	if value == nil { // To support zero Config
+	value := c.providers.sub(c.splitPath(path))
+	if value == nil {
 		return nil
 	}
 
@@ -133,7 +133,7 @@ func (c *Config) Unmarshal(path string, target any) error {
 	if converter == nil { // To support zero Config
 		converter = defaultConverter
 	}
-	if err := converter.Convert(c.sub(value, path), target); err != nil {
+	if err := converter.Convert(value, target); err != nil {
 		return fmt.Errorf("decode: %w", err)
 	}
 
@@ -148,12 +148,15 @@ func (c *Config) log(ctx context.Context, level slog.Level, message string, attr
 	logger.LogAttrs(ctx, level, message, attrs...)
 }
 
-func (c *Config) sub(values map[string]any, path string) any {
+func (c *Config) splitPath(path string) []string {
+	if path == "" {
+		return nil
+	}
 	if !c.caseSensitive {
 		path = defaultKeyMap(path)
 	}
 
-	return maps.Sub(values, path, c.delim())
+	return strings.Split(path, c.delim())
 }
 
 func (c *Config) delim() string {
@@ -179,13 +182,12 @@ func (c *Config) Explain(path string) string {
 	}
 	c.nocopy.Check()
 
-	value := c.providers.value()
-	if value == nil { // To support zero Config
+	value := c.providers.sub(c.splitPath(path))
+	if value == nil {
 		return path + " has no configuration.\n\n"
 	}
-
 	explanation := &strings.Builder{}
-	c.explain(explanation, path, c.sub(value, path))
+	c.explain(explanation, path, value)
 
 	return explanation.String()
 }
@@ -210,7 +212,7 @@ func (c *Config) explain(explanation *strings.Builder, path string, value any) {
 	}
 	var loaders []loaderValue
 	c.providers.traverse(func(provider *provider) {
-		if v := c.sub(*provider.values.Load(), path); v != nil {
+		if v := maps.Sub(*provider.values.Load(), c.splitPath(path)); v != nil {
 			loaders = append(loaders, loaderValue{provider.loader, v})
 		}
 	})
@@ -282,13 +284,13 @@ func (p *providers) traverse(action func(*provider)) {
 	}
 }
 
-func (p *providers) value() map[string]any {
+func (p *providers) sub(path []string) any {
 	val := p.values.Load()
-	if val == nil {
+	if val == nil { // To support zero Config
 		return nil
 	}
 
-	return *val
+	return maps.Sub(*val, path)
 }
 
 //nolint:gochecknoglobals
