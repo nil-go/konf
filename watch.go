@@ -47,7 +47,7 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 				return
 
 			case onChanges := <-onChangesChannel:
-				c.providers.sync()
+				c.providers.changed()
 				c.log(ctx, slog.LevelDebug, "Configuration has been updated with change.")
 
 				if len(onChanges) > 0 {

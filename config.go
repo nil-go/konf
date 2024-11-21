@@ -79,7 +79,6 @@ func (c *Config) Load(loader Loader) error {
 	}
 	c.transformKeys(values)
 	c.providers.append(loader, values)
-	c.providers.sync()
 
 	if _, ok := loader.(Watcher); !ok {
 		return nil
@@ -262,12 +261,18 @@ func (p *providers) append(loader Loader, values map[string]any) {
 	provider := &provider{loader: loader}
 	provider.values.Store(&values)
 	p.providers = append(p.providers, provider)
+
+	p.sync()
 }
 
-func (p *providers) sync() {
+func (p *providers) changed() {
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
 
+	p.sync()
+}
+
+func (p *providers) sync() {
 	values := make(map[string]any)
 	for _, w := range p.providers {
 		maps.Merge(values, *w.values.Load())
@@ -285,6 +290,9 @@ func (p *providers) traverse(action func(*provider)) {
 }
 
 func (p *providers) sub(path []string) any {
+	p.mutex.RLock()
+	defer p.mutex.RUnlock()
+
 	val := p.values.Load()
 	if val == nil { // To support zero Config
 		return nil
