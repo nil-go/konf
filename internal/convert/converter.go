@@ -553,22 +553,27 @@ func (c Converter) convertStruct(name string, fromVal, toVal reflect.Value) erro
 }
 
 func (c Converter) convertInterface(name string, fromVal, toVal reflect.Value) error {
-	switch fromVal.Kind() {
-	case reflect.Map:
-		if fromVal.IsNil() {
-			toVal.SetZero()
-
-			return nil
-		}
-
-		toVal.Set(reflect.MakeMapWithSize(fromVal.Type(), fromVal.Len()))
-
-		return c.convertMap(name, fromVal, toVal.Elem())
-	default:
-		toVal.Set(fromVal)
+	if fromVal.IsZero() {
+		toVal.SetZero()
 
 		return nil
 	}
+
+	// Copy the value from map and slice to avoid the original value being modified.
+	switch fromVal.Kind() {
+	case reflect.Map:
+		toVal.Set(reflect.MakeMapWithSize(fromVal.Type(), fromVal.Len()))
+
+		return c.convertMap(name, fromVal, toVal.Elem())
+	case reflect.Slice:
+		newSlice := reflect.MakeSlice(fromVal.Type(), fromVal.Len(), fromVal.Len())
+		reflect.Copy(newSlice, fromVal)
+		toVal.Set(newSlice)
+	default:
+		toVal.Set(fromVal)
+	}
+
+	return nil
 }
 
 func pointer(val reflect.Value) reflect.Value {

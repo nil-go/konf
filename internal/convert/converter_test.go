@@ -961,17 +961,21 @@ func TestConverter(t *testing.T) { //nolint:maintidx
 					Value: "value1",
 				},
 				"key2": "value2",
+				"key3": []int{1, 2},
 			},
 			to: pointer(struct {
 				Key1 interface{}
 				Key2 interface{}
+				Key3 interface{}
 			}{}),
 			expected: pointer(struct {
 				Key1 interface{}
 				Key2 interface{}
+				Key3 interface{}
 			}{
 				Key1: "value1",
 				Key2: "value2",
+				Key3: []int{1, 2},
 			}),
 		},
 		{
