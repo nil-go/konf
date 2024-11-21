@@ -13,6 +13,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Removes the chronological order between Config.Load and Config.Watch,
   so they can be called in different goroutines (#569).
 
+### Fixed
+
+- Copy the value from slice to avoid the original value being modified (#572).
+
 ## [1.3.1] - 2024-09-09
 
 ### Added
