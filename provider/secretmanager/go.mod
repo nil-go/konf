@@ -5,8 +5,8 @@ go 1.22
 require (
 	cloud.google.com/go/compute/metadata v0.5.2
 	cloud.google.com/go/secretmanager v1.14.2
-	github.com/stretchr/testify v1.9.0
-	google.golang.org/api v0.206.0
+	github.com/stretchr/testify v1.10.0
+	google.golang.org/api v0.209.0
 	google.golang.org/grpc v1.67.1
 	google.golang.org/protobuf v1.35.2
 )
