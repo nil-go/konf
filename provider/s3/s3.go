@@ -1,4 +1,4 @@
-// Copyright (c) 2024 The konf authors
+// Copyright (c) 2025 The konf authors
 // Use of this source code is governed by a MIT license found in the LICENSE file.
 
 // Package s3 loads configuration from AWS [S3].
