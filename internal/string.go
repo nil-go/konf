@@ -3,7 +3,9 @@
 
 package internal
 
-import "unsafe"
+import (
+	"unsafe"
+)
 
 func String2ByteSlice(str string) []byte {
 	if str == "" {

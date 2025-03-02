@@ -432,17 +432,15 @@ func (c Converter) convertSlice(name string, fromVal, toVal reflect.Value) error
 		parts := strings.Split(fromVal.String(), ",")
 
 		toVal.Clear()
-		needed := len(parts)
-		if toVal.Cap() < needed {
-			toVal.Grow(needed - toVal.Cap())
+		if toVal.Cap() < len(parts) {
+			toVal.Grow(len(parts) - toVal.Cap())
 		}
-		toVal.SetLen(needed)
+		toVal.SetLen(len(parts))
 
 		errs := make([]error, 0, len(parts))
 		for i, part := range parts {
 			fieldName := name + "[" + strconv.Itoa(i) + "]"
 			toElemVal := toVal.Index(i)
-
 			if err := c.convert(fieldName, strings.TrimSpace(part), pointer(toElemVal)); err != nil {
 				errs = append(errs, err)
 			}

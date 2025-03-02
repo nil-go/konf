@@ -33,7 +33,7 @@ func WithHook[F, T any, FN func(F) (T, error) | func(F, T) error](hook FN) Optio
 			return nil
 		})
 	case func(F, T) error:
-		return withHookFunc[F, T](hookFunc)
+		return withHookFunc(hookFunc)
 	default:
 		return func(*options) {}
 	}
