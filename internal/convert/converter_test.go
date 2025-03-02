@@ -1017,6 +1017,42 @@ func TestConverter(t *testing.T) { //nolint:maintidx
 			to:          pointer(any(nil)),
 			expected:    pointer(any(nil)),
 		},
+		{
+			description: "comma-separated string to []string",
+			from:        "alpha,beta,gamma",
+			to:          pointer([]string(nil)),
+			expected:    pointer([]string{"alpha", "beta", "gamma"}),
+		},
+		{
+			description: "comma-separated string to []int",
+			from:        "42,100,200",
+			to:          pointer([]int(nil)),
+			expected:    pointer([]int{42, 100, 200}),
+		},
+		{
+			description: "comma-separated string with spaces to []int",
+			from:        " 42,  100 ,  300 ",
+			to:          pointer([]int(nil)),
+			expected:    pointer([]int{42, 100, 300}),
+		},
+		{
+			description: "comma-separated string with empty element to []int",
+			from:        "42,,100",
+			to:          pointer([]int(nil)),
+			expected:    pointer([]int{42, 0, 100}),
+		},
+		{
+			description: "comma-separated string to []int (invalid element)",
+			from:        "42,foo,100",
+			to:          pointer([]int(nil)),
+			err:         "cannot parse '[1]' as int: strconv.ParseInt: parsing \"foo\": invalid syntax",
+		},
+		{
+			description: "comma-separated string to []float64",
+			from:        "3.14,2.71",
+			to:          pointer([]float64(nil)),
+			expected:    pointer([]float64{3.14, 2.71}),
+		},
 		// unsupported.
 		{
 			description: "to func (unsupported)",

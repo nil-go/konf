@@ -464,8 +464,6 @@ func (c Converter) convertSlice(name string, fromVal, toVal reflect.Value) error
 		// Just re-try this function with data as a slice.
 		return c.convertSlice(name, reflect.ValueOf([]any{fromVal.Interface()}), toVal)
 	}
-
-	return nil
 }
 
 func (c Converter) convertString(name string, fromVal, toVal reflect.Value) error { //nolint:cyclop
