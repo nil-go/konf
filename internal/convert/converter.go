@@ -422,8 +422,33 @@ func (c Converter) convertSlice(name string, fromVal, toVal reflect.Value) error
 		}
 
 		return errors.Join(errs...)
-	case fromVal.Kind() == reflect.String && toVal.Type().Elem().Kind() == reflect.Uint8:
-		toVal.SetBytes(internal.String2ByteSlice(fromVal.String()))
+	case fromVal.Kind() == reflect.String:
+		if toVal.Type().Elem().Kind() == reflect.Uint8 {
+			toVal.SetBytes(internal.String2ByteSlice(fromVal.String()))
+
+			return nil
+		}
+
+		parts := strings.Split(fromVal.String(), ",")
+
+		toVal.Clear()
+		needed := len(parts)
+		if toVal.Cap() < needed {
+			toVal.Grow(needed - toVal.Cap())
+		}
+		toVal.SetLen(needed)
+
+		errs := make([]error, 0, len(parts))
+		for i, part := range parts {
+			fieldName := name + "[" + strconv.Itoa(i) + "]"
+			toElemVal := toVal.Index(i)
+
+			if err := c.convert(fieldName, strings.TrimSpace(part), pointer(toElemVal)); err != nil {
+				errs = append(errs, err)
+			}
+		}
+
+		return errors.Join(errs...)
 	case fromVal.Kind() == reflect.Map:
 		// Empty maps turn into empty arrays
 		if fromVal.Len() == 0 {
