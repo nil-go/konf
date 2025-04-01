@@ -1,167 +1,89 @@
-linters-settings:
-  errcheck:
-    check-type-assertions: true
-  exhaustive:
-    default-signifies-exhaustive: true
-  gci:
-    sections:
-      - standard
-      - default
-      - prefix(github.com/nil-go/konf)
-  goheader:
-    template: |-
-      Copyright (c) {{ YEAR }} The konf authors
-      Use of this source code is governed by a MIT license found in the LICENSE file.
-  goimports:
-    local-prefixes: github.com/nil-go/konf
-  gosec:
-    excludes:
-      # Flags for potentially-unsafe casting of ints, similar problem to globally-disabled G103
-      - G115
-  govet:
-    enable:
-      - shadow
-  inamedparam:
-    skip-single-param: true
-  makezero:
-    always: true
-  misspell:
-    locale: US
-    ignore-words:
-      - konf
-      - statuser
-  nonamedreturns:
-    report-error-in-defer: true
-  paralleltest:
-    ignore-missing: true
-
+version: "2"
 linters:
-  disable-all: true
+  default: all
+  disable:
+    - depguard
+    - exhaustruct
+    - loggercheck
+    - musttag
+    - spancheck
+    - sqlclosecheck
+    - wsl
+    - zerologlint
+  settings:
+    errcheck:
+      check-type-assertions: true
+    exhaustive:
+      default-signifies-exhaustive: true
+    goheader:
+      template: |-
+        Copyright (c) {{ YEAR }} The konf authors
+        Use of this source code is governed by a MIT license found in the LICENSE file.
+    gosec:
+      excludes:
+        - G115
+    govet:
+      enable:
+        - shadow
+    inamedparam:
+      skip-single-param: true
+    makezero:
+      always: true
+    misspell:
+      locale: US
+      ignore-rules:
+        - konf
+        - statuser
+    nonamedreturns:
+      report-error-in-defer: true
+    paralleltest:
+      ignore-missing: true
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules:
+      - linters:
+          - lll
+        source: "^\t*// "
+      - linters:
+          - contextcheck
+          - cyclop
+          - err113
+          - errcheck
+          - forcetypeassert
+          - funlen
+          - gochecknoglobals
+          - gochecknoinits
+          - goconst
+          - lll
+          - wrapcheck
+        path: _test\.go
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
   enable:
-    - asasalint
-    - asciicheck
-    - bidichk
-    - bodyclose
-    - canonicalheader
-    - containedctx
-    - contextcheck
-    - copyloopvar
-    - cyclop
-    - decorder
-    # depguard
-    - dogsled
-    - dupl
-    - durationcheck
-    - dupword
-    - err113
-    - errcheck
-    - errchkjson
-    - errname
-    - errorlint
-    - exhaustive
-    # exhaustruct
-    - fatcontext
-    - forbidigo
-    - forcetypeassert
-    - funlen
     - gci
-    - ginkgolinter
-    - gocheckcompilerdirectives
-    - gochecknoglobals
-    - gochecknoinits
-    - gochecksumtype
-    - gocognit
-    - goconst
-    - gocritic
-    - gocyclo
-    - godot
-    - godox
     - gofmt
     - gofumpt
-    - goheader
     - goimports
-    - gomoddirectives
-    - gomodguard
-    - goprintffuncname
-    - gosec
-    - gosimple
-    - gosmopolitan
-    - govet
-    - grouper
-    - iface
-    - importas
-    - inamedparam
-    - ineffassign
-    - interfacebloat
-    - intrange
-    - ireturn
-    - lll
-    # loggercheck
-    - maintidx
-    - makezero
-    - mirror
-    - misspell
-    - mnd
-    # musttag
-    - nakedret
-    - nestif
-    - nilerr
-    - nilnil
-    - nlreturn
-    - noctx
-    - nolintlint
-    - nonamedreturns
-    - nosprintfhostport
-    - paralleltest
-    - perfsprint
-    - prealloc
-    - predeclared
-    - promlinter
-    - protogetter
-    - reassign
-    - recvcheck
-    - revive
-    - rowserrcheck
-    - sloglint
-    # spancheck
-    # sqlclosecheck
-    - staticcheck
-    - stylecheck
-    - tagalign
-    - tagliatelle
-    - tenv
-    - testableexamples
-    - testifylint
-    - testpackage
-    - thelper
-    - tparallel
-    - typecheck
-    - unconvert
-    - unparam
-    - unused
-    - usestdlibvars
-    - varnamelen
-    - wastedassign
-    - whitespace
-    - wrapcheck
-    # wsl
-    # zerologlint
-
-issues:
-  exclude-rules:
-    - linters:
-        - lll
-      source: "^\t*// "
-    - path: _test\.go
-      linters:
-        - contextcheck
-        - cyclop
-        - err113
-        - errcheck
-        - forcetypeassert
-        - funlen
-        - gochecknoglobals
-        - goconst
-        - gochecknoinits
-        - lll
-        - wrapcheck
+  settings:
+    gci:
+      sections:
+        - standard
+        - default
+        - prefix(github.com/nil-go/konf)
+    goimports:
+      local-prefixes:
+        - github.com/nil-go/konf
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$

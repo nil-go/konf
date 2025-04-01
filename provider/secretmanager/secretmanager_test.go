@@ -310,7 +310,7 @@ func grpcServer(t *testing.T, service pb.SecretManagerServiceServer) (*grpc.Clie
 	server := grpc.NewServer()
 	pb.RegisterSecretManagerServiceServer(server, service)
 
-	temp, err := os.MkdirTemp("", "*") // t.TempDir() causes deadlock on macos.
+	temp, err := os.MkdirTemp("", "*") //nolint:usetesting // t.TempDir() causes deadlock on macos.
 	require.NoError(t, err)
 	endpoint := path.Join(temp, "load.sock")
 

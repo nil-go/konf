@@ -185,6 +185,7 @@ func (c *Config) Explain(path string) string {
 	return explanation.String()
 }
 
+//nolint:staticcheck
 func (c *Config) explain(explanation *strings.Builder, path string, value any) {
 	if values, ok := value.(map[string]any); ok {
 		for key, val := range values {
