@@ -1,6 +1,6 @@
 module github.com/nil-go/konf/provider/appconfig
 
-go 1.22
+go 1.23.0
 
 require (
 	github.com/aws/aws-sdk-go-v2 v1.36.3
