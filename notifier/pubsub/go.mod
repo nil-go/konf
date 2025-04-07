@@ -4,7 +4,7 @@ go 1.23.0
 
 require (
 	cloud.google.com/go/compute/metadata v0.6.0
-	cloud.google.com/go/pubsub v1.48.0
+	cloud.google.com/go/pubsub v1.48.1
 	github.com/google/uuid v1.6.0
 	google.golang.org/api v0.228.0
 	google.golang.org/grpc v1.71.1
