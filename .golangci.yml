@@ -4,6 +4,7 @@ linters:
   disable:
     - depguard
     - exhaustruct
+    - funcorder
     - loggercheck
     - musttag
     - spancheck
