@@ -37,7 +37,7 @@ jobs:
           go-version: 'stable'
           cache: false
       - name: Lint
-        uses: golangci/golangci-lint-action@v7
+        uses: golangci/golangci-lint-action@v8
         with:
           working-directory: ${{ matrix.module }}
   all:
