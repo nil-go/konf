@@ -12,8 +12,8 @@ github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.6.34 h1:SZwFm17ZUNNg5Np0io
 github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.6.34/go.mod h1:dFZsC0BLo346mvKQLWmoJxT+Sjp+qcVR1tRVHQGOH9Q=
 github.com/aws/aws-sdk-go-v2/internal/ini v1.8.3 h1:bIqFDwgGXXN1Kpp99pDOdKMTTb5d2KyU5X/BZxjOkRo=
 github.com/aws/aws-sdk-go-v2/internal/ini v1.8.3/go.mod h1:H5O/EsxDWyU+LP/V8i5sm8cxoZgc2fdNR9bxlOFrQTo=
-github.com/aws/aws-sdk-go-v2/service/appconfig v1.37.3 h1:4B5MufJNLfzoUzad3nqndhk/guoUxQJ/LzPOS8WoZWk=
-github.com/aws/aws-sdk-go-v2/service/appconfig v1.37.3/go.mod h1:CN/8VG7LSDuminHk8uUcxsdlAvbiLSwkK46K21F0fuA=
+github.com/aws/aws-sdk-go-v2/service/appconfig v1.38.0 h1:ITNRaENviLtjUUSHOi6EWLinhsynnyCoBMOzDxIPifM=
+github.com/aws/aws-sdk-go-v2/service/appconfig v1.38.0/go.mod h1:CN/8VG7LSDuminHk8uUcxsdlAvbiLSwkK46K21F0fuA=
 github.com/aws/aws-sdk-go-v2/service/appconfigdata v1.19.3 h1:Z2LRBEMj7Fa83WhKnToHmqgVP7n5UwQna15wLnnoWow=
 github.com/aws/aws-sdk-go-v2/service/appconfigdata v1.19.3/go.mod h1:fWUyUjh4myyP+SKj/RpARMzUM28MCEzLSBGgq/6l/r0=
 github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.12.3 h1:eAh2A4b5IzM/lum78bZ590jy36+d/aFLgKF/4Vd1xPE=
