@@ -17,4 +17,4 @@ jobs:
         with:
           go-version: 'stable'
           cache-dependency-path: "**/go.sum"
-      - uses: joelanford/go-apidiff@v0.8.2
+      - uses: joelanford/go-apidiff@v0.8.3
