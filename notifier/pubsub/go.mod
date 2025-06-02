@@ -6,7 +6,7 @@ require (
 	cloud.google.com/go/compute/metadata v0.7.0
 	cloud.google.com/go/pubsub v1.49.0
 	github.com/google/uuid v1.6.0
-	google.golang.org/api v0.234.0
+	google.golang.org/api v0.235.0
 	google.golang.org/grpc v1.72.2
 )
 
