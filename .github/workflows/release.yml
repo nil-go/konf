@@ -21,7 +21,7 @@ jobs:
           version: latest-or-unreleased
       - name: Get latest release
         id: latest-release
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         if: steps.query-release-info.outputs.version != '[unreleased]'
         continue-on-error: true
         with:
@@ -33,7 +33,7 @@ jobs:
             })
       - name: Create release
         id: create-release
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         if: steps.latest-release.outcome == 'failure'
         with:
           script: |
@@ -46,7 +46,7 @@ jobs:
               body: `${{ steps.query-release-info.outputs.release-notes }}`
             })
       - name: Tag Submodules
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         if: steps.create-release.outcome == 'success'
         with:
           script: |
