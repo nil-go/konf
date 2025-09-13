@@ -4,6 +4,7 @@
 package fs_test
 
 import (
+	"embed"
 	"errors"
 	"io/fs"
 	"testing"
@@ -12,6 +13,9 @@ import (
 	"github.com/nil-go/konf/internal/assert"
 	kfs "github.com/nil-go/konf/provider/fs"
 )
+
+//go:embed config.json
+var config embed.FS
 
 func TestFS_empty(t *testing.T) {
 	var loader kfs.FS
@@ -72,6 +76,16 @@ func TestFS_Load(t *testing.T) {
 			fs:          fstest.MapFS{},
 			path:        "not_found.json",
 			err:         "read file: open not_found.json: file does not exist",
+		},
+		{
+			description: "embed fs",
+			fs:          config,
+			path:        "config.json",
+			expected: map[string]any{
+				"p": map[string]any{
+					"k": "v",
+				},
+			},
 		},
 		{
 			description: "unmarshal error",
