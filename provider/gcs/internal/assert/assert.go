@@ -5,6 +5,7 @@ package assert
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -32,5 +33,16 @@ func EqualError(tb testing.TB, err error, message string) {
 		tb.Errorf("\n  actual: <nil>\nexpected: %v", message)
 	case err.Error() != message:
 		tb.Errorf("\n  actual: %v\nexpected: %v", err.Error(), message)
+	}
+}
+
+func EqualContains(tb testing.TB, err error, message string) {
+	tb.Helper()
+
+	switch {
+	case err == nil:
+		tb.Errorf("\n  actual: <nil>\nexpected: %v", message)
+	case !strings.Contains(err.Error(), message):
+		tb.Errorf("\n  %v\n does not contains %v", err.Error(), message)
 	}
 }

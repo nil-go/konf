@@ -15,7 +15,7 @@ import (
 	"sync"
 
 	"cloud.google.com/go/compute/metadata"
-	"cloud.google.com/go/pubsub"
+	"cloud.google.com/go/pubsub" //nolint:staticcheck
 	"github.com/google/uuid"
 	"google.golang.org/api/option"
 )

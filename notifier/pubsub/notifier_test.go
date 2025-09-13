@@ -17,8 +17,8 @@ import (
 	"testing"
 	"time"
 
-	"cloud.google.com/go/pubsub/apiv1/pubsubpb"
-	"cloud.google.com/go/pubsub/pstest"
+	"cloud.google.com/go/pubsub/apiv1/pubsubpb" //nolint:staticcheck
+	"cloud.google.com/go/pubsub/pstest"         //nolint:staticcheck
 	"google.golang.org/api/option"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -102,7 +102,7 @@ level=WARN msg="Fail to delete pubsub subscription." topic=topic subscription=pr
 				_ = srv.Close()
 			}()
 			topic := "projects/test/topics/topic"
-			_, err := srv.GServer.CreateTopic(ctx, &pubsubpb.Topic{Name: topic})
+			_, err := srv.GServer.CreateTopic(ctx, &pubsubpb.Topic{Name: topic}) //nolint:staticcheck
 			assert.NoError(t, err)
 
 			// Connect to the server without using TLS.
