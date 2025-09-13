@@ -7,13 +7,11 @@ import (
 	"context"
 	"embed"
 	"fmt"
-	"sync"
 	"time"
 
 	"gopkg.in/yaml.v3"
 
 	"github.com/nil-go/konf"
-	"github.com/nil-go/konf/notifier/azservicebus"
 	"github.com/nil-go/konf/provider/azappconfig"
 	"github.com/nil-go/konf/provider/azblob"
 	"github.com/nil-go/konf/provider/env"
@@ -116,21 +114,21 @@ func loadConfig(ctx context.Context) func() {
 			panic(err) // handle error
 		}
 	}()
-	// Notify the changes of configuration.
-	notifier := azservicebus.NewNotifier("konf-test.servicebus.windows.net", "konf-test")
-	notifier.Register(blobLoader, appconfigLoader)
-	var waitGroup sync.WaitGroup
-	waitGroup.Add(1)
-	go func() {
-		defer waitGroup.Done()
-		err := notifier.Start(ctx)
-		if err != nil {
-			panic(err) // handle error
-		}
-	}()
+	// Disable due to cost. Notify the changes of configuration.
+	// notifier := azservicebus.NewNotifier("konf-test.servicebus.windows.net", "konf-test")
+	// notifier.Register(blobLoader, appconfigLoader)
+	// var waitGroup sync.WaitGroup
+	// waitGroup.Add(1)
+	// go func() {
+	// 	defer waitGroup.Done()
+	// 	err := notifier.Start(ctx)
+	// 	if err != nil {
+	// 		panic(err) // handle error
+	// 	}
+	// }()
 
 	return func() {
-		waitGroup.Wait()
+		// waitGroup.Wait()
 	}
 }
 
