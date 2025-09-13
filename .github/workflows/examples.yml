@@ -16,13 +16,13 @@ jobs:
     name: Examples AWS
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
         with:
           go-version: "stable"
           cache-dependency-path: "**/go.sum"
       - name: configure aws credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v5
         with:
           role-to-assume: ${{ secrets.AWS_ROLE }}
           aws-region: us-west-1
@@ -34,8 +34,8 @@ jobs:
     name: Examples Azure
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
         with:
           go-version: "stable"
           cache-dependency-path: "**/go.sum"
@@ -53,12 +53,12 @@ jobs:
     name: Examples GCP
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
         with:
           go-version: "stable"
           cache-dependency-path: "**/go.sum"
-      - uses: "google-github-actions/auth@v2"
+      - uses: "google-github-actions/auth@v3"
         with:
           workload_identity_provider: "${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}"
       - name: Test
