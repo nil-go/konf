@@ -1078,13 +1078,13 @@ func (e *Enum) UnmarshalText(text []byte) error {
 
 type (
 	OuterStruct struct {
+		InnerStruct `konf:",squash"`
+
 		Enum           Enum
 		OuterField     string
 		privateField   string //nolint:unused
 		InterfaceField any
-
-		InnerStruct `konf:",squash"`
-		Inner       *InnerStruct
+		Inner          *InnerStruct
 	}
 
 	InnerStruct struct {

@@ -40,6 +40,7 @@ type (
 	Option     = option.ClientOption
 	optionFunc struct {
 		internaloption.EmbeddableAdapter
+
 		fn func(options *options)
 	}
 	options Notifier

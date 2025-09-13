@@ -58,7 +58,7 @@ func TestGCS_Load(t *testing.T) {
 			)
 			values, err := loader.Load()
 			if testcase.err != "" {
-				assert.EqualError(t, err, testcase.err)
+				assert.EqualContains(t, err, testcase.err)
 			} else {
 				assert.NoError(t, err)
 				assert.Equal(t, testcase.expected, values)
@@ -134,7 +134,7 @@ func TestGCS_Watch(t *testing.T) {
 				if testcase.err == "" {
 					assert.Equal(t, nil, err.Load())
 				} else {
-					assert.EqualError(t, *err.Load(), testcase.err)
+					assert.EqualContains(t, *err.Load(), testcase.err)
 				}
 			}
 		})

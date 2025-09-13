@@ -197,7 +197,8 @@ type clientProxy struct {
 func (p *clientProxy) load(ctx context.Context) (map[string]string, bool, error) { //nolint:cyclop,funlen
 	if p.project == "" {
 		var err error
-		if p.project, err = metadata.ProjectIDWithContext(ctx); err != nil {
+		p.project, err = metadata.ProjectIDWithContext(ctx)
+		if err != nil {
 			return nil, false, fmt.Errorf("get GCP project ID: %w", err)
 		}
 		projectNumer, err := metadata.NumericProjectIDWithContext(ctx)
@@ -208,7 +209,8 @@ func (p *clientProxy) load(ctx context.Context) (map[string]string, bool, error)
 	}
 	if p.client == nil {
 		var err error
-		if p.client, err = secretmanager.NewClient(ctx, p.opts...); err != nil {
+		p.client, err = secretmanager.NewClient(ctx, p.opts...)
+		if err != nil {
 			return nil, false, fmt.Errorf("create GCP secret manager client: %w", err)
 		}
 	}
@@ -264,7 +266,8 @@ func (p *clientProxy) load(ctx context.Context) (map[string]string, bool, error)
 	waitGroup.Wait()
 	close(secretChan)
 
-	if err := context.Cause(ctx); err != nil && !errors.Is(err, ctx.Err()) {
+	err := context.Cause(ctx)
+	if err != nil && !errors.Is(err, ctx.Err()) {
 		return nil, false, err //nolint:wrapcheck
 	}
 

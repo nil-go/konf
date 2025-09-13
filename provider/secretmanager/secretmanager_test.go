@@ -317,7 +317,7 @@ func grpcServer(t *testing.T, service pb.SecretManagerServiceServer) (*grpc.Clie
 	started := make(chan struct{})
 	go func() {
 		assert.NoError(t, os.RemoveAll(endpoint))
-		listener, e := net.Listen("unix", endpoint)
+		listener, e := (&net.ListenConfig{}).Listen(context.Background(), "unix", endpoint)
 		assert.NoError(t, e)
 		close(started)
 

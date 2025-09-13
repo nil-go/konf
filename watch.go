@@ -55,7 +55,8 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 				}
 
 				c.log(ctx, slog.LevelDebug, "Watching configuration change.", slog.Any("loader", watcher))
-				if err := watcher.Watch(ctx, onChange); err != nil {
+				err := watcher.Watch(ctx, onChange)
+				if err != nil {
 					cancel(fmt.Errorf("watch configuration change on %v: %w", watcher, err))
 				}
 			}(ctx)
@@ -118,7 +119,8 @@ func (c *Config) Watch(ctx context.Context) error { //nolint:cyclop,funlen,gocog
 	c.providers.traverse(watchProvider)
 	waitGroup.Wait()
 
-	if err := context.Cause(ctx); err != nil && !errors.Is(err, ctx.Err()) {
+	err := context.Cause(ctx)
+	if err != nil && !errors.Is(err, ctx.Err()) {
 		return err //nolint:wrapcheck
 	}
 

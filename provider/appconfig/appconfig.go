@@ -135,7 +135,8 @@ func (a *AppConfig) load(ctx context.Context) (map[string]any, bool, error) {
 		unmarshal = json.Unmarshal
 	}
 	var values map[string]any
-	if e := unmarshal(resp, &values); e != nil {
+	e := unmarshal(resp, &values)
+	if e != nil {
 		return nil, false, fmt.Errorf("unmarshal: %w", e)
 	}
 
@@ -163,17 +164,18 @@ func (a *AppConfig) OnEvent(msg []byte) error { //nolint:cyclop,funlen
 			} `json:"ConfigurationProfile"`
 		}
 		appConfigEvent struct {
+			// From SNS: https://docs.aws.amazon.com/appconfig/latest/userguide/working-with-appconfig-extensions-about-predefined-notification-sns.html
+			appConfig
+
 			// From EventBridge: https://docs.aws.amazon.com/appconfig/latest/userguide/working-with-appconfig-extensions-about-predefined-notification-eventbridge.html
 			Source string    `json:"source"`
 			Detail appConfig `json:"detail"`
-
-			// From SNS: https://docs.aws.amazon.com/appconfig/latest/userguide/working-with-appconfig-extensions-about-predefined-notification-sns.html
-			appConfig
 		}
 	)
 
 	var event appConfigEvent
-	if err := json.Unmarshal(msg, &event); err != nil {
+	err := json.Unmarshal(msg, &event)
+	if err != nil {
 		return fmt.Errorf("unmarshal appconfig event: %w", err)
 	}
 
@@ -181,14 +183,16 @@ func (a *AppConfig) OnEvent(msg []byte) error { //nolint:cyclop,funlen
 	if applicationID == "" {
 		applicationID = event.Application.ID
 	}
-	if err := a.client.ensureApplicationID(applicationID); err != nil {
+	err = a.client.ensureApplicationID(applicationID)
+	if err != nil {
 		return err
 	}
 	environmentID := event.Detail.Environment.ID
 	if environmentID == "" {
 		environmentID = event.Environment.ID
 	}
-	if err := a.client.ensureEnvironmentID(environmentID); err != nil {
+	err = a.client.ensureEnvironmentID(environmentID)
+	if err != nil {
 		return err
 	}
 
@@ -247,7 +251,8 @@ func (p *clientProxy) load(ctx context.Context) ([]byte, bool, error) {
 	if p.client == nil {
 		if reflect.ValueOf(p.config).IsZero() {
 			var err error
-			if p.config, err = config.LoadDefaultConfig(ctx); err != nil {
+			p.config, err = config.LoadDefaultConfig(ctx)
+			if err != nil {
 				return nil, false, fmt.Errorf("load default AWS config: %w", err)
 			}
 		}

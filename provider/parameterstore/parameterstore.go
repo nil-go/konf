@@ -157,7 +157,8 @@ func (p *ParameterStore) OnEvent(msg []byte) error {
 		Source     string `json:"source"`
 		DetailType string `json:"detail-type"`
 	}
-	if err := json.Unmarshal(msg, &event); err != nil {
+	err := json.Unmarshal(msg, &event)
+	if err != nil {
 		return fmt.Errorf("unmarshal parameter store event: %w", err)
 	}
 
@@ -194,7 +195,8 @@ func (p *clientProxy) load(ctx context.Context) (map[string]string, bool, error)
 	if p.client == nil {
 		if reflect.ValueOf(p.config).IsZero() {
 			var err error
-			if p.config, err = config.LoadDefaultConfig(ctx); err != nil {
+			p.config, err = config.LoadDefaultConfig(ctx)
+			if err != nil {
 				return nil, false, fmt.Errorf("load default AWS config: %w", err)
 			}
 		}

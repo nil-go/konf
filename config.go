@@ -126,7 +126,8 @@ func (c *Config) Unmarshal(path string, target any) error {
 	if converter == nil { // To support zero Config
 		converter = defaultConverter
 	}
-	if err := converter.Convert(value, target); err != nil {
+	err := converter.Convert(value, target)
+	if err != nil {
 		return fmt.Errorf("decode: %w", err)
 	}
 

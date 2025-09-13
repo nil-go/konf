@@ -131,7 +131,8 @@ func (b *Blob) load(ctx context.Context) (map[string]any, bool, error) {
 		unmarshal = json.Unmarshal
 	}
 	var values map[string]any
-	if e := unmarshal(resp, &values); e != nil {
+	e := unmarshal(resp, &values)
+	if e != nil {
 		return nil, false, fmt.Errorf("unmarshal: %w", e)
 	}
 
@@ -152,7 +153,8 @@ func (b *Blob) OnEvent(event messaging.CloudEvent) error {
 	if !ok {
 		return errNonBytesData
 	}
-	if e := json.Unmarshal(bytes, &data); e != nil {
+	e := json.Unmarshal(bytes, &data)
+	if e != nil {
 		return fmt.Errorf("unmarshal event data: %w", e)
 	}
 
@@ -191,7 +193,8 @@ func (p *clientProxy) load(ctx context.Context) ([]byte, bool, error) { //nolint
 	if p.client == nil {
 		if token, ok := p.credential.(*azidentity.DefaultAzureCredential); ok && reflect.ValueOf(*token).IsZero() {
 			var err error
-			if p.credential, err = azidentity.NewDefaultAzureCredential(nil); err != nil {
+			p.credential, err = azidentity.NewDefaultAzureCredential(nil)
+			if err != nil {
 				return nil, false, fmt.Errorf("load default Azure credential: %w", err)
 			}
 		}

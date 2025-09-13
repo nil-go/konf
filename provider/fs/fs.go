@@ -56,7 +56,8 @@ func (f FS) Load() (map[string]any, error) {
 	}
 
 	var out map[string]any
-	if err := f.unmarshal(bytes, &out); err != nil {
+	err = f.unmarshal(bytes, &out)
+	if err != nil {
 		return nil, fmt.Errorf("unmarshal: %w", err)
 	}
 

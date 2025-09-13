@@ -17,7 +17,8 @@ import (
 // The path is case-insensitive unless konf.WithCaseSensitive is set.
 func Get[T any](path string) T { //nolint:ireturn
 	var value T
-	if err := Unmarshal(path, &value); err != nil {
+	err := Unmarshal(path, &value)
+	if err != nil {
 		defaultConfig.Load().log(context.Background(),
 			slog.LevelWarn,
 			"Could not read config, return empty value instead.",

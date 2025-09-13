@@ -185,13 +185,15 @@ func (p *clientProxy) load(ctx context.Context) (map[string]string, bool, error)
 	if p.client == nil {
 		if token, ok := p.credential.(*azidentity.DefaultAzureCredential); ok && reflect.ValueOf(*token).IsZero() {
 			var err error
-			if p.credential, err = azidentity.NewDefaultAzureCredential(nil); err != nil {
+			p.credential, err = azidentity.NewDefaultAzureCredential(nil)
+			if err != nil {
 				return nil, false, fmt.Errorf("load default Azure credential: %w", err)
 			}
 		}
 
 		var err error
-		if p.client, err = azappconfig.NewClient(p.endpoint, p.credential, nil); err != nil {
+		p.client, err = azappconfig.NewClient(p.endpoint, p.credential, nil)
+		if err != nil {
 			return nil, false, fmt.Errorf("create Azure app configuration client: %w", err)
 		}
 	}
@@ -233,7 +235,8 @@ func (p *clientProxy) load(ctx context.Context) (map[string]string, bool, error)
 		}
 	)
 	for pager.More() {
-		if err := nextPage(ctx); err != nil {
+		err := nextPage(ctx)
+		if err != nil {
 			return nil, false, err
 		}
 	}

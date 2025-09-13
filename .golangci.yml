@@ -10,6 +10,7 @@ linters:
     - spancheck
     - sqlclosecheck
     - wsl
+    - wsl_v5
     - zerologlint
   settings:
     errcheck:
