@@ -80,7 +80,8 @@ func (n *Notifier) Start(ctx context.Context) error { //nolint:cyclop,funlen,goc
 
 	if token, ok := n.credential.(*azidentity.DefaultAzureCredential); ok && reflect.ValueOf(*token).IsZero() {
 		var err error
-		if n.credential, err = azidentity.NewDefaultAzureCredential(nil); err != nil {
+		n.credential, err = azidentity.NewDefaultAzureCredential(nil)
+		if err != nil {
 			return fmt.Errorf("load default Azure credential: %w", err)
 		}
 	}
@@ -100,14 +101,15 @@ func (n *Notifier) Start(ctx context.Context) error { //nolint:cyclop,funlen,goc
 	}
 	subscriptionName := subscription.SubscriptionName
 	defer func() {
-		if _, derr := adminClient.DeleteSubscription(context.WithoutCancel(ctx),
+		_, err = adminClient.DeleteSubscription(context.WithoutCancel(ctx),
 			n.topic, subscriptionName, nil,
-		); derr != nil {
+		)
+		if err != nil {
 			logger.LogAttrs(ctx, slog.LevelWarn,
 				"Fail to delete service bus subscription.",
 				slog.String("topic", n.topic),
 				slog.String("subscription", subscriptionName),
-				slog.Any("error", derr),
+				slog.Any("error", err),
 			)
 		}
 	}()
@@ -169,7 +171,8 @@ func (n *Notifier) Start(ctx context.Context) error { //nolint:cyclop,funlen,goc
 					continue
 				}
 				var event messaging.CloudEvent
-				if err := event.UnmarshalJSON(msg.Body); err != nil {
+				err := event.UnmarshalJSON(msg.Body)
+				if err != nil {
 					logger.LogAttrs(ctx, slog.LevelWarn,
 						"Fail to unmarshal message.",
 						slog.String("msg", string(msg.Body)),

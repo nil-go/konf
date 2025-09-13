@@ -61,7 +61,8 @@ func (c Converter) convert(name string, from any, toVal reflect.Value) error { /
 
 	for _, h := range c.hooks {
 		if fromVal.Type().AssignableTo(h.fromType) && toVal.Type().AssignableTo(h.toType) {
-			if err := h.hook(fromVal.Interface(), toVal.Interface()); !errors.Is(err, errors.ErrUnsupported) {
+			err := h.hook(fromVal.Interface(), toVal.Interface())
+			if !errors.Is(err, errors.ErrUnsupported) {
 				return err
 			}
 		}
@@ -308,7 +309,8 @@ func (c Converter) convertArray(name string, fromVal, toVal reflect.Value) error
 			fieldName := name + "[" + strconv.Itoa(i) + "]"
 			fromElemVal := fromVal.Index(i)
 			toElemVal := toVal.Index(i)
-			if err := c.convert(fieldName, fromElemVal.Interface(), pointer(toElemVal)); err != nil {
+			err := c.convert(fieldName, fromElemVal.Interface(), pointer(toElemVal))
+			if err != nil {
 				errs = append(errs, err)
 			}
 		}
@@ -355,7 +357,8 @@ func (c Converter) convertMap(name string, fromVal, toVal reflect.Value) error {
 			fromValueVal := fromVal.MapIndex(fromKeyVal)
 			toValueVal := reflect.New(toValueType)
 			key, value := maps.Unpack(fromValueVal.Interface())
-			if err := c.convert(fieldName, value, pointer(toValueVal)); err != nil {
+			err := c.convert(fieldName, value, pointer(toValueVal))
+			if err != nil {
 				errs = append(errs, err)
 
 				continue
@@ -365,7 +368,8 @@ func (c Converter) convertMap(name string, fromVal, toVal reflect.Value) error {
 				key = fromKeyVal.String()
 			}
 			toKeyVal := reflect.New(toKeyType)
-			if err := c.convert(fieldName, key, pointer(toKeyVal)); err != nil {
+			err = c.convert(fieldName, key, pointer(toKeyVal))
+			if err != nil {
 				errs = append(errs, err)
 
 				continue
@@ -416,7 +420,8 @@ func (c Converter) convertSlice(name string, fromVal, toVal reflect.Value) error
 			fieldName := name + "[" + strconv.Itoa(i) + "]"
 			fromElemVal := fromVal.Index(i)
 			toElemVal := toVal.Index(i)
-			if err := c.convert(fieldName, fromElemVal.Interface(), pointer(toElemVal)); err != nil {
+			err := c.convert(fieldName, fromElemVal.Interface(), pointer(toElemVal))
+			if err != nil {
 				errs = append(errs, err)
 			}
 		}
@@ -540,7 +545,8 @@ func (c Converter) convertStruct(name string, fromVal, toVal reflect.Value) erro
 					fieldName = name + "." + fieldName
 				}
 				_, value := maps.Unpack(elemVal.Interface())
-				if err := c.convert(fieldName, value, pointer(fieldVal)); err != nil {
+				err := c.convert(fieldName, value, pointer(fieldVal))
+				if err != nil {
 					errs = append(errs, err)
 				}
 			}

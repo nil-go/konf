@@ -127,7 +127,8 @@ func (a *S3) load(ctx context.Context) (map[string]any, bool, error) {
 		unmarshal = json.Unmarshal
 	}
 	var values map[string]any
-	if e := unmarshal(resp, &values); e != nil {
+	e := unmarshal(resp, &values)
+	if e != nil {
 		return nil, false, fmt.Errorf("unmarshal: %w", e)
 	}
 
@@ -165,7 +166,8 @@ func (a *S3) OnEvent(msg []byte) error { //nolint:cyclop
 	)
 
 	var event s3Event
-	if err := json.Unmarshal(msg, &event); err != nil {
+	err := json.Unmarshal(msg, &event)
+	if err != nil {
 		return fmt.Errorf("unmarshal s3 event: %w", err)
 	}
 
@@ -228,7 +230,8 @@ func (p *clientProxy) load(ctx context.Context) ([]byte, bool, error) {
 	if p.client == nil {
 		if reflect.ValueOf(p.config).IsZero() {
 			var err error
-			if p.config, err = config.LoadDefaultConfig(ctx); err != nil {
+			p.config, err = config.LoadDefaultConfig(ctx)
+			if err != nil {
 				return nil, false, fmt.Errorf("load default AWS config: %w", err)
 			}
 		}

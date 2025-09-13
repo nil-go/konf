@@ -57,7 +57,8 @@ func (f *File) Load() (map[string]any, error) {
 		unmarshal = json.Unmarshal
 	}
 	var out map[string]any
-	if err := unmarshal(bytes, &out); err != nil {
+	err = unmarshal(bytes, &out)
+	if err != nil {
 		return nil, fmt.Errorf("unmarshal: %w", err)
 	}
 

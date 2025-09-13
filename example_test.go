@@ -30,7 +30,8 @@ func ExampleUnmarshal() {
 		Port: 8080,
 	}
 
-	if err := konf.Unmarshal("server", &cfg); err != nil {
+	err := konf.Unmarshal("server", &cfg)
+	if err != nil {
 		// Handle error here.
 		panic(err)
 	}
@@ -43,11 +44,13 @@ var testdata embed.FS
 
 func ExampleSetDefault() {
 	var config konf.Config
-	if err := config.Load(kfs.New(testdata, "testdata/config.json")); err != nil {
+	err := config.Load(kfs.New(testdata, "testdata/config.json"))
+	if err != nil {
 		// Handle error here.
 		panic(err)
 	}
-	if err := config.Load(env.New(env.WithPrefix("server"))); err != nil {
+	err = config.Load(env.New(env.WithPrefix("server")))
+	if err != nil {
 		// Handle error here.
 		panic(err)
 	}

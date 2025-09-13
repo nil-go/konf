@@ -1,6 +1,6 @@
 module github.com/nil-go/konf/examples/gcp
 
-go 1.23.0
+go 1.24.0
 
 require (
 	github.com/nil-go/konf v1.4.0

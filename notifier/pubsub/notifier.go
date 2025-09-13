@@ -76,7 +76,8 @@ func (n *Notifier) Start(ctx context.Context) error { //nolint:cyclop,funlen
 	project := n.project
 	if project == "" {
 		var err error
-		if project, err = metadata.ProjectIDWithContext(ctx); err != nil {
+		project, err = metadata.ProjectIDWithContext(ctx)
+		if err != nil {
 			return fmt.Errorf("get GCP project ID: %w", err)
 		}
 	}
@@ -91,7 +92,8 @@ func (n *Notifier) Start(ctx context.Context) error { //nolint:cyclop,funlen
 		return fmt.Errorf("create PubSub client: %w", err)
 	}
 	defer func() {
-		if derr := client.Close(); derr != nil {
+		derr := client.Close()
+		if derr != nil {
 			logger.LogAttrs(ctx, slog.LevelWarn,
 				"Fail to close pubsub client.",
 				slog.String("project", project),
@@ -106,7 +108,8 @@ func (n *Notifier) Start(ctx context.Context) error { //nolint:cyclop,funlen
 		return fmt.Errorf("create PubSub subscription: %w", err)
 	}
 	defer func() {
-		if derr := subscription.Delete(context.WithoutCancel(ctx)); derr != nil {
+		derr := subscription.Delete(context.WithoutCancel(ctx))
+		if derr != nil {
 			logger.LogAttrs(ctx, slog.LevelWarn,
 				"Fail to delete pubsub subscription.",
 				slog.String("topic", n.topic),

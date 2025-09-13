@@ -141,7 +141,8 @@ func (g *GCS) load(ctx context.Context) (map[string]any, bool, error) {
 	}
 
 	var values map[string]any
-	if e := unmarshal(resp, &values); e != nil {
+	e := unmarshal(resp, &values)
+	if e != nil {
 		return nil, false, fmt.Errorf("unmarshal: %w", e)
 	}
 
@@ -185,7 +186,8 @@ type clientProxy struct {
 func (p *clientProxy) load(ctx context.Context) ([]byte, bool, error) {
 	if p.client == nil {
 		var err error
-		if p.client, err = storage.NewClient(ctx, append(p.opts, storage.WithJSONReads())...); err != nil {
+		p.client, err = storage.NewClient(ctx, append(p.opts, storage.WithJSONReads())...)
+		if err != nil {
 			return nil, false, fmt.Errorf("create GCS client: %w", err)
 		}
 	}

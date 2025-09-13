@@ -38,12 +38,14 @@ func Example() {
 	}{
 		Source: "default",
 	}
-	if err := konf.Unmarshal("konf", &config); err != nil {
+	err := konf.Unmarshal("konf", &config)
+	if err != nil {
 		panic(err) // handle error
 	}
 	konf.OnChange(func() {
 		newConfig := config
-		if err := konf.Unmarshal("konf", &newConfig); err != nil {
+		err := konf.Unmarshal("konf", &newConfig)
+		if err != nil {
 			panic(err) // handle error
 		}
 		config = newConfig
@@ -79,11 +81,13 @@ func loadConfig(ctx context.Context) func() {
 	}))
 
 	// Load configuration from embed file system.
-	if err := config.Load(fs.New(configFS, "config/config.yaml", fs.WithUnmarshal(yaml.Unmarshal))); err != nil {
+	err := config.Load(fs.New(configFS, "config/config.yaml", fs.WithUnmarshal(yaml.Unmarshal)))
+	if err != nil {
 		panic(err) // handle error
 	}
 	// Load configuration from environment variables.
-	if err := config.Load(env.New()); err != nil {
+	err = config.Load(env.New())
+	if err != nil {
 		panic(err) // handle error
 	}
 
@@ -93,7 +97,8 @@ func loadConfig(ctx context.Context) func() {
 		s3.WithUnmarshal(yaml.Unmarshal),
 		s3.WithPollInterval(15*time.Second),
 	)
-	if err := config.Load(s3Loader); err != nil {
+	err = config.Load(s3Loader)
+	if err != nil {
 		panic(err) // handle error
 	}
 	// Load configuration from AWS AppConfig.
@@ -102,18 +107,21 @@ func loadConfig(ctx context.Context) func() {
 		appconfig.WithUnmarshal(yaml.Unmarshal),
 		appconfig.WithPollInterval(18*time.Second),
 	)
-	if err := config.Load(appConfigLoader); err != nil {
+	err = config.Load(appConfigLoader)
+	if err != nil {
 		panic(err) // handle error
 	}
 	parameterStoreLoader := parameterstore.New(parameterstore.WithPollInterval(20 * time.Second))
-	if err := config.Load(parameterStoreLoader); err != nil {
+	err = config.Load(parameterStoreLoader)
+	if err != nil {
 		panic(err) // handle error
 	}
 	konf.SetDefault(config)
 
 	// Watch the changes of configuration.
 	go func() {
-		if err := config.Watch(ctx); err != nil {
+		err := config.Watch(ctx)
+		if err != nil {
 			panic(err) // handle error
 		}
 	}()
@@ -125,7 +133,8 @@ func loadConfig(ctx context.Context) func() {
 	waitGroup.Add(1)
 	go func() {
 		defer waitGroup.Done()
-		if err := notifier.Start(ctx); err != nil {
+		err := notifier.Start(ctx)
+		if err != nil {
 			panic(err) // handle error
 		}
 	}()

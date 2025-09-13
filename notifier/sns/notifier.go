@@ -85,7 +85,8 @@ func (n *Notifier) Start(ctx context.Context) error { //nolint:cyclop,funlen,goc
 
 	if reflect.ValueOf(n.config).IsZero() {
 		var err error
-		if n.config, err = config.LoadDefaultConfig(ctx); err != nil {
+		n.config, err = config.LoadDefaultConfig(ctx)
+		if err != nil {
 			return fmt.Errorf("load default AWS config: %w", err)
 		}
 	}
@@ -156,13 +157,14 @@ func (n *Notifier) Start(ctx context.Context) error { //nolint:cyclop,funlen,goc
 		return fmt.Errorf("create sqs queue: %w", err)
 	}
 	defer func() {
-		if _, derr := sqsClient.DeleteQueue(context.WithoutCancel(ctx), &sqs.DeleteQueueInput{
+		_, err = sqsClient.DeleteQueue(context.WithoutCancel(ctx), &sqs.DeleteQueueInput{
 			QueueUrl: queue.QueueUrl,
-		}); derr != nil {
+		})
+		if err != nil {
 			logger.LogAttrs(ctx, slog.LevelWarn,
 				"Fail to delete sqs queue.",
 				slog.String("queue", *queue.QueueUrl),
-				slog.Any("error", derr),
+				slog.Any("error", err),
 			)
 		}
 	}()
@@ -186,13 +188,14 @@ func (n *Notifier) Start(ctx context.Context) error { //nolint:cyclop,funlen,goc
 		return fmt.Errorf("subscribe sns topic %s: %w", n.topic, err)
 	}
 	defer func() {
-		if _, derr := snsClient.Unsubscribe(context.WithoutCancel(ctx), &sns.UnsubscribeInput{
+		_, err = snsClient.Unsubscribe(context.WithoutCancel(ctx), &sns.UnsubscribeInput{
 			SubscriptionArn: Subscription.SubscriptionArn,
-		}); derr != nil {
+		})
+		if err != nil {
 			logger.LogAttrs(ctx, slog.LevelWarn,
 				"Fail to unsubscribe sns topic.",
 				slog.String("topic", n.topic),
-				slog.Any("error", derr),
+				slog.Any("error", err),
 			)
 		}
 	}()
@@ -281,10 +284,11 @@ func (n *Notifier) Start(ctx context.Context) error { //nolint:cyclop,funlen,goc
 					ReceiptHandle: msg.ReceiptHandle,
 				})
 			}
-			if _, err = sqsClient.DeleteMessageBatch(ctx, &sqs.DeleteMessageBatchInput{
+			_, err = sqsClient.DeleteMessageBatch(ctx, &sqs.DeleteMessageBatchInput{
 				QueueUrl: queue.QueueUrl,
 				Entries:  entries,
-			}); err != nil && !errors.Is(err, context.Canceled) {
+			})
+			if err != nil && !errors.Is(err, context.Canceled) {
 				logger.LogAttrs(ctx, slog.LevelWarn,
 					"Fail to delete sqs message.",
 					slog.String("queue", *queue.QueueUrl),
