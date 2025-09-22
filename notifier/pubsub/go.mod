@@ -3,7 +3,7 @@ module github.com/nil-go/konf/notifier/pubsub
 go 1.24.0
 
 require (
-	cloud.google.com/go/compute/metadata v0.8.0
+	cloud.google.com/go/compute/metadata v0.8.4
 	cloud.google.com/go/pubsub v1.50.1
 	github.com/google/uuid v1.6.0
 	google.golang.org/api v0.249.0
