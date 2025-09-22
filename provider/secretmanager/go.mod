@@ -3,7 +3,7 @@ module github.com/nil-go/konf/provider/secretmanager
 go 1.24.0
 
 require (
-	cloud.google.com/go/compute/metadata v0.8.0
+	cloud.google.com/go/compute/metadata v0.8.4
 	cloud.google.com/go/secretmanager v1.15.0
 	github.com/stretchr/testify v1.11.1
 	google.golang.org/api v0.249.0
