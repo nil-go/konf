@@ -1,4 +1,4 @@
-// Copyright (c) 2025 The konf authors
+// Copyright (c) 2026 The konf authors
 // Use of this source code is governed by a MIT license found in the LICENSE file.
 
 package appconfig_test
@@ -706,8 +706,7 @@ func TestAppConfig_Watch(t *testing.T) {
 				}
 			})
 
-			ctx, cancel := context.WithCancel(context.Background())
-			defer cancel()
+			ctx := t.Context()
 
 			values := make(chan map[string]any)
 			started := make(chan struct{})
