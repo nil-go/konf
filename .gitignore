@@ -1,9 +1,13 @@
-# All files and folders start with .
-.*
+# Local OpenClaw workspace files (do not commit)
+AGENTS.md
+BOOTSTRAP.md
+HEARTBEAT.md
+IDENTITY.md
+MEMORY.md
+SOUL.md
+TOOLS.md
+USER.md
+memory/
 
-# Go workspace file
-go.work
-go.work.sum
-
-# Go vendor folder
-vendor
+# macOS
+.DS_Store
