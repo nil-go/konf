@@ -1,4 +1,4 @@
-// Package aws contains integration examples for using konf with AWS services.
+// Package aws provides integration examples for using konf with AWS services.
 //
-// The actual runnable example is guarded by the `integration` build tag.
+// The runnable example is guarded by the `integration` build tag.
 package aws
