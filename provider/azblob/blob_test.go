@@ -99,8 +99,7 @@ func TestBlob_Watch(t *testing.T) {
 			})
 
 			values := make(chan map[string]any)
-			ctx, cancel := context.WithCancel(context.Background())
-			defer cancel()
+			ctx := t.Context()
 
 			started := make(chan struct{})
 			go func() {
@@ -114,7 +113,8 @@ func TestBlob_Watch(t *testing.T) {
 			<-started
 
 			if !reflect.ValueOf(testcase.event).IsZero() {
-				testcase.event.Data = []byte(fmt.Sprintf(string(testcase.event.Data.([]byte)), server.URL))
+				data := testcase.event.Data.([]byte)
+				testcase.event.Data = fmt.Appendf(nil, string(data), server.URL)
 				eerr := loader.OnEvent(testcase.event)
 				if testcase.err == "" {
 					assert.NoError(t, eerr)
