@@ -706,8 +706,7 @@ func TestAppConfig_Watch(t *testing.T) {
 				}
 			})
 
-			ctx, cancel := context.WithCancel(context.Background())
-			defer cancel()
+			ctx := t.Context()
 
 			values := make(chan map[string]any)
 			started := make(chan struct{})
