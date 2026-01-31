@@ -103,8 +103,7 @@ func TestGCS_Watch(t *testing.T) {
 			})
 
 			values := make(chan map[string]any)
-			ctx, cancel := context.WithCancel(context.Background())
-			defer cancel()
+			ctx := t.Context()
 
 			started := make(chan struct{})
 			go func() {
