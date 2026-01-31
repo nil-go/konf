@@ -1,4 +1,4 @@
-// Copyright (c) 2025 The konf authors
+// Copyright (c) 2026 The konf authors
 // Use of this source code is governed by a MIT license found in the LICENSE file.
 
 package env
