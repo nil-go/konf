@@ -1,4 +1,4 @@
-// Copyright (c) 2025 The konf authors
+// Copyright (c) 2026 The konf authors
 // Use of this source code is governed by a MIT license found in the LICENSE file.
 
 package konf_test
@@ -280,8 +280,7 @@ func TestConfig_Watch_error(t *testing.T) {
 	err := config.Load(errorWatcher{})
 	assert.NoError(t, err)
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := t.Context()
 
 	assert.EqualError(t, config.Watch(ctx), "watch configuration change on error: watch error")
 }
