@@ -1,10 +1,9 @@
-// Copyright (c) 2025 The konf authors
+// Copyright (c) 2026 The konf authors
 // Use of this source code is governed by a MIT license found in the LICENSE file.
 
 package file_test
 
 import (
-	"context"
 	"os"
 	"path"
 	"testing"
@@ -54,8 +53,7 @@ func TestFile_Watch(t *testing.T) {
 			values := make(chan map[string]any)
 
 			started := make(chan struct{})
-			ctx, cancel := context.WithCancel(context.Background())
-			defer cancel()
+			ctx := t.Context()
 			loader := file.New(tmpFile)
 			go func() {
 				close(started)
