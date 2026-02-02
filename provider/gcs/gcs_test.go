@@ -130,40 +130,16 @@ func TestGCS_Watch(t *testing.T) {
 			}
 
 			// Wait (briefly) for either a value or an error from the watch loop.
-			deadline := time.After(100 * time.Millisecond)
-			var (
-				gotVal map[string]any
-				gotErr error
-			)
-			for gotVal == nil && gotErr == nil {
-				select {
-				case gotVal = <-values:
-				case <-time.After(5 * time.Millisecond):
-					if perr := err.Load(); perr != nil {
-						gotErr = *perr
-					}
-				case <-deadline:
-					break
-				}
-				select {
-				case <-deadline:
-					// exit loop
-					gotErr = gotErr
-					gotVal = gotVal
-					break
-				default:
-				}
-				if gotVal != nil || gotErr != nil {
-					break
-				}
-			}
+			gotVal, gotErr := waitForValueOrErr(values, &err, 100*time.Millisecond)
 
 			if gotVal != nil {
 				assert.Equal(t, testcase.expected, gotVal)
+
 				return
 			}
 			if expectedWatchErr == "" {
 				assert.Equal(t, nil, err.Load())
+
 				return
 			}
 			if gotErr == nil {
@@ -171,6 +147,31 @@ func TestGCS_Watch(t *testing.T) {
 			}
 			assert.EqualContains(t, gotErr, expectedWatchErr)
 		})
+	}
+}
+
+func waitForValueOrErr(values <-chan map[string]any, errPtr *atomic.Pointer[error], timeout time.Duration) (map[string]any, error) {
+	deadline := time.NewTimer(timeout)
+	defer deadline.Stop()
+
+	tick := time.NewTicker(5 * time.Millisecond)
+	defer tick.Stop()
+
+	for {
+		select {
+		case val := <-values:
+			return val, nil
+		case <-tick.C:
+			if perr := errPtr.Load(); perr != nil {
+				return nil, *perr
+			}
+		case <-deadline.C:
+			if perr := errPtr.Load(); perr != nil {
+				return nil, *perr
+			}
+
+			return nil, nil
+		}
 	}
 }
 
