@@ -116,26 +116,60 @@ func TestGCS_Watch(t *testing.T) {
 			}()
 			<-started
 
+			// If we expect an error from OnEvent, check it there and don't require
+			// the watch loop to also produce the same error via Status().
+			expectedWatchErr := testcase.err
 			if len(testcase.event) > 0 {
 				eerr := loader.OnEvent(testcase.event)
 				if testcase.err == "" {
 					assert.NoError(t, eerr)
 				} else {
 					assert.EqualError(t, eerr, testcase.err)
+					expectedWatchErr = ""
 				}
 			}
 
-			time.Sleep(15 * time.Millisecond) // wait for the first tick, but not the second
-			select {
-			case val := <-values:
-				assert.Equal(t, testcase.expected, val)
-			default:
-				if testcase.err == "" {
-					assert.Equal(t, nil, err.Load())
-				} else {
-					assert.EqualContains(t, *err.Load(), testcase.err)
+			// Wait (briefly) for either a value or an error from the watch loop.
+			deadline := time.After(100 * time.Millisecond)
+			var (
+				gotVal map[string]any
+				gotErr error
+			)
+			for gotVal == nil && gotErr == nil {
+				select {
+				case gotVal = <-values:
+				case <-time.After(5 * time.Millisecond):
+					if perr := err.Load(); perr != nil {
+						gotErr = *perr
+					}
+				case <-deadline:
+					break
+				}
+				select {
+				case <-deadline:
+					// exit loop
+					gotErr = gotErr
+					gotVal = gotVal
+					break
+				default:
+				}
+				if gotVal != nil || gotErr != nil {
+					break
 				}
 			}
+
+			if gotVal != nil {
+				assert.Equal(t, testcase.expected, gotVal)
+				return
+			}
+			if expectedWatchErr == "" {
+				assert.Equal(t, nil, err.Load())
+				return
+			}
+			if gotErr == nil {
+				t.Fatalf("expected watch error containing %q, got none", expectedWatchErr)
+			}
+			assert.EqualContains(t, gotErr, expectedWatchErr)
 		})
 	}
 }
