@@ -131,6 +131,9 @@ func TestGCS_Watch(t *testing.T) {
 
 			// Wait (briefly) for either a value or an error from the watch loop.
 			gotVal, gotErr := waitForValueOrErr(values, &err, 100*time.Millisecond)
+			if errors.Is(gotErr, errNoValueOrErr) {
+				gotErr = nil
+			}
 
 			if gotVal != nil {
 				assert.Equal(t, testcase.expected, gotVal)
@@ -149,6 +152,8 @@ func TestGCS_Watch(t *testing.T) {
 		})
 	}
 }
+
+var errNoValueOrErr = errors.New("no value or error")
 
 func waitForValueOrErr(values <-chan map[string]any, errPtr *atomic.Pointer[error], timeout time.Duration) (map[string]any, error) {
 	deadline := time.NewTimer(timeout)
@@ -170,7 +175,7 @@ func waitForValueOrErr(values <-chan map[string]any, errPtr *atomic.Pointer[erro
 				return nil, *perr
 			}
 
-			return nil, nil
+			return nil, errNoValueOrErr
 		}
 	}
 }
