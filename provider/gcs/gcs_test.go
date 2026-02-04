@@ -116,27 +116,67 @@ func TestGCS_Watch(t *testing.T) {
 			}()
 			<-started
 
+			// If we expect an error from OnEvent, check it there and don't require
+			// the watch loop to also produce the same error via Status().
+			expectedWatchErr := testcase.err
 			if len(testcase.event) > 0 {
 				eerr := loader.OnEvent(testcase.event)
 				if testcase.err == "" {
 					assert.NoError(t, eerr)
 				} else {
 					assert.EqualError(t, eerr, testcase.err)
+					expectedWatchErr = ""
 				}
 			}
 
-			time.Sleep(15 * time.Millisecond) // wait for the first tick, but not the second
-			select {
-			case val := <-values:
-				assert.Equal(t, testcase.expected, val)
-			default:
-				if testcase.err == "" {
-					assert.Equal(t, nil, err.Load())
-				} else {
-					assert.EqualContains(t, *err.Load(), testcase.err)
-				}
+			// Wait (briefly) for either a value or an error from the watch loop.
+			gotVal, gotErr := waitForValueOrErr(values, &err, 100*time.Millisecond)
+			if errors.Is(gotErr, errNoValueOrError) {
+				gotErr = nil
 			}
+
+			if gotVal != nil {
+				assert.Equal(t, testcase.expected, gotVal)
+
+				return
+			}
+			if expectedWatchErr == "" {
+				assert.Equal(t, nil, err.Load())
+
+				return
+			}
+			if gotErr == nil {
+				t.Fatalf("expected watch error containing %q, got none", expectedWatchErr)
+			}
+			assert.EqualContains(t, gotErr, expectedWatchErr)
 		})
+	}
+}
+
+var errNoValueOrError = errors.New("no value or error")
+
+func waitForValueOrErr(values <-chan map[string]any, errPtr *atomic.Pointer[error], timeout time.Duration) (map[string]any, error) {
+	deadline := time.NewTimer(timeout)
+	defer deadline.Stop()
+
+	tick := time.NewTicker(5 * time.Millisecond)
+	defer tick.Stop()
+
+	for {
+		select {
+		case val := <-values:
+			return val, nil
+		case <-tick.C:
+			if perr := errPtr.Load(); perr != nil {
+				return nil, *perr
+			}
+		case <-deadline.C:
+			if perr := errPtr.Load(); perr != nil {
+				return nil, *perr
+			}
+
+			return nil, errNoValueOrError
+		}
 	}
 }
 
