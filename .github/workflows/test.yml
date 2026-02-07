@@ -26,8 +26,9 @@ jobs:
           - 'provider/gcs'
           - 'notifier/pubsub'
         go-version: [ 'stable', 'oldstable' ]
+        os: [ ubuntu-latest, windows-latest ]
     name: Test
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-go@v6
@@ -37,27 +38,17 @@ jobs:
       - name: Race Test
         run: go test -v -shuffle=on -count=10 -race ./...
         working-directory: ${{ matrix.module }}
+        if: ${{ matrix.os == 'ubuntu-latest' }}
       - name: Test
         run: go test -shuffle=on -v ./...
         working-directory: ${{ matrix.module }}
-  test-windows:
-    name: Test (windows)
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-go@v6
-        with:
-          go-version: stable
-          cache-dependency-path: "**/go.sum"
-      - name: Test
-        run: go test -shuffle=on -v ./...
 
   all:
     if: ${{ always() }}
     runs-on: ubuntu-latest
     name: All Tests
-    needs: [test, test-windows]
+    needs: test
     steps:
       - name: Check test matrix status
-        if: ${{ needs.test.result != 'success' || needs.test-windows.result != 'success' }}
+        if: ${{ needs.test.result != 'success' }}
         run: exit 1
