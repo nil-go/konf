@@ -40,12 +40,24 @@ jobs:
       - name: Test
         run: go test -shuffle=on -v ./...
         working-directory: ${{ matrix.module }}
+  test-windows:
+    name: Test (windows)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version: stable
+          cache-dependency-path: "**/go.sum"
+      - name: Test
+        run: go test -shuffle=on -v ./...
+
   all:
     if: ${{ always() }}
     runs-on: ubuntu-latest
     name: All Tests
-    needs: test
+    needs: [test, test-windows]
     steps:
       - name: Check test matrix status
-        if: ${{ needs.test.result != 'success' }}
+        if: ${{ needs.test.result != 'success' || needs.test-windows.result != 'success' }}
         run: exit 1
