@@ -17,8 +17,8 @@ import (
 	"testing"
 	"time"
 
-	"cloud.google.com/go/pubsub/apiv1/pubsubpb" //nolint:staticcheck
-	"cloud.google.com/go/pubsub/pstest"         //nolint:staticcheck
+	"cloud.google.com/go/pubsub/v2/apiv1/pubsubpb"
+	"cloud.google.com/go/pubsub/v2/pstest"
 	"google.golang.org/api/option"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
