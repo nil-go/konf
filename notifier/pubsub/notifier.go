@@ -12,10 +12,12 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"strings"
 	"sync"
 
 	"cloud.google.com/go/compute/metadata"
-	"cloud.google.com/go/pubsub" //nolint:staticcheck
+	"cloud.google.com/go/pubsub/v2"
+	"cloud.google.com/go/pubsub/v2/apiv1/pubsubpb"
 	"github.com/google/uuid"
 	"google.golang.org/api/option"
 )
@@ -101,19 +103,34 @@ func (n *Notifier) Start(ctx context.Context) error { //nolint:cyclop,funlen
 			)
 		}
 	}()
-	subscription, err := client.CreateSubscription(ctx, "konf-"+uuid.NewString(), pubsub.SubscriptionConfig{
-		Topic: client.Topic(n.topic),
-	})
+	// In PubSub v2, admin operations require fully-qualified resource names.
+	topicName := n.topic
+	if !strings.HasPrefix(topicName, "projects/") {
+		topicName = fmt.Sprintf("projects/%s/topics/%s", project, n.topic)
+	}
+	subName := fmt.Sprintf("projects/%s/subscriptions/%s", project, "konf-"+uuid.NewString())
+
+	subpb := &pubsubpb.Subscription{
+		Name:  subName,
+		Topic: topicName,
+	}
+	created, err := client.SubscriptionAdminClient.CreateSubscription(ctx, subpb)
 	if err != nil {
 		return fmt.Errorf("create PubSub subscription: %w", err)
 	}
+	// Use the actual name returned by the API.
+	subName = created.GetName()
+
 	defer func() {
-		derr := subscription.Delete(context.WithoutCancel(ctx))
+		derr := client.SubscriptionAdminClient.DeleteSubscription(
+			context.WithoutCancel(ctx),
+			&pubsubpb.DeleteSubscriptionRequest{Subscription: subName},
+		)
 		if derr != nil {
 			logger.LogAttrs(ctx, slog.LevelWarn,
 				"Fail to delete pubsub subscription.",
 				slog.String("topic", n.topic),
-				slog.String("subscription", subscription.String()),
+				slog.String("subscription", subName),
 				slog.Any("error", derr),
 			)
 		}
@@ -121,10 +138,11 @@ func (n *Notifier) Start(ctx context.Context) error { //nolint:cyclop,funlen
 	logger.LogAttrs(ctx, slog.LevelInfo,
 		"Start watching PubSub topic.",
 		slog.String("topic", n.topic),
-		slog.String("subscription", subscription.String()),
+		slog.String("subscription", subName),
 	)
 
-	err = subscription.Receive(ctx, func(ctx context.Context, msg *pubsub.Message) {
+	subscriber := client.Subscriber(subName)
+	err = subscriber.Receive(ctx, func(ctx context.Context, msg *pubsub.Message) {
 		attributes := msg.Attributes
 		logger.LogAttrs(ctx, slog.LevelInfo,
 			"Received PubSub message.",

@@ -7,6 +7,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- notifier/pubsub: migrate to cloud.google.com/go/pubsub/v2 (#901)
+
 ## [1.4.0] - 2024-11-25
 
 ### Changed
