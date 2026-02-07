@@ -122,9 +122,10 @@ func (n *Notifier) Start(ctx context.Context) error { //nolint:cyclop,funlen
 	subName = created.GetName()
 
 	defer func() {
-		derr := client.SubscriptionAdminClient.DeleteSubscription(context.WithoutCancel(ctx), &pubsubpb.DeleteSubscriptionRequest{
-			Subscription: subName,
-		})
+		derr := client.SubscriptionAdminClient.DeleteSubscription(
+			context.WithoutCancel(ctx),
+			&pubsubpb.DeleteSubscriptionRequest{Subscription: subName},
+		)
 		if derr != nil {
 			logger.LogAttrs(ctx, slog.LevelWarn,
 				"Fail to delete pubsub subscription.",

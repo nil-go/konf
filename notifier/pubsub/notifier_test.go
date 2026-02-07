@@ -102,7 +102,7 @@ level=WARN msg="Fail to delete pubsub subscription." topic=topic subscription=pr
 				_ = srv.Close()
 			}()
 			topic := "projects/test/topics/topic"
-			_, err := srv.GServer.CreateTopic(ctx, &pubsubpb.Topic{Name: topic}) //nolint:staticcheck
+			_, err := srv.GServer.CreateTopic(ctx, &pubsubpb.Topic{Name: topic})
 			assert.NoError(t, err)
 
 			// Connect to the server without using TLS.
