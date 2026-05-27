@@ -126,20 +126,26 @@ level=WARN msg="Fail to delete pubsub subscription." topic=topic subscription=pr
 				err:    testcase.errLoader,
 			}
 			notifier.Register(loader)
-			var waitgroup sync.WaitGroup
-			waitgroup.Add(1)
+
+			done := make(chan struct{})
+			var startErr error
 			go func() {
-				defer waitgroup.Done()
-				err = notifier.Start(ctx)
-				if testcase.error == "" {
-					assert.NoError(t, err)
-				} else {
-					assert.EqualError(t, err, testcase.error)
-				}
+				startErr = notifier.Start(ctx)
+				close(done)
 			}()
-			time.Sleep(10 * time.Millisecond) // Wait for notifier starts.
+
 			srv.Publish(topic, []byte{}, map[string]string{"eventType": "test"})
-			waitgroup.Wait()
+
+			select {
+			case <-done:
+				if testcase.error == "" {
+					assert.NoError(t, startErr)
+				} else {
+					assert.EqualError(t, startErr, testcase.error)
+				}
+			case <-time.After(2 * time.Second):
+				t.Fatal("timeout waiting for notifier.Start to return")
+			}
 
 			assert.Equal(t, testcase.notified, loader.notified.Load())
 			re := regexp.MustCompile(`konf-[0-9a-f-]+`)
