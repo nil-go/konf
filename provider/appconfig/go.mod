@@ -7,7 +7,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/config v1.32.25
 	github.com/aws/aws-sdk-go-v2/service/appconfig v1.44.6
 	github.com/aws/aws-sdk-go-v2/service/appconfigdata v1.24.3
-	github.com/aws/smithy-go v1.27.2
+	github.com/aws/smithy-go v1.27.3
 )
 
 require (
