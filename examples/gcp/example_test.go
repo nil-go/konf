@@ -120,14 +120,12 @@ func loadConfig(ctx context.Context) func() {
 	notifier := pubsub.NewNotifier("konf-test", pubsub.WithProject("konf-test"))
 	notifier.Register(gcsLoader, secretManagerLoader)
 	var waitGroup sync.WaitGroup
-	waitGroup.Add(1)
-	go func() {
-		defer waitGroup.Done()
+	waitGroup.Go(func() {
 		err := notifier.Start(ctx)
 		if err != nil {
 			panic(err) // handle error
 		}
-	}()
+	})
 
 	return func() {
 		waitGroup.Wait()

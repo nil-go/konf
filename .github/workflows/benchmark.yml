@@ -16,15 +16,15 @@ jobs:
     name: Benchmark
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-go@v6
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
         with:
           go-version: 'stable'
           cache-dependency-path: "**/go.sum"
       - name: Run benchmark
         run: go test -v -bench=. -run=^$ ./... | tee output.txt
       - name: Download previous benchmark data
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@v6
         with:
           path: ./cache
           key: ${{ runner.os }}-benchmark-${{ github.sha }}
@@ -39,7 +39,7 @@ jobs:
           fail-on-alert: true
           summary-always: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
-      - uses: actions/cache/save@v5
+      - uses: actions/cache/save@v6
         if: ${{ github.ref_name=='main' }}
         with:
           path: ./cache
