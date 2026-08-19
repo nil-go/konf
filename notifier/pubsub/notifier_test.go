@@ -127,16 +127,14 @@ level=WARN msg="Fail to delete pubsub subscription." topic=topic subscription=pr
 			}
 			notifier.Register(loader)
 			var waitgroup sync.WaitGroup
-			waitgroup.Add(1)
-			go func() {
-				defer waitgroup.Done()
+			waitgroup.Go(func() {
 				err = notifier.Start(ctx)
 				if testcase.error == "" {
 					assert.NoError(t, err)
 				} else {
 					assert.EqualError(t, err, testcase.error)
 				}
-			}()
+			})
 			time.Sleep(10 * time.Millisecond) // Wait for notifier starts.
 			srv.Publish(topic, []byte{}, map[string]string{"eventType": "test"})
 			waitgroup.Wait()
