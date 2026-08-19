@@ -197,7 +197,7 @@ download blob error
 		},
 		{
 			description: "default credential",
-			err:         "get blob: authenticated requests are not permitted for non TLS protected (https) endpoints",
+			err:         "get blob: authorized requests are not permitted for non-TLS protected (https) endpoints",
 		},
 	}
 }
