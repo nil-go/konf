@@ -772,13 +772,28 @@ level=WARN msg="Fail to delete sqs message." queue=https://sqs.us-west-2.amazona
 
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
+			received := make(chan struct{}, 1)
 			cfg, err := config.LoadDefaultConfig(ctx,
 				config.WithAPIOptions([]func(*middleware.Stack) error{
 					func(stack *middleware.Stack) error {
 						return stack.Finalize.Add(
 							middleware.FinalizeMiddlewareFunc(
 								"mock",
-								testcase.middleware,
+								func(
+									ctx context.Context,
+									input middleware.FinalizeInput,
+									next middleware.FinalizeHandler,
+								) (middleware.FinalizeOutput, middleware.Metadata, error) {
+									output, metadata, err := testcase.middleware(ctx, input, next)
+									if awsMiddleware.GetOperationName(ctx) == "ReceiveMessage" {
+										select {
+										case received <- struct{}{}:
+										default:
+										}
+									}
+
+									return output, metadata, err
+								},
 							),
 							middleware.Before,
 						)
@@ -807,6 +822,26 @@ level=WARN msg="Fail to delete sqs message." queue=https://sqs.us-west-2.amazona
 				startErr = notifier.Start(ctx)
 				close(done)
 			}()
+
+			if testcase.error == "" && !testcase.notified {
+				select {
+				case <-received:
+				case <-done:
+					t.Fatalf("notifier.Start returned before receiving a message: %v", startErr)
+				case <-time.After(2 * time.Second):
+					t.Fatal("timeout waiting for ReceiveMessage")
+				}
+
+				deadline := time.After(2 * time.Second)
+				for buf.String() != testcase.log {
+					select {
+					case <-deadline:
+						t.Fatalf("timeout waiting for log:\n%s", testcase.log)
+					case <-time.After(time.Millisecond):
+					}
+				}
+				cancel()
+			}
 
 			select {
 			case <-done:

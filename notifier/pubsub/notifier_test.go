@@ -134,7 +134,28 @@ level=WARN msg="Fail to delete pubsub subscription." topic=topic subscription=pr
 				close(done)
 			}()
 
-			srv.Publish(topic, []byte{}, map[string]string{"eventType": "test"})
+			if testcase.error == "" {
+				deadline := time.After(2 * time.Second)
+				for {
+					subscriptions, listErr := srv.GServer.ListSubscriptions(ctx, &pubsubpb.ListSubscriptionsRequest{
+						Project: "projects/test",
+					})
+					assert.NoError(t, listErr)
+					if len(subscriptions.GetSubscriptions()) > 0 {
+						break
+					}
+
+					select {
+					case <-done:
+						t.Fatalf("notifier.Start returned before creating a subscription: %v", startErr)
+					case <-deadline:
+						t.Fatal("timeout waiting for PubSub subscription")
+					case <-time.After(time.Millisecond):
+					}
+				}
+
+				srv.Publish(topic, []byte{}, map[string]string{"eventType": "test"})
+			}
 
 			select {
 			case <-done:
