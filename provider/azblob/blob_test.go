@@ -11,7 +11,6 @@ import (
 	"net/http/httptest"
 	"reflect"
 	"strings"
-	"sync/atomic"
 	"testing"
 	"time"
 
@@ -91,10 +90,13 @@ func TestBlob_Watch(t *testing.T) {
 					azblob.WithPollInterval(10*time.Millisecond),
 				)...,
 			)
-			var err atomic.Pointer[error]
+			errs := make(chan error, 1)
 			loader.Status(func(_ bool, e error) {
 				if e != nil {
-					err.Store(&e)
+					select {
+					case errs <- e:
+					default:
+					}
 				}
 			})
 
@@ -123,18 +125,40 @@ func TestBlob_Watch(t *testing.T) {
 				}
 			}
 
-			time.Sleep(15 * time.Millisecond) // wait for the first tick, but not the second
-			select {
-			case val := <-values:
-				assert.Equal(t, testcase.expected, val)
-			default:
-				if strings.Contains(testcase.err, "%s") {
-					assert.EqualError(t, *err.Load(), fmt.Sprintf(testcase.err, server.URL))
-				} else {
-					assert.EqualError(t, *err.Load(), testcase.err)
-				}
-			}
+			assertWatchResult(t, testcase, server.URL, values, errs)
 		})
+	}
+}
+
+func assertWatchResult(
+	t *testing.T,
+	testcase testcase,
+	serverURL string,
+	values <-chan map[string]any,
+	errs <-chan error,
+) {
+	t.Helper()
+
+	if testcase.expected != nil {
+		select {
+		case val := <-values:
+			assert.Equal(t, testcase.expected, val)
+		case <-time.After(time.Second):
+			t.Fatal("timed out waiting for changed values")
+		}
+
+		return
+	}
+
+	expected := testcase.err
+	if strings.Contains(expected, "%s") {
+		expected = fmt.Sprintf(expected, serverURL)
+	}
+	select {
+	case err := <-errs:
+		assert.EqualError(t, err, expected)
+	case <-time.After(time.Second):
+		t.Fatal("timed out waiting for watcher error")
 	}
 }
 
