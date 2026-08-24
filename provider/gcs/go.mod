@@ -3,7 +3,7 @@ module github.com/nil-go/konf/provider/gcs
 go 1.25.8
 
 require (
-	cloud.google.com/go/storage v1.64.0
+	cloud.google.com/go/storage v1.65.0
 	google.golang.org/api v0.293.0
 )
 
