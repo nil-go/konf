@@ -7,7 +7,7 @@ require (
 	cloud.google.com/go/pubsub/v2 v2.6.1
 	github.com/google/uuid v1.6.0
 	google.golang.org/api v0.285.0
-	google.golang.org/grpc v1.82.1
+	google.golang.org/grpc v1.83.1
 )
 
 require (
