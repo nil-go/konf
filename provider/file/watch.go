@@ -36,7 +36,8 @@ func (f *File) Watch(ctx context.Context, onChange func(map[string]any)) (err er
 
 	// Although only a single file is being watched, fsnotify has to watch
 	// the whole parent directory to pick up all events such as symlink changes.
-	dir, _ := filepath.Split(f.path)
+	watchedPath := filepath.Clean(f.path)
+	dir, _ := filepath.Split(watchedPath)
 	e := watcher.Add(dir)
 	if e != nil {
 		return fmt.Errorf("watch dir %s: %w", dir, e)
@@ -44,7 +45,7 @@ func (f *File) Watch(ctx context.Context, onChange func(map[string]any)) (err er
 
 	// Resolve symlinks and save the original path so that changes to symlinks
 	// can be detected.
-	realPath, err := filepath.EvalSymlinks(f.path)
+	realPath, err := filepath.EvalSymlinks(watchedPath)
 	if err != nil {
 		return fmt.Errorf("eval symlike: %w", err)
 	}
@@ -68,7 +69,7 @@ func (f *File) Watch(ctx context.Context, onChange func(map[string]any)) (err er
 			// Since the event is triggered on a directory, is this
 			// one on the file being watched?
 			evFile := filepath.Clean(event.Name)
-			if evFile != realPath && evFile != f.path {
+			if evFile != realPath && evFile != watchedPath {
 				continue
 			}
 
