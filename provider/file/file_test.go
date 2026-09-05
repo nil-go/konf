@@ -6,6 +6,7 @@ package file_test
 import (
 	"context"
 	"errors"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -31,10 +32,11 @@ func TestFile_Load(t *testing.T) {
 		opts        []file.Option
 		expected    map[string]any
 		err         string
+		notExist    bool
 	}{
 		{
 			description: "empty path",
-			err:         "read file: open : no such file or directory",
+			notExist:    true,
 		},
 		{
 			description: "file",
@@ -46,7 +48,7 @@ func TestFile_Load(t *testing.T) {
 		{
 			description: "file (not exist)",
 			path:        "not_found.json",
-			err:         "read file: open not_found.json: no such file or directory",
+			notExist:    true,
 		},
 		{
 			description: "unmarshal error",
@@ -65,9 +67,14 @@ func TestFile_Load(t *testing.T) {
 			t.Parallel()
 
 			values, err := file.New(testcase.path, testcase.opts...).Load()
-			if testcase.err != "" {
+			switch {
+			case testcase.notExist:
+				if !errors.Is(err, os.ErrNotExist) {
+					t.Errorf("expected file-not-found error, got %v", err)
+				}
+			case testcase.err != "":
 				assert.EqualError(t, err, testcase.err)
-			} else {
+			default:
 				assert.NoError(t, err)
 				assert.Equal(t, testcase.expected, values)
 			}

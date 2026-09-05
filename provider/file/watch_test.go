@@ -5,7 +5,7 @@ package file_test
 
 import (
 	"os"
-	"path"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -44,7 +44,7 @@ func TestFile_Watch(t *testing.T) {
 
 	for _, testcase := range testcases {
 		t.Run(testcase.description, func(t *testing.T) {
-			tmpFile := path.Join(t.TempDir(), "watch.json")
+			tmpFile := filepath.Join(t.TempDir(), "watch.json")
 			assert.NoError(t, os.WriteFile(tmpFile, []byte(`{"p": {"k": "v"}}`), 0o600))
 			for _, e := os.Stat(tmpFile); os.IsNotExist(e); _, e = os.Stat(tmpFile) { //nolint:revive
 				// wait for the file to be written
@@ -66,7 +66,12 @@ func TestFile_Watch(t *testing.T) {
 			time.Sleep(time.Second) // wait for the watcher to start
 
 			assert.NoError(t, testcase.action(tmpFile))
-			assert.Equal(t, testcase.expected, <-values)
+			select {
+			case value := <-values:
+				assert.Equal(t, testcase.expected, value)
+			case <-time.After(5 * time.Second):
+				t.Fatal("timed out waiting for file change")
+			}
 		})
 	}
 }
