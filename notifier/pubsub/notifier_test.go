@@ -126,18 +126,47 @@ level=WARN msg="Fail to delete pubsub subscription." topic=topic subscription=pr
 				err:    testcase.errLoader,
 			}
 			notifier.Register(loader)
-			var waitgroup sync.WaitGroup
-			waitgroup.Go(func() {
-				err = notifier.Start(ctx)
-				if testcase.error == "" {
-					assert.NoError(t, err)
-				} else {
-					assert.EqualError(t, err, testcase.error)
+
+			done := make(chan struct{})
+			var startErr error
+			go func() {
+				startErr = notifier.Start(ctx)
+				close(done)
+			}()
+
+			if testcase.error == "" {
+				deadline := time.After(2 * time.Second)
+				for {
+					subscriptions, listErr := srv.GServer.ListSubscriptions(ctx, &pubsubpb.ListSubscriptionsRequest{
+						Project: "projects/test",
+					})
+					assert.NoError(t, listErr)
+					if len(subscriptions.GetSubscriptions()) > 0 {
+						break
+					}
+
+					select {
+					case <-done:
+						t.Fatalf("notifier.Start returned before creating a subscription: %v", startErr)
+					case <-deadline:
+						t.Fatal("timeout waiting for PubSub subscription")
+					case <-time.After(time.Millisecond):
+					}
 				}
-			})
-			time.Sleep(10 * time.Millisecond) // Wait for notifier starts.
-			srv.Publish(topic, []byte{}, map[string]string{"eventType": "test"})
-			waitgroup.Wait()
+
+				srv.Publish(topic, []byte{}, map[string]string{"eventType": "test"})
+			}
+
+			select {
+			case <-done:
+				if testcase.error == "" {
+					assert.NoError(t, startErr)
+				} else {
+					assert.EqualError(t, startErr, testcase.error)
+				}
+			case <-time.After(2 * time.Second):
+				t.Fatal("timeout waiting for notifier.Start to return")
+			}
 
 			assert.Equal(t, testcase.notified, loader.notified.Load())
 			re := regexp.MustCompile(`konf-[0-9a-f-]+`)
