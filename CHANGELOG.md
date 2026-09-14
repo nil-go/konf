@@ -7,6 +7,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- provider/file: preserve configuration after failed watch reloads and retry the next write event (#1112).
+
 ### Changed
 
 - notifier/pubsub: migrate to cloud.google.com/go/pubsub/v2 (#901)
