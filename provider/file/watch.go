@@ -84,6 +84,13 @@ func (f *File) Watch(ctx context.Context, onChange func(map[string]any)) (err er
 				if f.onStatus != nil {
 					f.onStatus(true, err)
 				}
+				if err != nil {
+					// A partial write may fail to load. Allow its following write event
+					// to retry, and preserve the previous configuration until it succeeds.
+					lastEvent = ""
+
+					continue
+				}
 				onChange(values)
 			}
 
