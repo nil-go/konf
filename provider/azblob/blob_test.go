@@ -11,6 +11,7 @@ import (
 	"net/http/httptest"
 	"reflect"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -65,6 +66,50 @@ func TestBlob_Load(t *testing.T) {
 				values, err = loader.Load()
 				assert.NoError(t, err)
 				assert.Equal(t, nil, values)
+			}
+		})
+	}
+}
+
+func TestBlob_Load_notModified(t *testing.T) {
+	t.Parallel()
+
+	for _, errorCode := range []string{"ConditionNotMet", ""} {
+		t.Run("error code "+errorCode, func(t *testing.T) {
+			t.Parallel()
+
+			var changed atomic.Bool
+			server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+				value := "original"
+				if changed.Load() {
+					value = "updated"
+				}
+				etag := `"` + value + `"`
+				if request.Header.Get("If-None-Match") == etag {
+					if errorCode != "" {
+						writer.Header().Set("x-ms-error-code", errorCode)
+					}
+					writer.WriteHeader(http.StatusNotModified)
+
+					return
+				}
+				writer.Header().Set("Etag", etag)
+				_, _ = fmt.Fprintf(writer, `{"k":%q}`, value)
+			}))
+			defer server.Close()
+
+			loader := azblob.New(server.URL, "container", "blob", azblob.WithCredential(nil))
+			for _, value := range []string{"original", "updated"} {
+				values, err := loader.Load()
+				assert.NoError(t, err)
+				assert.Equal(t, map[string]any{"k": value}, values)
+
+				for range 2 {
+					values, err = loader.Load()
+					assert.NoError(t, err)
+					assert.Equal(t, nil, values)
+				}
+				changed.Store(true)
 			}
 		})
 	}

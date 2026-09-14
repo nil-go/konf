@@ -219,6 +219,10 @@ func (p *clientProxy) load(ctx context.Context) ([]byte, bool, error) { //nolint
 	if err != nil {
 		return nil, false, fmt.Errorf("get blob: %w", err)
 	}
+	// DownloadStream returns no body for HTTP 304 (Not Modified).
+	if resp.Body == nil {
+		return nil, false, nil
+	}
 	defer func() {
 		// Ignore error: it could do nothing on this error.
 		_ = resp.Body.Close()
