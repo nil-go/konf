@@ -87,7 +87,7 @@ func TestBlob_Load_notModified(t *testing.T) {
 				etag := `"` + value + `"`
 				if request.Header.Get("If-None-Match") == etag {
 					if errorCode != "" {
-						writer.Header().Set("x-ms-error-code", errorCode)
+						writer.Header().Set("X-Ms-Error-Code", errorCode)
 					}
 					writer.WriteHeader(http.StatusNotModified)
 
