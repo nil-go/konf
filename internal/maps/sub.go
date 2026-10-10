@@ -3,10 +3,7 @@
 
 package maps
 
-import "slices"
-
 func Sub(values map[string]any, path []string) any {
-	path = slices.Compact(path)
 	if len(path) == 0 {
 		return values
 	}
