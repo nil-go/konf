@@ -4,6 +4,7 @@
 package maps_test
 
 import (
+	"slices"
 	"testing"
 
 	"github.com/nil-go/konf/internal/assert"
@@ -72,6 +73,36 @@ func TestSub(t *testing.T) {
 			expected:    2,
 		},
 		{
+			description: "repeated leading keys",
+			values:      map[string]any{"a": map[string]any{"a": map[string]any{"b": 1}}},
+			path:        []string{"a", "a", "b"},
+			expected:    1,
+		},
+		{
+			description: "repeated trailing keys",
+			values:      map[string]any{"a": map[string]any{"b": map[string]any{"b": 2}}},
+			path:        []string{"a", "b", "b"},
+			expected:    2,
+		},
+		{
+			description: "three repeated keys",
+			values:      map[string]any{"a": map[string]any{"a": map[string]any{"a": 3}}},
+			path:        []string{"a", "a", "a"},
+			expected:    3,
+		},
+		{
+			description: "repeated key below scalar",
+			values:      map[string]any{"a": 1},
+			path:        []string{"a", "a"},
+			expected:    nil,
+		},
+		{
+			description: "repeated empty keys",
+			values:      map[string]any{"": map[string]any{"": 4}},
+			path:        []string{"", ""},
+			expected:    4,
+		},
+		{
 			description: "non-map value",
 			values:      map[string]any{"a": map[string]any{"x": 1}},
 			path:        []string{"x", "y"},
@@ -83,8 +114,10 @@ func TestSub(t *testing.T) {
 		t.Run(testcase.description, func(t *testing.T) {
 			t.Parallel()
 
+			originalPath := slices.Clone(testcase.path)
 			actual := maps.Sub(testcase.values, testcase.path)
 			assert.Equal(t, testcase.expected, actual)
+			assert.Equal(t, originalPath, testcase.path)
 		})
 	}
 }

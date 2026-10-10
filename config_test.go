@@ -31,6 +31,61 @@ func TestConfig_nil(t *testing.T) {
 	assert.True(t, len(config.Explain("key")) > 0)
 }
 
+func TestConfig_RepeatedPathComponents(t *testing.T) {
+	t.Parallel()
+
+	testcases := []struct {
+		description string
+		opts        []konf.Option
+		path        string
+		keys        []string
+	}{
+		{
+			description: "default delimiter",
+			path:        "node.node.leaf",
+			keys:        []string{"node", "node", "leaf"},
+		},
+		{
+			description: "custom delimiter",
+			opts:        []konf.Option{konf.WithDelimiter("/")},
+			path:        "node/node/leaf",
+			keys:        []string{"node", "node", "leaf"},
+		},
+		{
+			description: "case insensitive",
+			path:        "NODE.Node.LEAF",
+			keys:        []string{"node", "node", "leaf"},
+		},
+		{
+			description: "case sensitive",
+			opts:        []konf.Option{konf.WithCaseSensitive()},
+			path:        "node.node.leaf",
+			keys:        []string{"node", "node", "leaf"},
+		},
+	}
+
+	for _, testcase := range testcases {
+		t.Run(testcase.description, func(t *testing.T) {
+			t.Parallel()
+
+			config := konf.New(testcase.opts...)
+			assert.NoError(t, config.Load(mapLoader{
+				"node": map[string]any{"node": map[string]any{"leaf": "nested"}},
+			}))
+			var value string
+			assert.NoError(t, config.Unmarshal(testcase.path, &value))
+			assert.Equal(t, "nested", value)
+			assert.True(t, config.Exists(testcase.keys))
+			assert.Equal(t, []string{"node", "node", "leaf"}, testcase.keys)
+			assert.True(t, strings.Contains(config.Explain(testcase.path), "has value[nested]"))
+
+			missing := konf.New(testcase.opts...)
+			assert.NoError(t, missing.Load(mapLoader{"node": "parent"}))
+			assert.True(t, !missing.Exists([]string{"node", "node"}))
+		})
+	}
+}
+
 func TestConfig_Load(t *testing.T) {
 	t.Parallel()
 
