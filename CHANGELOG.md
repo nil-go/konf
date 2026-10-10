@@ -7,9 +7,11 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-10-09
+
 ### Fixed
 
-- Preserve repeated path components when reading configuration and leave caller paths unchanged.
+- Preserve repeated path components when reading configuration and leave caller paths unchanged (#1140).
 - provider/file: preserve configuration after failed watch reloads and retry the next write event (#1112).
 
 ### Changed
