@@ -7,6 +7,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- notifier/sns: ignore SQS messages with missing bodies instead of panicking (#1169).
+
 ## [1.5.0] - 2026-10-09
 
 ### Fixed

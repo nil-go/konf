@@ -36,6 +36,109 @@ func TestNotifier_nil(t *testing.T) {
 	assert.EqualError(t, err, "nil Notifier")
 }
 
+func TestNotifier_nilMessageBody(t *testing.T) {
+	t.Parallel()
+
+	valid := types.Message{
+		MessageId:     aws.String("message-id"),
+		ReceiptHandle: aws.String("receipt-handle"),
+		Body:          aws.String("message"),
+	}
+	empty := types.Message{
+		MessageId:     aws.String("empty-id"),
+		ReceiptHandle: aws.String("empty-handle"),
+		Body:          aws.String(""),
+	}
+	testcases := []struct {
+		description string
+		messages    []types.Message
+		deleted     []types.DeleteMessageBatchRequestEntry
+		notified    bool
+	}{
+		{
+			description: "only nil bodies",
+			messages: []types.Message{
+				{}, // The SDK decodes a null list entry as a zero-valued message.
+				{MessageId: aws.String("nil-body"), ReceiptHandle: aws.String("nil-handle")},
+			},
+		},
+		{
+			description: "mixed messages",
+			messages: []types.Message{
+				{}, valid, {}, empty,
+			},
+			deleted: []types.DeleteMessageBatchRequestEntry{
+				{Id: valid.MessageId, ReceiptHandle: valid.ReceiptHandle},
+				{Id: empty.MessageId, ReceiptHandle: empty.ReceiptHandle},
+			},
+			notified: true,
+		},
+	}
+	for _, testcase := range testcases {
+		t.Run(testcase.description, func(t *testing.T) {
+			t.Parallel()
+
+			ctx, cancel := context.WithTimeout(t.Context(), 2*time.Second)
+			defer cancel()
+			var deleted []types.DeleteMessageBatchRequestEntry
+			deleteCalls := 0
+			cfg := aws.Config{
+				Region: "us-west-2",
+				APIOptions: []func(*middleware.Stack) error{
+					func(stack *middleware.Stack) error {
+						return stack.Initialize.Add(middleware.InitializeMiddlewareFunc("mock", func(
+							ctx context.Context,
+							input middleware.InitializeInput,
+							_ middleware.InitializeHandler,
+						) (middleware.InitializeOutput, middleware.Metadata, error) {
+							var result any
+							switch operation := awsMiddleware.GetOperationName(ctx); operation {
+							case "GetCallerIdentity":
+								result = &sts.GetCallerIdentityOutput{Arn: aws.String("arn:aws:iam::123456789012:role/test")}
+							case "CreateQueue":
+								result = &sqs.CreateQueueOutput{QueueUrl: aws.String("https://sqs.us-west-2.amazonaws.com/123456789012/test")}
+							case "GetQueueAttributes":
+								result = &sqs.GetQueueAttributesOutput{Attributes: map[string]string{"QueueArn": "arn:aws:sqs:us-west-2:123456789012:test"}}
+							case "Subscribe":
+								result = &sns.SubscribeOutput{SubscriptionArn: aws.String("arn:aws:sns:us-west-2:123456789012:test:subscription")}
+							case "ReceiveMessage":
+								result = &sqs.ReceiveMessageOutput{Messages: testcase.messages}
+								if !testcase.notified {
+									cancel()
+								}
+							case "DeleteMessageBatch":
+								deleteCalls++
+								deleted = input.Parameters.(*sqs.DeleteMessageBatchInput).Entries
+								result = &sqs.DeleteMessageBatchOutput{}
+							case "Unsubscribe":
+								result = &sns.UnsubscribeOutput{}
+							case "DeleteQueue":
+								result = &sqs.DeleteQueueOutput{}
+							default:
+								return middleware.InitializeOutput{}, middleware.Metadata{}, fmt.Errorf("unexpected operation: %s", operation)
+							}
+
+							return middleware.InitializeOutput{Result: result}, middleware.Metadata{}, nil
+						}), middleware.Before)
+					},
+				},
+			}
+			notifier := ksns.NewNotifier("arn:aws:sns:us-west-2:123456789012:test", ksns.WithAWSConfig(cfg))
+			loader := &loader{cancel: cancel}
+			notifier.Register(loader)
+
+			assert.NoError(t, notifier.Start(ctx))
+			assert.Equal(t, testcase.notified, loader.notified.Load())
+			assert.Equal(t, testcase.deleted, deleted)
+			if testcase.deleted == nil {
+				assert.Equal(t, 0, deleteCalls)
+			} else {
+				assert.Equal(t, 1, deleteCalls)
+			}
+		})
+	}
+}
+
 //nolint:dupl,gocognit,gocyclo,maintidx
 func TestNotifier(t *testing.T) {
 	t.Parallel()
