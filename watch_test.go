@@ -9,6 +9,8 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"slices"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -109,23 +111,60 @@ func TestConfig_Watch_onchange_block(t *testing.T) {
 	err := config.Load(watcher)
 	assert.NoError(t, err)
 
+	started := make(chan struct{})
+	release := make(chan struct{})
+	finished := make(chan struct{})
 	config.OnChange(func(*konf.Config) {
-		time.Sleep(time.Second)
+		defer close(finished)
+		close(started)
+		<-release
 	})
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
-	defer cancel()
+	ctx := make(manualDeadlineContext)
+	stopped := make(chan error, 1)
 	go func() {
-		assert.NoError(t, config.Watch(ctx))
+		stopped <- config.Watch(ctx)
 	}()
 	watcher.change()
+	<-started
+	close(ctx)
+	assert.NoError(t, <-stopped)
+	close(release)
+	<-finished
 
-	<-ctx.Done()
-	time.Sleep(10 * time.Millisecond) // Wait for log to be written
 	expected := `level=INFO msg="Configuration has been changed." loader=stringWatcher
 level=WARN msg="Configuration has not been fully applied to onChanges in one minute. Please check if the onChanges is blocking or takes too long to complete."
 `
-	assert.Equal(t, expected, buf.String())
+	// The provider and callback goroutines can log in either order.
+	expectedLines := strings.Split(expected, "\n")
+	slices.Sort(expectedLines)
+	actualLines := strings.Split(buf.String(), "\n")
+	slices.Sort(actualLines)
+	assert.Equal(t, expectedLines, actualLines)
+}
+
+// manualDeadlineContext simulates a deadline expiring after the callback starts.
+type manualDeadlineContext chan struct{}
+
+func (manualDeadlineContext) Deadline() (time.Time, bool) {
+	return time.Time{}, false
+}
+
+func (c manualDeadlineContext) Done() <-chan struct{} {
+	return c
+}
+
+func (c manualDeadlineContext) Err() error {
+	select {
+	case <-c:
+		return context.DeadlineExceeded
+	default:
+		return nil
+	}
+}
+
+func (manualDeadlineContext) Value(any) any {
+	return nil
 }
 
 func TestConfig_Watch_twice(t *testing.T) {
