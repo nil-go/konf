@@ -232,6 +232,10 @@ func (n *Notifier) Start(ctx context.Context) error { //nolint:cyclop,funlen,goc
 			}
 
 			timer.Reset(time.Second) // Reset timer for next polling.
+			// The SDK represents null list entries as messages with nil bodies.
+			messages.Messages = slices.DeleteFunc(messages.Messages, func(msg types.Message) bool {
+				return msg.Body == nil
+			})
 			if len(messages.Messages) == 0 {
 				continue
 			}
