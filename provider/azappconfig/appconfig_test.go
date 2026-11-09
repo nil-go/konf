@@ -16,7 +16,6 @@ import (
 	"time"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/messaging"
-	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 
 	"github.com/nil-go/konf/provider/azappconfig"
 	"github.com/nil-go/konf/provider/azappconfig/internal/assert"
@@ -175,7 +174,7 @@ list settings error
 			description: "KeyValueModified",
 			event: messaging.CloudEvent{
 				Type:    "Microsoft.AppConfiguration.KeyValueModified",
-				Subject: to.Ptr(server.URL + "/kv/k"),
+				Subject: new(server.URL + "/kv/k"),
 			},
 			expected: map[string]any{
 				"p": map[string]any{
@@ -188,7 +187,7 @@ list settings error
 			description: "KeyValueDeleted",
 			event: messaging.CloudEvent{
 				Type:    "Microsoft.AppConfiguration.KeyValueDeleted",
-				Subject: to.Ptr(server.URL + "/kv/k"),
+				Subject: new(server.URL + "/kv/k"),
 			},
 			expected: map[string]any{
 				"p": map[string]any{
@@ -201,7 +200,7 @@ list settings error
 			description: "unmatched event",
 			event: messaging.CloudEvent{
 				Type:    "Microsoft.Storage.BlobCreated",
-				Subject: to.Ptr("https://another.azconfig.io/kv/"),
+				Subject: new("https://another.azconfig.io/kv/"),
 			},
 			expected: map[string]any{
 				"p": map[string]any{
